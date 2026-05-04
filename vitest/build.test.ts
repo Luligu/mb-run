@@ -49,10 +49,10 @@ beforeEach(() => {
 });
 
 describe('runBin — known entrypoint (tsc)', () => {
-  it('calls logCommand with process.execPath in dryRun mode', async () => {
+  it('calls logCommand with the tool label in dryRun mode', async () => {
     await runBin('tsc', ['--version'], makeOpts());
-    // The logged line contains the node binary name and the tsc entry path.
-    expect(lines.some((l) => l.includes(path.basename(process.execPath)) && l.includes('--version'))).toBe(true);
+    // The logged line contains the tool label and the display args.
+    expect(lines.some((l) => l.includes('tsc') && l.includes('--version'))).toBe(true);
   });
 
   it('does not spawn a process when dryRun=true', async () => {
@@ -112,14 +112,14 @@ describe('runBin — known entrypoint (tsc)', () => {
 });
 
 describe('runBin — unknown bin (shim path)', () => {
-  it('calls logCommand with the binPath (no .cmd) when isWindows=false', async () => {
+  it('calls logCommand with the bin label when isWindows=false', async () => {
     await runBin('shx', ['--version'], makeOpts({ isWindows: false }));
-    expect(lines.some((l) => l.includes(path.join('node_modules', '.bin', 'shx')) && l.includes('--version'))).toBe(true);
+    expect(lines.some((l) => l.includes('shx') && l.includes('--version'))).toBe(true);
   });
 
-  it('calls logCommand with .cmd path when isWindows=true', async () => {
+  it('calls logCommand with the bin label when isWindows=true', async () => {
     await runBin('shx', [], makeOpts({ isWindows: true }));
-    expect(lines.some((l) => l.includes('shx.cmd'))).toBe(true);
+    expect(lines.some((l) => l.includes('shx') && !l.includes('shx.cmd'))).toBe(true);
   });
 
   it('does not spawn a process when dryRun=true', async () => {
@@ -133,10 +133,17 @@ describe('runBin — unknown bin (shim path)', () => {
   });
 
   it('uses the .cmd shim path when isWindows=true', async () => {
-    mockCrossSpawn.mockImplementationOnce(() => makeChild(0));
-    const opts = makeOpts({ isWindows: true, dryRun: false });
-    await runBin('shx', [], opts);
-    expect(mockCrossSpawn).toHaveBeenCalledWith(expect.stringContaining('shx.cmd'), [], expect.anything());
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-shim-'));
+    try {
+      await mkdir(path.join(tmpDir, 'node_modules', '.bin'), { recursive: true });
+      await writeFile(path.join(tmpDir, 'node_modules', '.bin', 'shx.cmd'), '');
+      mockCrossSpawn.mockImplementationOnce(() => makeChild(0));
+      const opts = makeOpts({ isWindows: true, dryRun: false, rootDir: tmpDir });
+      await runBin('shx', [], opts);
+      expect(mockCrossSpawn).toHaveBeenCalledWith(expect.stringContaining('shx.cmd'), [], expect.anything());
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 
   it('uses the plain shim path when isWindows=false', async () => {
@@ -147,9 +154,16 @@ describe('runBin — unknown bin (shim path)', () => {
   });
 
   it('throws ExitError when the shim process exits non-zero (Windows)', async () => {
-    mockCrossSpawn.mockImplementationOnce(() => makeChild(3));
-    const opts = makeOpts({ isWindows: true, dryRun: false });
-    await expect(runBin('shx', [], opts)).rejects.toMatchObject({ code: 3 });
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-shim-'));
+    try {
+      await mkdir(path.join(tmpDir, 'node_modules', '.bin'), { recursive: true });
+      await writeFile(path.join(tmpDir, 'node_modules', '.bin', 'shx.cmd'), '');
+      mockCrossSpawn.mockImplementationOnce(() => makeChild(3));
+      const opts = makeOpts({ isWindows: true, dryRun: false, rootDir: tmpDir });
+      await expect(runBin('shx', [], opts)).rejects.toMatchObject({ code: 3 });
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 
   it('treats null exit code as 1 (shim path)', async () => {

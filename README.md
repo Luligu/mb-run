@@ -135,4 +135,4 @@ For each operation, `mb-run` resolves the tool binary from `node_modules/.bin` i
 
 If you find this project useful, please consider giving it a star on GitHub and sponsoring it. Your support helps maintain and improve the project.
 
-<a href="https://www.buymeacoffee.com/luligugithub"><img src="https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png" width="80" alt="Buy Me A Coffee"></a>
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/luligugithub)

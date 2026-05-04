@@ -15,21 +15,21 @@ beforeEach(async () => {
 
 describe('backup — packageJsonMap', () => {
   it('has keys for root and all workspace packages', () => {
-    expect(packageJsonMap.has('monorepo')).toBe(true);
+    expect(packageJsonMap.has('@monorepo/monorepo')).toBe(true);
     expect(packageJsonMap.has('@monorepo/one')).toBe(true);
     expect(packageJsonMap.has('@monorepo/two')).toBe(true);
     expect(packageJsonMap.size).toBe(3);
   });
 
   it('stores parsed objects, not strings', () => {
-    const root = packageJsonMap.get('monorepo');
+    const root = packageJsonMap.get('@monorepo/monorepo');
     expect(typeof root).toBe('object');
     expect(root).not.toBeNull();
   });
 
   it('root package.json has correct name and version', () => {
-    const root = packageJsonMap.get('monorepo');
-    expect(root?.name).toBe('monorepo');
+    const root = packageJsonMap.get('@monorepo/monorepo');
+    expect(root?.name).toBe('@monorepo/monorepo');
     expect(root?.version).toBe('1.0.0');
   });
 
@@ -39,7 +39,7 @@ describe('backup — packageJsonMap', () => {
   });
 
   it('stores the full parsed object (workspaces field present on root)', () => {
-    const root = packageJsonMap.get('monorepo');
+    const root = packageJsonMap.get('@monorepo/monorepo');
     expect(Array.isArray(root?.workspaces)).toBe(true);
   });
 });
