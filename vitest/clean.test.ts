@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CleanOptions } from '../src/clean.js';
-import { cleanOnly, fileExists, resetClean } from '../src/clean.js';
+import { cleanOnly, cleanWorkspaceArtifacts, commonClean, fileExists, resetClean } from '../src/clean.js';
 import { initLogger } from '../src/logger.js';
 
 let tmpDir: string;
@@ -210,5 +210,39 @@ describe('resetClean', () => {
     expect(await fileExists(nodeModules)).toBe(true);
     expect(await fileExists(path.join(nodeModules, 'pkg'))).toBe(true);
     expect(lines.some((l) => l.includes('pkg'))).toBe(true);
+  });
+});
+
+describe('cleanWorkspaceArtifacts', () => {
+  it('empties .cache and node_modules inside workspace directories', async () => {
+    const wsRoot = path.join(tmpDir, 'ws1');
+    const wsCache = path.join(wsRoot, '.cache');
+    const wsNodeModules = path.join(wsRoot, 'node_modules');
+    await mkdir(wsCache, { recursive: true });
+    await writeFile(path.join(wsCache, 'cached.txt'), '');
+    await mkdir(wsNodeModules, { recursive: true });
+    await writeFile(path.join(wsNodeModules, 'pkg.js'), '');
+    initLogger({ dryRun: true, verbose: false, rootDir: tmpDir });
+
+    // dryRun=true: removePath logs but skips deletion, so dirs survive for emptyDir to walk
+    await cleanWorkspaceArtifacts(tmpDir, makeOpts({ dryRun: true }));
+
+    expect(await fileExists(wsCache)).toBe(true);
+    expect(await fileExists(wsNodeModules)).toBe(true);
+    expect(lines.some((l) => l.includes('cached.txt'))).toBe(true);
+    expect(lines.some((l) => l.includes('pkg.js'))).toBe(true);
+  });
+});
+
+describe('commonClean', () => {
+  it('empties root .cache when it exists', async () => {
+    const cache = path.join(tmpDir, '.cache');
+    await mkdir(cache);
+    await writeFile(path.join(cache, 'cached.txt'), '');
+
+    await commonClean(false, makeOpts());
+
+    expect(await fileExists(cache)).toBe(true);
+    expect(await readdir(cache)).toHaveLength(0);
   });
 });

@@ -80,28 +80,6 @@ export async function emptyDir(dirPath: string, opts: CleanOptions): Promise<voi
 }
 
 /**
- * Empties a directory only if it exists; does not create it.
- *
- * @param {string} dirPath Directory path.
- * @param {CleanOptions} opts Clean options.
- * @returns {Promise<void>} Resolves when emptied or when missing.
- */
-async function emptyDirIfExists(dirPath: string, opts: CleanOptions): Promise<void> {
-  let entries;
-  try {
-    entries = await readdir(dirPath, { withFileTypes: true });
-  } catch {
-    return;
-  }
-
-  await Promise.all(
-    entries.map(async (entry) => {
-      await removePath(path.join(dirPath, entry.name), opts);
-    }),
-  );
-}
-
-/**
  * Removes all `.tsbuildinfo` files under a root, skipping node_modules.
  *
  * @param {string} rootDir Root directory.
@@ -112,6 +90,7 @@ async function removeTsBuildInfo(rootDir: string, opts: CleanOptions): Promise<v
   const stack = [rootDir];
   while (stack.length > 0) {
     const current = stack.pop();
+    /* v8 ignore next -- TypeScript type-guard; stack.pop() on a non-empty array never returns undefined at runtime */
     if (!current) break;
 
     let entries;
@@ -139,11 +118,10 @@ async function removeTsBuildInfo(rootDir: string, opts: CleanOptions): Promise<v
  * Removes common build/test artifacts from workspace folders.
  *
  * @param {string} parentDir Parent directory that contains workspaces.
- * @param {boolean} ensureDirs Whether to ensure workspace dirs exist after emptying.
  * @param {CleanOptions} opts Clean options.
  * @returns {Promise<void>} Resolves when done.
  */
-async function cleanWorkspaceArtifacts(parentDir: string, ensureDirs: boolean, opts: CleanOptions): Promise<void> {
+export async function cleanWorkspaceArtifacts(parentDir: string, opts: CleanOptions): Promise<void> {
   let workspaces;
   try {
     workspaces = await readdir(parentDir, { withFileTypes: true });
@@ -169,8 +147,7 @@ async function cleanWorkspaceArtifacts(parentDir: string, ensureDirs: boolean, o
           removePath(path.join(wsRoot, 'npm-shrinkwrap.json'), opts),
         ]);
 
-        const empty = ensureDirs ? emptyDir : emptyDirIfExists;
-        await Promise.all([empty(path.join(wsRoot, '.cache'), opts), empty(path.join(wsRoot, 'node_modules'), opts)]);
+        await Promise.all([emptyDir(path.join(wsRoot, '.cache'), opts), emptyDir(path.join(wsRoot, 'node_modules'), opts)]);
       }),
   );
 }
@@ -179,11 +156,10 @@ async function cleanWorkspaceArtifacts(parentDir: string, ensureDirs: boolean, o
  * Shared clean pipeline for both --clean and --reset.
  *
  * @param {boolean} emptyRootNodeModules Whether to empty root node_modules.
- * @param {boolean} ensureWorkspaceDirs Whether to ensure workspace dirs exist after emptying.
  * @param {CleanOptions} opts Clean options.
  * @returns {Promise<void>} Resolves when done.
  */
-async function commonClean(emptyRootNodeModules: boolean, ensureWorkspaceDirs: boolean, opts: CleanOptions): Promise<void> {
+export async function commonClean(emptyRootNodeModules: boolean, opts: CleanOptions): Promise<void> {
   await removeTsBuildInfo(opts.rootDir, opts);
 
   await Promise.all([
@@ -196,14 +172,10 @@ async function commonClean(emptyRootNodeModules: boolean, ensureWorkspaceDirs: b
     removePath(path.join(opts.rootDir, 'npm-shrinkwrap.json'), opts),
   ]);
 
-  await Promise.all([
-    cleanWorkspaceArtifacts(path.join(opts.rootDir, 'packages'), ensureWorkspaceDirs, opts),
-    cleanWorkspaceArtifacts(path.join(opts.rootDir, 'apps'), ensureWorkspaceDirs, opts),
-  ]);
+  await Promise.all([cleanWorkspaceArtifacts(path.join(opts.rootDir, 'packages'), opts), cleanWorkspaceArtifacts(path.join(opts.rootDir, 'apps'), opts)]);
 
   // Always empty root .cache (don't create it on clean).
-  const emptyRootCache = ensureWorkspaceDirs ? emptyDir : emptyDirIfExists;
-  await emptyRootCache(path.join(opts.rootDir, '.cache'), opts);
+  await emptyDir(path.join(opts.rootDir, '.cache'), opts);
 
   if (emptyRootNodeModules) {
     await emptyDir(path.join(opts.rootDir, 'node_modules'), opts);
@@ -217,7 +189,7 @@ async function commonClean(emptyRootNodeModules: boolean, ensureWorkspaceDirs: b
  * @returns {Promise<void>} Resolves when done.
  */
 export async function resetClean(opts: CleanOptions): Promise<void> {
-  await commonClean(true, false, opts);
+  await commonClean(true, opts);
 }
 
 /**
@@ -227,5 +199,5 @@ export async function resetClean(opts: CleanOptions): Promise<void> {
  * @returns {Promise<void>} Resolves when done.
  */
 export async function cleanOnly(opts: CleanOptions): Promise<void> {
-  await commonClean(false, false, opts);
+  await commonClean(false, opts);
 }
