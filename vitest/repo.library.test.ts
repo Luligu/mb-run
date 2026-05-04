@@ -1,3 +1,5 @@
+// This test suite intentionally writes to vendor/library (real builds, version bumps, cleans).
+// It is the only test file permitted to do so. All other tests must use temporary directories.
 import path from 'node:path';
 import process from 'node:process';
 

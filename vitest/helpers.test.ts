@@ -2,9 +2,14 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isMonorepo, isPlugin, parsePackageJson } from '../src/helpers.js';
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  return { ...actual, readFile: vi.fn((...args: Parameters<typeof actual.readFile>) => actual.readFile(...args)) };
+});
 
 let tmpDir: string;
 
@@ -89,5 +94,11 @@ describe('parsePackageJson', () => {
   it('error message includes the package.json path', async () => {
     const expectedPath = path.join(tmpDir, 'nonexistent', 'package.json');
     await expect(parsePackageJson(path.join(tmpDir, 'nonexistent'))).rejects.toThrow(expectedPath);
+  });
+
+  it('includes a non-Error thrown value as a string in the message', async () => {
+    const fsp = await import('node:fs/promises');
+    vi.mocked(fsp.readFile).mockRejectedValueOnce('disk failure');
+    await expect(parsePackageJson(tmpDir)).rejects.toThrow('disk failure');
   });
 });

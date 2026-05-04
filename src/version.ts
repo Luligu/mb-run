@@ -60,7 +60,7 @@ export function parseVersionTag(tag: string | undefined): 'dev' | 'edge' | 'git'
  * @param {Date} date Date.
  * @returns {string} yyyymmdd string.
  */
-function formatYyyymmdd(date: Date): string {
+export function formatYyyymmdd(date: Date): string {
   const year = String(date.getFullYear());
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -73,7 +73,7 @@ function formatYyyymmdd(date: Date): string {
  * @param {string} cwd Repo root.
  * @returns {string} sha7.
  */
-function shortSha7FromGit(cwd: string): string {
+export function shortSha7FromGit(cwd: string): string {
   logCommand('git', ['rev-parse', '--short=7', 'HEAD'], cwd);
   const out = execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], {
     cwd,
@@ -93,7 +93,7 @@ function shortSha7FromGit(cwd: string): string {
  * @param {string} cwd Repo root.
  * @returns {string} sha7.
  */
-function getShortSha7(cwd: string): string {
+export function getShortSha7(cwd: string): string {
   try {
     return shortSha7FromGit(cwd);
   } catch (err) {
@@ -110,7 +110,7 @@ function getShortSha7(cwd: string): string {
  * @param {unknown} version Version.
  * @returns {string} Base semver.
  */
-function extractBaseSemver(version: unknown): string {
+export function extractBaseSemver(version: unknown): string {
   const trimmed = String(version ?? '').trim();
   const match = /^([0-9]+\.[0-9]+\.[0-9]+)(?:-.+)?$/.exec(trimmed);
   if (!match) {
@@ -127,7 +127,7 @@ function extractBaseSemver(version: unknown): string {
  * @param {VersionOptions} opts Version options.
  * @returns {Promise<string[]>} Absolute paths to workspace package.json files.
  */
-async function getWorkspacePackageJsonPaths(opts: VersionOptions): Promise<string[]> {
+export async function getWorkspacePackageJsonPaths(opts: VersionOptions): Promise<string[]> {
   const rootPkg = await parsePackageJson(opts.rootDir);
 
   const workspacesConfig = rootPkg?.workspaces;

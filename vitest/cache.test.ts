@@ -93,13 +93,14 @@ describe('backup — idempotency', () => {
 });
 
 /**
- * Reads every file that `restore(monorepoPath)` would overwrite, returning a map of path→content.
+ * Creates a temporary directory populated with all files that `backup`/`restore` operate on,
+ * copied from `vendor/monorepo`. Each call returns a fresh isolated directory so restore
+ * tests never write to the shared vendor tree.
  *
- * @returns {Promise<Map<string, string>>} Absolute path to original file content.
+ * @returns {Promise<string>} Absolute path to the temporary directory.
  */
-async function snapshotRestoreTargets(): Promise<Map<string, string>> {
-  const snapshot = new Map<string, string>();
-  const relKeys = [
+async function createTempMonorepo(): Promise<string> {
+  const relPaths = [
     'package.json',
     path.join('packages', 'one', 'package.json'),
     path.join('packages', 'two', 'package.json'),
@@ -114,91 +115,77 @@ async function snapshotRestoreTargets(): Promise<Map<string, string>> {
     path.join('packages', 'two', 'tsconfig.build.json'),
     path.join('packages', 'two', 'tsconfig.build.production.json'),
   ];
-  for (const rel of relKeys) {
-    const abs = path.join(monorepoPath, rel);
-    snapshot.set(abs, await readFile(abs, 'utf8'));
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-restore-'));
+  for (const rel of relPaths) {
+    const dest = path.join(tmpDir, rel);
+    await mkdir(path.dirname(dest), { recursive: true });
+    await writeFile(dest, await readFile(path.join(monorepoPath, rel), 'utf8'));
   }
-  return snapshot;
-}
-
-/**
- * Writes every saved file back to disk exactly as it was read.
- *
- * @param {Map<string, string>} snapshot Absolute path to original file content.
- * @returns {Promise<void>} Resolves when all files are written.
- */
-async function restoreSnapshot(snapshot: Map<string, string>): Promise<void> {
-  for (const [abs, content] of snapshot) {
-    await writeFile(abs, content);
-  }
+  return tmpDir;
 }
 
 describe('restore — package.json round-trip', () => {
   it('restores root package.json after version is modified on disk', async () => {
-    const snapshot = await snapshotRestoreTargets();
-    const pkgPath = path.join(monorepoPath, 'package.json');
-    const modified = (await readFile(pkgPath, 'utf8')).replace(/"version": "1\.0\.0"/, '"version": "9.9.9"');
-
+    const tmpDir = await createTempMonorepo();
     try {
+      await backup(tmpDir);
+      const pkgPath = path.join(tmpDir, 'package.json');
+      const modified = (await readFile(pkgPath, 'utf8')).replace(/"version": "1\.0\.0"/, '"version": "9.9.9"');
       await writeFile(pkgPath, modified);
       const onDisk = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(onDisk.version).toBe('9.9.9');
-
-      await restore(monorepoPath);
-
+      await restore(tmpDir);
       const restored = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(restored.version).toBe('1.0.0');
     } finally {
-      await restoreSnapshot(snapshot);
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('restores workspace package.json after content is modified on disk', async () => {
-    const snapshot = await snapshotRestoreTargets();
-    const pkgPath = path.join(monorepoPath, 'packages', 'one', 'package.json');
-    const modified = (await readFile(pkgPath, 'utf8')).replace(/"version": "1\.0\.0"/, '"version": "9.9.9"');
-
+    const tmpDir = await createTempMonorepo();
     try {
+      await backup(tmpDir);
+      const pkgPath = path.join(tmpDir, 'packages', 'one', 'package.json');
+      const modified = (await readFile(pkgPath, 'utf8')).replace(/"version": "1\.0\.0"/, '"version": "9.9.9"');
       await writeFile(pkgPath, modified);
-      await restore(monorepoPath);
+      await restore(tmpDir);
       const restored = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(restored.version).toBe('1.0.0');
     } finally {
-      await restoreSnapshot(snapshot);
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 });
 
 describe('restore — tsconfig round-trip', () => {
   it('restores root tsconfig.json after it is overwritten on disk', async () => {
-    const snapshot = await snapshotRestoreTargets();
-    const tsPath = path.join(monorepoPath, 'tsconfig.json');
-
+    const tmpDir = await createTempMonorepo();
     try {
+      await backup(tmpDir);
+      const tsPath = path.join(tmpDir, 'tsconfig.json');
       await writeFile(tsPath, '{}');
       const onDisk = JSON.parse(await readFile(tsPath, 'utf8')) as Record<string, unknown>;
       expect(onDisk).toEqual({});
-
-      await restore(monorepoPath);
-
+      await restore(tmpDir);
       const restored = JSON.parse(await readFile(tsPath, 'utf8')) as Record<string, unknown>;
       expect(restored).toHaveProperty('compilerOptions');
     } finally {
-      await restoreSnapshot(snapshot);
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('restores workspace tsconfig after it is overwritten on disk', async () => {
-    const snapshot = await snapshotRestoreTargets();
-    const tsPath = path.join(monorepoPath, 'packages', 'one', 'tsconfig.build.json');
-
+    const tmpDir = await createTempMonorepo();
     try {
+      await backup(tmpDir);
+      const tsPath = path.join(tmpDir, 'packages', 'one', 'tsconfig.build.json');
       await writeFile(tsPath, '{}');
-      await restore(monorepoPath);
+      await restore(tmpDir);
       const restored = JSON.parse(await readFile(tsPath, 'utf8')) as Record<string, unknown>;
       expect(restored).not.toEqual({});
     } finally {
-      await restoreSnapshot(snapshot);
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 });

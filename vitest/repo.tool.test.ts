@@ -1,3 +1,5 @@
+// This test suite intentionally writes to vendor/tool (real builds, version bumps, cleans).
+// It is the only test file permitted to do so. All other tests must use temporary directories.
 import { execSync } from 'node:child_process';
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';

@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
-import { access, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -213,19 +214,21 @@ describe('main — --info', () => {
 
 describe('main — --sort', () => {
   it('--sort sorts package.json files on disk', async () => {
-    const pkgPath = path.join(toolRepoPath, 'package.json');
-    const original = await readFile(pkgPath, 'utf8');
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-sort-'));
     try {
-      const pkg = JSON.parse(original) as Record<string, unknown>;
-      // Shuffle: put 'scripts' first so sorting is observable
-      const shuffled: Record<string, unknown> = { scripts: pkg['scripts'], ...pkg };
+      const pkgPath = path.join(tmpDir, 'package.json');
+      // Shuffled: 'scripts' before 'name' so the sort effect is observable
+      const shuffled: Record<string, unknown> = { scripts: { build: 'tsc' }, name: 'test-pkg', version: '1.0.0' };
       await writeFile(pkgPath, JSON.stringify(shuffled, null, 2));
+      // Symlink the library vendor node_modules so prettier is available without writing to vendor
+      await symlink(path.join(toolRepoPath, 'node_modules'), path.join(tmpDir, 'node_modules'));
+      vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
       setArgs('--sort');
       await expect(main()).resolves.toBeUndefined();
       const sorted = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(Object.keys(sorted)[0]).toBe('name');
     } finally {
-      await writeFile(pkgPath, original);
+      await rm(tmpDir, { recursive: true, force: true });
     }
   });
 });
