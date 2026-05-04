@@ -30,11 +30,13 @@ cd vendor
 cd tool
 npm install --no-fund --no-audit
 npm run build
+npm run format
 cd ..
 
 cd library
 npm install --no-fund --no-audit
 npm run build
+npm run format
 cd ..
 
 cd plugin
@@ -42,11 +44,13 @@ npm install --no-fund --no-audit --global matterbridge
 npm install --no-fund --no-audit
 npm link --no-fund --no-audit matterbridge
 npm run build
+npm run format
 cd ..
 
 cd monorepo
 npm install --no-fund --no-audit
 npm run build
+npm run format
 cd ..
 
 cd ..
