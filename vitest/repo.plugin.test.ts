@@ -31,6 +31,13 @@ beforeAll(async () => {
   if (!(await exists(path.join(pluginRepoPath, 'node_modules')))) {
     execSync('npm install --no-fund --no-audit', { cwd: pluginRepoPath, stdio: 'inherit' });
   }
+  if (!(await exists(path.join(pluginRepoPath, 'node_modules', 'matterbridge')))) {
+    try {
+      execSync('npm link --no-fund --no-audit matterbridge', { cwd: pluginRepoPath, stdio: 'inherit' });
+    } catch {
+      execSync('npm install --no-fund --no-audit matterbridge', { cwd: pluginRepoPath, stdio: 'inherit' });
+    }
+  }
 }, 300_000);
 
 beforeEach(() => {
