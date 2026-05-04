@@ -131,6 +131,14 @@ describe('systemInfo', () => {
     expect(lines[4]).not.toContain('minutes');
   });
 
+  it('uptime line uses plural forms for 2 days, 2 hours, 2 minutes', () => {
+    vi.spyOn(os, 'uptime').mockReturnValue(2 * 86400 + 2 * 3600 + 2 * 60);
+    systemInfo();
+    expect(lines[4]).toContain('2 days');
+    expect(lines[4]).toContain('2 hours');
+    expect(lines[4]).toContain('2 minutes');
+  });
+
   it('npm line shows version from npm_config_user_agent when package.json candidates are absent', () => {
     vi.spyOn(os, 'networkInterfaces').mockReturnValue({});
     // Point execPath to a directory with no npm package.json
