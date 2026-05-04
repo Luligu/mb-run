@@ -17,7 +17,7 @@ let tmpDir: string;
 
 beforeAll(async () => {
   tmpDir = await copyRepo(vendorLibraryPath, { install: true });
-}, 120_000);
+}, 300_000);
 
 afterAll(async () => {
   if (tmpDir) await rm(tmpDir, { recursive: true, force: true });

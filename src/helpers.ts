@@ -21,7 +21,7 @@
  * limitations under the License.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readdir, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -143,7 +143,11 @@ export async function copyRepo(sourceDir: string, opts: CopyRepoOptions = {}): P
       GIT_COMMITTER_NAME: 'mb-run',
       GIT_COMMITTER_EMAIL: 'mb-run@localhost',
     };
-    execSync('git init && git symbolic-ref HEAD refs/heads/main && git add -A && git commit --no-verify -m init', { cwd: tmpDir, stdio: 'ignore', env: gitEnv, shell: '/bin/sh' });
+    const execOpts = { cwd: tmpDir, stdio: 'ignore' as const, env: gitEnv };
+    execFileSync('git', ['init'], execOpts);
+    execFileSync('git', ['symbolic-ref', 'HEAD', 'refs/heads/main'], execOpts);
+    execFileSync('git', ['add', '-A'], execOpts);
+    execFileSync('git', ['commit', '--no-verify', '-m', 'init'], execOpts);
   }
 
   return tmpDir;

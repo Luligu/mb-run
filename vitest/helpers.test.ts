@@ -8,7 +8,7 @@ import { copyRepo, isMonorepo, isPlugin, parsePackageJson } from '../src/helpers
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
-  return { ...actual, execSync: vi.fn(actual.execSync) };
+  return { ...actual, execFileSync: vi.fn(actual.execFileSync), execSync: vi.fn(actual.execSync) };
 });
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -188,12 +188,12 @@ describe('copyRepo', () => {
   it('runs git init when gitInit is true', async () => {
     await writeFile(path.join(tmpDir, 'package.json'), '{}');
     const cp = await import('node:child_process');
-    const execSyncMock = vi.mocked(cp.execSync);
-    execSyncMock.mockImplementation(() => Buffer.from(''));
+    const execFileSyncMock = vi.mocked(cp.execFileSync);
+    execFileSyncMock.mockImplementation(() => Buffer.from(''));
     destDir = await copyRepo(tmpDir, { install: false, gitInit: true });
-    const gitCall = execSyncMock.mock.calls.find((c) => String(c[0]).includes('git init'));
+    const gitCall = execFileSyncMock.mock.calls.find((c) => String(c[0]).includes('git') && String(c[1]).includes('init'));
     expect(gitCall).toBeDefined();
-    execSyncMock.mockRestore();
+    execFileSyncMock.mockRestore();
   });
 
   it('skips symlinks (neither directory nor file) silently', async () => {
