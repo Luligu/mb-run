@@ -2,19 +2,17 @@ import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
 const vendorPluginPath = path.join(process.cwd(), 'vendor', 'plugin');
 
-let tmpDir: string;
-let distPath: string;
-let packageJsonPath: string;
-let packageLockPath: string;
-let buildInfoPath: string;
-let buildProductionInfoPath: string;
+const distPath = path.join(vendorPluginPath, 'dist');
+const packageJsonPath = path.join(vendorPluginPath, 'package.json');
+const packageLockPath = path.join(vendorPluginPath, 'package-lock.json');
+const buildInfoPath = path.join(vendorPluginPath, 'tsconfig.build.tsbuildinfo');
+const buildProductionInfoPath = path.join(vendorPluginPath, 'tsconfig.build.production.tsbuildinfo');
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -29,23 +27,16 @@ function setArgs(...args: string[]): void {
   process.argv = ['node', 'mb-run', ...args];
 }
 
-beforeAll(async () => {
-  tmpDir = await copyRepo(vendorPluginPath, { install: true, linkMatterbridge: true, gitInit: true });
-  distPath = path.join(tmpDir, 'dist');
-  packageJsonPath = path.join(tmpDir, 'package.json');
-  packageLockPath = path.join(tmpDir, 'package-lock.json');
-  buildInfoPath = path.join(tmpDir, 'tsconfig.build.tsbuildinfo');
-  buildProductionInfoPath = path.join(tmpDir, 'tsconfig.build.production.tsbuildinfo');
-}, 300_000);
-
 afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-}, 30_000);
+  await rm(distPath, { recursive: true, force: true });
+  await rm(buildInfoPath, { force: true });
+  await rm(buildProductionInfoPath, { force: true });
+});
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+  vi.spyOn(process, 'cwd').mockReturnValue(vendorPluginPath);
 });
 
 describe('repo.plugin — real operations', () => {
@@ -108,7 +99,7 @@ describe('repo.plugin — real operations', () => {
 
   it('--version dev tags the version with the dev prerelease format', async () => {
     const savedPkg = await readFile(packageJsonPath, 'utf8');
-    const hadLock = await exists(packageLockPath);
+    const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);
     try {
       setArgs('--version', 'dev');
       await expect(main()).resolves.toBeUndefined();
@@ -116,13 +107,14 @@ describe('repo.plugin — real operations', () => {
       expect(pkg.version).toMatch(/^1\.0\.0-dev-\d{8}-[0-9a-f]{7}$/u);
     } finally {
       await writeFile(packageJsonPath, savedPkg, 'utf8');
-      if (!hadLock) await rm(packageLockPath, { force: true });
+      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
+      else await rm(packageLockPath, { force: true });
     }
   }, 30_000);
 
   it('--version strips the prerelease tag to base semver', async () => {
     const savedPkg = await readFile(packageJsonPath, 'utf8');
-    const hadLock = await exists(packageLockPath);
+    const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);
     try {
       setArgs('--version');
       await expect(main()).resolves.toBeUndefined();
@@ -130,7 +122,8 @@ describe('repo.plugin — real operations', () => {
       expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/u);
     } finally {
       await writeFile(packageJsonPath, savedPkg, 'utf8');
-      if (!hadLock) await rm(packageLockPath, { force: true });
+      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
+      else await rm(packageLockPath, { force: true });
     }
   }, 30_000);
 });

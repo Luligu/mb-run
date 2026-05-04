@@ -2,27 +2,23 @@ import { access, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import process from 'node:process';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as buildModule from '../src/build.js';
-import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
-import * as spawnModule from '../src/spawn.js';
 
 const vendorMonorepoPath = path.join(process.cwd(), 'vendor', 'monorepo');
 
-let tmpDir: string;
-let distPath: string;
-let pkgOneDist: string;
-let pkgTwoDist: string;
-let packageJsonPath: string;
-let pkgOneJsonPath: string;
-let pkgTwoJsonPath: string;
-let packageLockPath: string;
-let buildInfoPath: string;
-let buildProductionInfoPath: string;
-let pkgOneBuildInfoPath: string;
-let pkgTwoBuildInfoPath: string;
+const distPath = path.join(vendorMonorepoPath, 'dist');
+const pkgOneDist = path.join(vendorMonorepoPath, 'packages', 'one', 'dist');
+const pkgTwoDist = path.join(vendorMonorepoPath, 'packages', 'two', 'dist');
+const packageJsonPath = path.join(vendorMonorepoPath, 'package.json');
+const pkgOneJsonPath = path.join(vendorMonorepoPath, 'packages', 'one', 'package.json');
+const pkgTwoJsonPath = path.join(vendorMonorepoPath, 'packages', 'two', 'package.json');
+const packageLockPath = path.join(vendorMonorepoPath, 'package-lock.json');
+const buildInfoPath = path.join(vendorMonorepoPath, 'tsconfig.build.tsbuildinfo');
+const buildProductionInfoPath = path.join(vendorMonorepoPath, 'tsconfig.build.production.tsbuildinfo');
+const pkgOneBuildInfoPath = path.join(vendorMonorepoPath, 'packages', 'one', 'tsconfig.build.tsbuildinfo');
+const pkgTwoBuildInfoPath = path.join(vendorMonorepoPath, 'packages', 'two', 'tsconfig.build.tsbuildinfo');
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -37,29 +33,20 @@ function setArgs(...args: string[]): void {
   process.argv = ['node', 'mb-run', ...args];
 }
 
-beforeAll(async () => {
-  tmpDir = await copyRepo(vendorMonorepoPath, { gitInit: true });
-  distPath = path.join(tmpDir, 'dist');
-  pkgOneDist = path.join(tmpDir, 'packages', 'one', 'dist');
-  pkgTwoDist = path.join(tmpDir, 'packages', 'two', 'dist');
-  packageJsonPath = path.join(tmpDir, 'package.json');
-  pkgOneJsonPath = path.join(tmpDir, 'packages', 'one', 'package.json');
-  pkgTwoJsonPath = path.join(tmpDir, 'packages', 'two', 'package.json');
-  packageLockPath = path.join(tmpDir, 'package-lock.json');
-  buildInfoPath = path.join(tmpDir, 'tsconfig.build.tsbuildinfo');
-  buildProductionInfoPath = path.join(tmpDir, 'tsconfig.build.production.tsbuildinfo');
-  pkgOneBuildInfoPath = path.join(tmpDir, 'packages', 'one', 'tsconfig.build.tsbuildinfo');
-  pkgTwoBuildInfoPath = path.join(tmpDir, 'packages', 'two', 'tsconfig.build.tsbuildinfo');
-}, 120_000);
-
 afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-}, 30_000);
+  await rm(distPath, { recursive: true, force: true });
+  await rm(pkgOneDist, { recursive: true, force: true });
+  await rm(pkgTwoDist, { recursive: true, force: true });
+  await rm(buildInfoPath, { force: true });
+  await rm(buildProductionInfoPath, { force: true });
+  await rm(pkgOneBuildInfoPath, { force: true });
+  await rm(pkgTwoBuildInfoPath, { force: true });
+});
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+  vi.spyOn(process, 'cwd').mockReturnValue(vendorMonorepoPath);
 });
 
 describe('repo.monorepo — real operations', () => {
@@ -112,7 +99,7 @@ describe('repo.monorepo — real operations', () => {
     const savedRoot = await readFile(packageJsonPath, 'utf8');
     const savedOne = await readFile(pkgOneJsonPath, 'utf8');
     const savedTwo = await readFile(pkgTwoJsonPath, 'utf8');
-    const hadLock = await exists(packageLockPath);
+    const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);
     try {
       setArgs('--version', 'dev');
       await expect(main()).resolves.toBeUndefined();
@@ -124,7 +111,8 @@ describe('repo.monorepo — real operations', () => {
       await writeFile(packageJsonPath, savedRoot, 'utf8');
       await writeFile(pkgOneJsonPath, savedOne, 'utf8');
       await writeFile(pkgTwoJsonPath, savedTwo, 'utf8');
-      if (!hadLock) await rm(packageLockPath, { force: true });
+      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
+      else await rm(packageLockPath, { force: true });
     }
   }, 30_000);
 
@@ -132,7 +120,7 @@ describe('repo.monorepo — real operations', () => {
     const savedRoot = await readFile(packageJsonPath, 'utf8');
     const savedOne = await readFile(pkgOneJsonPath, 'utf8');
     const savedTwo = await readFile(pkgTwoJsonPath, 'utf8');
-    const hadLock = await exists(packageLockPath);
+    const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);
     try {
       setArgs('--version');
       await expect(main()).resolves.toBeUndefined();
@@ -144,48 +132,23 @@ describe('repo.monorepo — real operations', () => {
       await writeFile(packageJsonPath, savedRoot, 'utf8');
       await writeFile(pkgOneJsonPath, savedOne, 'utf8');
       await writeFile(pkgTwoJsonPath, savedTwo, 'utf8');
-      if (!hadLock) await rm(packageLockPath, { force: true });
+      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
+      else await rm(packageLockPath, { force: true });
     }
   }, 30_000);
 
   it('--pack produces a tgz, sets bundleDependencies, and restores package.json', async () => {
-    const savedRoot = await readFile(packageJsonPath, 'utf8');
-    const savedLock = (await exists(packageLockPath)) ? await readFile(packageLockPath, 'utf8') : null;
+    setArgs('--pack');
+    await expect(main()).resolves.toBeUndefined();
 
-    // Mock the slow restore/build steps — they are pointless since tmpDir is cleaned up in afterAll.
-    // runWorkspaceBuild and runBin are mocked entirely (their assertBinExists check would also fail
-    // since node_modules is emptied during the pack flow before the restore install runs).
-    // runCommand is intercepted to allow only `npm pack` through; all npm install / shrinkwrap
-    // calls (both the omit-dev install and the restore install) are skipped.
-    const realRunCommand = spawnModule.runCommand;
-    vi.spyOn(spawnModule, 'runCommand').mockImplementation(async (cmd, args, opts) => {
-      if (cmd === 'npm' && Array.isArray(args) && args[0] === 'pack') {
-        return realRunCommand(cmd, args, opts);
-      }
-    });
-    vi.spyOn(buildModule, 'runWorkspaceBuild').mockResolvedValue(undefined);
-    vi.spyOn(buildModule, 'runBin').mockResolvedValue(undefined);
+    // tgz should exist
+    const entries = await readdir(vendorMonorepoPath);
+    expect(entries.filter((e) => e.endsWith('.tgz')).length).toBeGreaterThan(0);
 
-    try {
-      setArgs('--pack');
-      await expect(main()).resolves.toBeUndefined();
-
-      // tgz should exist
-      const entries = await readdir(tmpDir);
-      expect(entries.filter((e) => e.endsWith('.tgz')).length).toBeGreaterThan(0);
-
-      // package.json should be fully restored (no bundleDependencies, scripts present)
-      const restored = JSON.parse(await readFile(packageJsonPath, 'utf8')) as Record<string, unknown>;
-      expect(restored['bundleDependencies']).toBeUndefined();
-      expect(restored['scripts']).toBeDefined();
-      expect(restored['devDependencies']).toBeDefined();
-    } finally {
-      await writeFile(packageJsonPath, savedRoot, 'utf8');
-      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
-      else await rm(packageLockPath, { force: true });
-      // clean up generated tgz files
-      const entries = await readdir(tmpDir);
-      await Promise.all(entries.filter((e) => e.endsWith('.tgz')).map((e) => rm(path.join(tmpDir, e), { force: true })));
-    }
-  }, 120_000);
+    // package.json should be fully restored (no bundleDependencies, scripts present)
+    const restored = JSON.parse(await readFile(packageJsonPath, 'utf8')) as Record<string, unknown>;
+    expect(restored['bundleDependencies']).toBeUndefined();
+    expect(restored['scripts']).toBeDefined();
+    expect(restored['devDependencies']).toBeDefined();
+  }, 300_000);
 });

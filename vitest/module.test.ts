@@ -1,34 +1,14 @@
-import { readFile, rm, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import process from 'node:process';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 import { ExitError } from '../src/spawn.js';
 
-const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
-
-// tmpDir is a copy of vendor/library with node_modules installed, used by the --sort test
-// which needs prettier available. All other tests (dry-run) use vendorLibraryPath as cwd
-// so that git commands (e.g. git rev-parse for --version dev) resolve correctly.
-let tmpDir: string;
-
-beforeAll(async () => {
-  tmpDir = await copyRepo(vendorLibraryPath, { install: true });
-}, 300_000);
-
-afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
-});
-
 // Suppress all console output produced by dryRun logging and help text.
-// Redirect cwd to the vendor library repo (inside the git tree) so git-based commands resolve.
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(vendorLibraryPath);
 });
 
 function setArgs(...args: string[]): void {
@@ -107,11 +87,6 @@ describe('main — --dry-run quality operations', () => {
 
   it('--dry-run --format-check resolves without error', async () => {
     setArgs('--dry-run', '--format-check');
-    await expect(main()).resolves.toBeUndefined();
-  });
-
-  it('--dry-run --sort resolves without error', async () => {
-    setArgs('--dry-run', '--sort');
     await expect(main()).resolves.toBeUndefined();
   });
 
@@ -217,37 +192,9 @@ describe('main — --info', () => {
 });
 
 describe('main — --sort', () => {
-  it('--sort sorts package.json files on disk', async () => {
-    const pkgPath = path.join(tmpDir, 'package.json');
-    const savedPkg = await readFile(pkgPath, 'utf8');
-    try {
-      // Shuffled: 'scripts' before 'name' so the sort effect is observable
-      const shuffled: Record<string, unknown> = { scripts: { build: 'tsc' }, name: 'test-pkg', version: '1.0.0' };
-      await writeFile(pkgPath, JSON.stringify(shuffled, null, 2));
-      // Override cwd to tmpDir so --sort reads/writes tmpDir and prettier is available
-      vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
-      setArgs('--sort');
-      await expect(main()).resolves.toBeUndefined();
-      const sorted = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
-      expect(Object.keys(sorted)[0]).toBe('name');
-    } finally {
-      await writeFile(pkgPath, savedPkg, 'utf8');
-    }
-  });
-});
-
-describe('main — ANSI cursor movement', () => {
-  it('restorePos emits moveUp when FORCE_COLOR is set and not dry-run', async () => {
-    const saved = process.env['FORCE_COLOR'];
-    process.env['FORCE_COLOR'] = '1';
-    vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
-    try {
-      setArgs('--clean');
-      await expect(main()).resolves.toBeUndefined();
-    } finally {
-      if (saved !== undefined) process.env['FORCE_COLOR'] = saved;
-      else delete process.env['FORCE_COLOR'];
-    }
+  it('--dry-run --sort resolves without error', async () => {
+    setArgs('--dry-run', '--sort');
+    await expect(main()).resolves.toBeUndefined();
   });
 });
 

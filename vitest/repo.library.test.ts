@@ -1,15 +1,12 @@
-import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
 const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
 
-let tmpDir: string;
 let logLines: string[];
 
 function logged(...tokens: string[]): boolean {
@@ -20,19 +17,11 @@ function setArgs(...args: string[]): void {
   process.argv = ['node', 'mb-run', ...args];
 }
 
-beforeAll(async () => {
-  tmpDir = await copyRepo(vendorLibraryPath, { install: false, gitInit: true });
-}, 30_000);
-
-afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
-});
-
 beforeEach(() => {
   logLines = [];
   vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => logLines.push(String(args[0])));
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+  vi.spyOn(process, 'cwd').mockReturnValue(vendorLibraryPath);
 });
 
 describe('repo.library — dry-run operations', () => {
