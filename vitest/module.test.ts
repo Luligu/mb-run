@@ -8,7 +8,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main } from '../src/module.js';
 import { ExitError } from '../src/spawn.js';
 
-const toolRepoPath = path.join(process.cwd(), 'vendor', 'tool');
+const toolRepoPath = path.join(process.cwd(), 'vendor', 'library');
 
 beforeAll(async () => {
   try {
