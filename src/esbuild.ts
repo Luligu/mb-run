@@ -26,7 +26,9 @@ import path from 'node:path';
 
 import { build, type BuildOptions } from 'esbuild';
 
+import { log } from './ansi.js';
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
+import { fileExists } from './clean.js';
 import { parsePackageJson } from './helpers.js';
 import { logEsbuild } from './logger.js';
 
@@ -134,13 +136,30 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   // Step 6: Derive entryPoints from dist paths declared in package.json.
   // e.g. "./dist/module.js" → in: "src/module.ts", out: "module"
   // e.g. "./dist/bin/hello.js" → in: "src/bin/hello.ts", out: "bin/hello"
-  const entryPoints: Array<{ in: string; out: string }> = [
-    { in: path.join(opts.rootDir, toTsSrc(mainRel)), out: toOutName(mainRel) },
-    ...binEntries.map(([, binRelPath]) => ({
-      in: path.join(opts.rootDir, toTsSrc(binRelPath)),
-      out: toOutName(binRelPath),
-    })),
-  ];
+  //
+  // For bin entries:
+  // - Deduplicate by resolved absolute path (multiple bin names can map to the
+  //   same file; only the first is kept).
+  // - Skip any bin that does not map to a TypeScript source file. A bin path
+  //   that points into dist/ as a .js file converts cleanly (dist/bin/x.js →
+  //   src/bin/x.ts). A standalone shim (e.g. bin/mb-run with no dist/ prefix
+  //   and no .js extension) leaves the derived src path unchanged and not
+  //   ending in .ts — that file imports from dist/ and must not be bundled,
+  //   otherwise dist/ files would be both inputs and outputs.
+  const seenBinPaths = new Set<string>();
+  const resolvedBinEntries: Array<{ in: string; out: string }> = [];
+  for (const [, binRelPath] of binEntries) {
+    const derivedSrc = toTsSrc(binRelPath);
+    if (!derivedSrc.endsWith('.ts')) continue;
+    const srcPath = path.join(opts.rootDir, derivedSrc);
+    const absPath = path.resolve(srcPath);
+    if (seenBinPaths.has(absPath)) continue;
+    seenBinPaths.add(absPath);
+    if (!(await fileExists(srcPath))) continue;
+    resolvedBinEntries.push({ in: srcPath, out: toOutName(binRelPath) });
+  }
+
+  const entryPoints: Array<{ in: string; out: string }> = [{ in: path.join(opts.rootDir, toTsSrc(mainRel)), out: toOutName(mainRel) }, ...resolvedBinEntries];
 
   // Step 7: Run esbuild — all entries in one call with code splitting.
   logEsbuild(entryPoints, opts.rootDir);
@@ -157,6 +176,6 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     outdir: path.join(opts.rootDir, 'dist'),
     write: true,
   };
-  // log(`esbuild options: ${JSON.stringify(esbuildOptions, null, 2)}`);
+  log(`esbuild options: ${JSON.stringify(esbuildOptions, null, 2)}`);
   await build(esbuildOptions);
 }

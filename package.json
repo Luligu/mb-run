@@ -55,6 +55,7 @@
     "mb-run": "bin/mb-run",
     "pesto-run": "bin/mb-run",
     "barba-run": "bin/mb-run",
+    "socca-run": "bin/mb-run",
     "chips-run": "bin/mb-run"
   },
   "files": [

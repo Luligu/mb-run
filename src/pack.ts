@@ -177,25 +177,23 @@ export async function runPack(opts: PackOptions): Promise<void> {
     if (!opts.dryRun) {
       await restore(opts.rootDir);
     }
+
+    // Step 11: npm install (full restore).
+    await removeFile(path.join(opts.rootDir, 'package-lock.json'), opts);
+    await removeFile(path.join(opts.rootDir, 'npm-shrinkwrap.json'), opts);
+    await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
+    if (await isPlugin(opts.rootDir)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
+
+    // Step 12: Format the workspace.
+    await runBin('prettier', ['--log-level=silent', '--cache', '--cache-location', '.cache/.prettiercache', '--write', '.'], {
+      rootDir: opts.rootDir,
+      isWindows: opts.isWindows,
+      dryRun: opts.dryRun,
+      mode: 'build',
+      watch: false,
+    });
+
+    // Step 13: Build the workspace.
+    await runWorkspaceBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun, mode: 'build', watch: false });
   }
-
-  // Steps 11–13 run only when the pack succeeded (no exception from the try block above).
-
-  // Step 11: npm install (full restore).
-  await removeFile(path.join(opts.rootDir, 'package-lock.json'), opts);
-  await removeFile(path.join(opts.rootDir, 'npm-shrinkwrap.json'), opts);
-  await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
-  if (await isPlugin(opts.rootDir)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
-
-  // Step 12: Format the workspace.
-  await runBin('prettier', ['--log-level=silent', '--cache', '--cache-location', '.cache/.prettiercache', '--write', '.'], {
-    rootDir: opts.rootDir,
-    isWindows: opts.isWindows,
-    dryRun: opts.dryRun,
-    mode: 'build',
-    watch: false,
-  });
-
-  // Step 13: Build the workspace.
-  await runWorkspaceBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun, mode: 'build', watch: false });
 }
