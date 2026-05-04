@@ -47,8 +47,7 @@ describe('runUpdate', () => {
     it('calls ncuRun without workspace options', async () => {
       mockParsePackageJson.mockResolvedValue({ name: 'my-pkg', version: '1.0.0' });
       await runUpdate(baseOpts);
-      expect(mockNcuRun).toHaveBeenCalledOnce();
-      expect(mockNcuRun).toHaveBeenCalledWith({ upgrade: true, silent: true, cwd: rootDir });
+      expect(mockNcuRun).toHaveBeenCalledExactlyOnceWith({ upgrade: true, silent: true, cwd: rootDir });
     });
   });
 
@@ -56,8 +55,7 @@ describe('runUpdate', () => {
     it('calls ncuRun with workspaces and root options', async () => {
       mockParsePackageJson.mockResolvedValue({ name: 'my-ws', workspaces: ['packages/*'] });
       await runUpdate(baseOpts);
-      expect(mockNcuRun).toHaveBeenCalledOnce();
-      expect(mockNcuRun).toHaveBeenCalledWith({ upgrade: true, workspaces: true, root: true, silent: true, cwd: rootDir });
+      expect(mockNcuRun).toHaveBeenCalledExactlyOnceWith({ upgrade: true, workspaces: true, root: true, silent: true, cwd: rootDir });
     });
 
     it('passes the rootDir as cwd', async () => {
