@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatCommandArg, initLogger, logCommand, logDelete, Logger, logWriteFile } from '../src/logger.js';
+import { formatCommandArg, initLogger, logBackup, logCommand, logDelete, logEsbuild, Logger, logRestore, logWriteFile } from '../src/logger.js';
 
 describe('formatCommandArg', () => {
   it('wraps an empty string as ""', () => {
@@ -150,6 +150,60 @@ describe('Logger', () => {
       expect(lines[0]).toContain('out.json');
     });
   });
+
+  describe('logEsbuild', () => {
+    it('does not log when shouldLogActions is false', () => {
+      const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
+      logger.logEsbuild([{ in: 'src/index.ts', out: 'dist/index.js' }]);
+      expect(lines).toHaveLength(0);
+    });
+
+    it('logs "esbuild" and entry point when verbose is true', () => {
+      const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
+      logger.logEsbuild([{ in: 'src/index.ts', out: 'dist/index.js' }]);
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain('esbuild');
+      expect(lines[0]).toContain('src/index.ts');
+    });
+
+    it('uses provided cwd instead of rootDir', () => {
+      const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
+      logger.logEsbuild([{ in: 'src/a.ts', out: 'dist/a.js' }], '/custom/cwd');
+      expect(lines[0]).toContain('/custom/cwd');
+    });
+  });
+
+  describe('logBackup', () => {
+    it('does not log when shouldLogActions is false', () => {
+      const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
+      logger.logBackup('/some/dir');
+      expect(lines).toHaveLength(0);
+    });
+
+    it('logs "backup" and the dir when verbose is true', () => {
+      const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
+      logger.logBackup('/some/dir');
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain('backup');
+      expect(lines[0]).toContain('/some/dir');
+    });
+  });
+
+  describe('logRestore', () => {
+    it('does not log when shouldLogActions is false', () => {
+      const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
+      logger.logRestore('/some/dir');
+      expect(lines).toHaveLength(0);
+    });
+
+    it('logs "restore" and the dir when verbose is true', () => {
+      const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
+      logger.logRestore('/some/dir');
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain('restore');
+      expect(lines[0]).toContain('/some/dir');
+    });
+  });
 });
 
 describe('module-level logger (initLogger + free functions)', () => {
@@ -209,6 +263,33 @@ describe('module-level logger (initLogger + free functions)', () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain('write');
     expect(lines[0]).toContain('out.json');
+  });
+
+  it('logEsbuild logs when verbose is true', () => {
+    initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
+    logEsbuild([{ in: 'src/index.ts', out: 'dist/index.js' }]);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('esbuild');
+  });
+
+  it('logEsbuild uses cwd when provided', () => {
+    initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
+    logEsbuild([{ in: 'src/index.ts', out: 'dist/index.js' }], '/custom/cwd');
+    expect(lines[0]).toContain('/custom/cwd');
+  });
+
+  it('logBackup logs when verbose is true', () => {
+    initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
+    logBackup('/some/dir');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('backup');
+  });
+
+  it('logRestore logs when verbose is true', () => {
+    initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
+    logRestore('/some/dir');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('restore');
   });
 
   it('re-initializing changes the active logger', () => {
