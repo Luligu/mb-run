@@ -90,6 +90,22 @@ describe('repo.plugin — real operations', () => {
     expect(logged.some((line) => line.includes('link') && line.includes('matterbridge'))).toBe(true);
   }, 30_000);
 
+  it('--dry-run --install links matterbridge when isPlugin is true', async () => {
+    const logged: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => logged.push(String(args[0])));
+    setArgs('--dry-run', '--install');
+    await expect(main()).resolves.toBeUndefined();
+    expect(logged.some((line) => line.includes('link') && line.includes('matterbridge'))).toBe(true);
+  }, 30_000);
+
+  it('--dry-run --update links matterbridge when isPlugin is true', async () => {
+    const logged: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => logged.push(String(args[0])));
+    setArgs('--dry-run', '--update');
+    await expect(main()).resolves.toBeUndefined();
+    expect(logged.some((line) => line.includes('link') && line.includes('matterbridge'))).toBe(true);
+  }, 30_000);
+
   it('--version dev tags the version with the dev prerelease format', async () => {
     const savedPkg = await readFile(packageJsonPath, 'utf8');
     const hadLock = await exists(packageLockPath);

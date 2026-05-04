@@ -235,3 +235,49 @@ describe('main — --sort', () => {
     }
   });
 });
+
+describe('main — ANSI cursor movement', () => {
+  it('restorePos emits moveUp when FORCE_COLOR is set and not dry-run', async () => {
+    const saved = process.env['FORCE_COLOR'];
+    process.env['FORCE_COLOR'] = '1';
+    vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+    try {
+      setArgs('--clean');
+      await expect(main()).resolves.toBeUndefined();
+    } finally {
+      if (saved !== undefined) process.env['FORCE_COLOR'] = saved;
+      else delete process.env['FORCE_COLOR'];
+    }
+  });
+});
+
+describe('main — --esbuild', () => {
+  it('--dry-run --esbuild resolves without error', async () => {
+    setArgs('--dry-run', '--esbuild');
+    await expect(main()).resolves.toBeUndefined();
+  });
+});
+
+describe('main — --pack', () => {
+  it('--dry-run --pack resolves without error', async () => {
+    setArgs('--dry-run', '--pack');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --pack with an invalid tag throws ExitError', async () => {
+    setArgs('--dry-run', '--pack', 'invalid-tag');
+    await expect(main()).rejects.toBeInstanceOf(ExitError);
+  });
+});
+
+describe('main — --publish', () => {
+  it('--dry-run --publish resolves without error', async () => {
+    setArgs('--dry-run', '--publish');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --publish with an invalid tag throws ExitError', async () => {
+    setArgs('--dry-run', '--publish', 'invalid-tag');
+    await expect(main()).rejects.toBeInstanceOf(ExitError);
+  });
+});
