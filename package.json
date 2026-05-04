@@ -73,6 +73,7 @@
     "cleanBuildProduction": "npm run clean && npm run buildProduction",
     "deepClean": "npm run clean && npx shx rm -rf coverage jest temp package-lock.json npm-shrinkwrap.json .cache/* .cache/.[!.]* .cache/..?* node_modules/* node_modules/.[!.]* node_modules/..?*",
     "watch": "tsc --project tsconfig.build.json --watch",
+    "pretest": "node scripts/vendor-install.mjs",
     "test": "vitest run",
     "test:watch": "vitest --reporter verbose",
     "test:verbose": "vitest run --reporter verbose",
