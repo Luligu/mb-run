@@ -1,30 +1,34 @@
-import { execSync } from 'node:child_process';
-import { access, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
-import os from 'node:os';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 import { ExitError } from '../src/spawn.js';
 
-const toolRepoPath = path.join(process.cwd(), 'vendor', 'library');
+const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
+
+// tmpDir is a copy of vendor/library with node_modules installed, used by the --sort test
+// which needs prettier available. All other tests (dry-run) use vendorLibraryPath as cwd
+// so that git commands (e.g. git rev-parse for --version dev) resolve correctly.
+let tmpDir: string;
 
 beforeAll(async () => {
-  try {
-    await access(path.join(toolRepoPath, 'node_modules'));
-  } catch {
-    execSync('npm install --no-fund --no-audit', { cwd: toolRepoPath, stdio: 'inherit' });
-  }
+  tmpDir = await copyRepo(vendorLibraryPath, { install: true });
 }, 120_000);
 
+afterAll(async () => {
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+});
+
 // Suppress all console output produced by dryRun logging and help text.
-// Redirect cwd to the tool mocked repo so no operations touch the mb-run repo.
+// Redirect cwd to the vendor library repo (inside the git tree) so git-based commands resolve.
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(toolRepoPath);
+  vi.spyOn(process, 'cwd').mockReturnValue(vendorLibraryPath);
 });
 
 function setArgs(...args: string[]): void {
@@ -214,21 +218,20 @@ describe('main — --info', () => {
 
 describe('main — --sort', () => {
   it('--sort sorts package.json files on disk', async () => {
-    const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-sort-'));
+    const pkgPath = path.join(tmpDir, 'package.json');
+    const savedPkg = await readFile(pkgPath, 'utf8');
     try {
-      const pkgPath = path.join(tmpDir, 'package.json');
       // Shuffled: 'scripts' before 'name' so the sort effect is observable
       const shuffled: Record<string, unknown> = { scripts: { build: 'tsc' }, name: 'test-pkg', version: '1.0.0' };
       await writeFile(pkgPath, JSON.stringify(shuffled, null, 2));
-      // Symlink the library vendor node_modules so prettier is available without writing to vendor
-      await symlink(path.join(toolRepoPath, 'node_modules'), path.join(tmpDir, 'node_modules'));
+      // Override cwd to tmpDir so --sort reads/writes tmpDir and prettier is available
       vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
       setArgs('--sort');
       await expect(main()).resolves.toBeUndefined();
       const sorted = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(Object.keys(sorted)[0]).toBe('name');
     } finally {
-      await rm(tmpDir, { recursive: true, force: true });
+      await writeFile(pkgPath, savedPkg, 'utf8');
     }
   });
 });

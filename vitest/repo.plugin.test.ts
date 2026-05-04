@@ -1,20 +1,20 @@
-// This test suite intentionally writes to vendor/plugin (real builds, version bumps, cleans).
-// It is the only test file permitted to do so. All other tests must use temporary directories.
-import { execSync } from 'node:child_process';
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
-const pluginRepoPath = path.join(process.cwd(), 'vendor', 'plugin');
-const distPath = path.join(pluginRepoPath, 'dist');
-const packageJsonPath = path.join(pluginRepoPath, 'package.json');
-const packageLockPath = path.join(pluginRepoPath, 'package-lock.json');
-const buildInfoPath = path.join(pluginRepoPath, 'tsconfig.build.tsbuildinfo');
-const buildProductionInfoPath = path.join(pluginRepoPath, 'tsconfig.build.production.tsbuildinfo');
+const vendorPluginPath = path.join(process.cwd(), 'vendor', 'plugin');
+
+let tmpDir: string;
+let distPath: string;
+let packageJsonPath: string;
+let packageLockPath: string;
+let buildInfoPath: string;
+let buildProductionInfoPath: string;
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -30,22 +30,22 @@ function setArgs(...args: string[]): void {
 }
 
 beforeAll(async () => {
-  if (!(await exists(path.join(pluginRepoPath, 'node_modules')))) {
-    execSync('npm install --no-fund --no-audit', { cwd: pluginRepoPath, stdio: 'inherit' });
-  }
-  if (!(await exists(path.join(pluginRepoPath, 'node_modules', 'matterbridge')))) {
-    try {
-      execSync('npm link --no-fund --no-audit matterbridge', { cwd: pluginRepoPath, stdio: 'inherit' });
-    } catch {
-      execSync('npm install --no-fund --no-audit matterbridge', { cwd: pluginRepoPath, stdio: 'inherit' });
-    }
-  }
+  tmpDir = await copyRepo(vendorPluginPath, { install: true, linkMatterbridge: true, gitInit: true });
+  distPath = path.join(tmpDir, 'dist');
+  packageJsonPath = path.join(tmpDir, 'package.json');
+  packageLockPath = path.join(tmpDir, 'package-lock.json');
+  buildInfoPath = path.join(tmpDir, 'tsconfig.build.tsbuildinfo');
+  buildProductionInfoPath = path.join(tmpDir, 'tsconfig.build.production.tsbuildinfo');
 }, 300_000);
+
+afterAll(async () => {
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+});
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(pluginRepoPath);
+  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
 });
 
 describe('repo.plugin — real operations', () => {

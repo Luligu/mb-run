@@ -6,6 +6,7 @@ import process from 'node:process';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { backup, packageJsonMap, restore, tsconfigMap } from '../src/cache.js';
+import { copyRepo } from '../src/helpers.js';
 
 const monorepoPath = path.join(process.cwd(), 'vendor', 'monorepo');
 
@@ -92,41 +93,9 @@ describe('backup — idempotency', () => {
   });
 });
 
-/**
- * Creates a temporary directory populated with all files that `backup`/`restore` operate on,
- * copied from `vendor/monorepo`. Each call returns a fresh isolated directory so restore
- * tests never write to the shared vendor tree.
- *
- * @returns {Promise<string>} Absolute path to the temporary directory.
- */
-async function createTempMonorepo(): Promise<string> {
-  const relPaths = [
-    'package.json',
-    path.join('packages', 'one', 'package.json'),
-    path.join('packages', 'two', 'package.json'),
-    'tsconfig.json',
-    'tsconfig.base.json',
-    'tsconfig.build.json',
-    'tsconfig.build.production.json',
-    path.join('packages', 'one', 'tsconfig.json'),
-    path.join('packages', 'one', 'tsconfig.build.json'),
-    path.join('packages', 'one', 'tsconfig.build.production.json'),
-    path.join('packages', 'two', 'tsconfig.json'),
-    path.join('packages', 'two', 'tsconfig.build.json'),
-    path.join('packages', 'two', 'tsconfig.build.production.json'),
-  ];
-  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-restore-'));
-  for (const rel of relPaths) {
-    const dest = path.join(tmpDir, rel);
-    await mkdir(path.dirname(dest), { recursive: true });
-    await writeFile(dest, await readFile(path.join(monorepoPath, rel), 'utf8'));
-  }
-  return tmpDir;
-}
-
 describe('restore — package.json round-trip', () => {
   it('restores root package.json after version is modified on disk', async () => {
-    const tmpDir = await createTempMonorepo();
+    const tmpDir = await copyRepo(monorepoPath, { install: false });
     try {
       await backup(tmpDir);
       const pkgPath = path.join(tmpDir, 'package.json');
@@ -143,7 +112,7 @@ describe('restore — package.json round-trip', () => {
   });
 
   it('restores workspace package.json after content is modified on disk', async () => {
-    const tmpDir = await createTempMonorepo();
+    const tmpDir = await copyRepo(monorepoPath, { install: false });
     try {
       await backup(tmpDir);
       const pkgPath = path.join(tmpDir, 'packages', 'one', 'package.json');
@@ -160,7 +129,7 @@ describe('restore — package.json round-trip', () => {
 
 describe('restore — tsconfig round-trip', () => {
   it('restores root tsconfig.json after it is overwritten on disk', async () => {
-    const tmpDir = await createTempMonorepo();
+    const tmpDir = await copyRepo(monorepoPath, { install: false });
     try {
       await backup(tmpDir);
       const tsPath = path.join(tmpDir, 'tsconfig.json');
@@ -176,7 +145,7 @@ describe('restore — tsconfig round-trip', () => {
   });
 
   it('restores workspace tsconfig after it is overwritten on disk', async () => {
-    const tmpDir = await createTempMonorepo();
+    const tmpDir = await copyRepo(monorepoPath, { install: false });
     try {
       await backup(tmpDir);
       const tsPath = path.join(tmpDir, 'packages', 'one', 'tsconfig.build.json');

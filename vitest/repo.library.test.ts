@@ -1,14 +1,15 @@
-// This test suite intentionally writes to vendor/library (real builds, version bumps, cleans).
-// It is the only test file permitted to do so. All other tests must use temporary directories.
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
-const libraryRepoPath = path.join(process.cwd(), 'vendor', 'library');
+const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
 
+let tmpDir: string;
 let logLines: string[];
 
 function logged(...tokens: string[]): boolean {
@@ -19,11 +20,19 @@ function setArgs(...args: string[]): void {
   process.argv = ['node', 'mb-run', ...args];
 }
 
+beforeAll(async () => {
+  tmpDir = await copyRepo(vendorLibraryPath, { install: false, gitInit: true });
+}, 30_000);
+
+afterAll(async () => {
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+});
+
 beforeEach(() => {
   logLines = [];
   vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => logLines.push(String(args[0])));
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(libraryRepoPath);
+  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
 });
 
 describe('repo.library — dry-run operations', () => {

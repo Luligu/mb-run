@@ -1,20 +1,20 @@
-// This test suite intentionally writes to vendor/tool (real builds, version bumps, cleans).
-// It is the only test file permitted to do so. All other tests must use temporary directories.
-import { execSync } from 'node:child_process';
 import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
-const toolRepoPath = path.join(process.cwd(), 'vendor', 'tool');
-const distPath = path.join(toolRepoPath, 'dist');
-const packageJsonPath = path.join(toolRepoPath, 'package.json');
-const packageLockPath = path.join(toolRepoPath, 'package-lock.json');
-const buildInfoPath = path.join(toolRepoPath, 'tsconfig.build.tsbuildinfo');
-const buildProductionInfoPath = path.join(toolRepoPath, 'tsconfig.build.production.tsbuildinfo');
+const vendorToolPath = path.join(process.cwd(), 'vendor', 'tool');
+
+let tmpDir: string;
+let distPath: string;
+let packageJsonPath: string;
+let packageLockPath: string;
+let buildInfoPath: string;
+let buildProductionInfoPath: string;
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -30,15 +30,22 @@ function setArgs(...args: string[]): void {
 }
 
 beforeAll(async () => {
-  if (!(await exists(path.join(toolRepoPath, 'node_modules')))) {
-    execSync('npm install --no-fund --no-audit', { cwd: toolRepoPath, stdio: 'inherit' });
-  }
+  tmpDir = await copyRepo(vendorToolPath, { gitInit: true });
+  distPath = path.join(tmpDir, 'dist');
+  packageJsonPath = path.join(tmpDir, 'package.json');
+  packageLockPath = path.join(tmpDir, 'package-lock.json');
+  buildInfoPath = path.join(tmpDir, 'tsconfig.build.tsbuildinfo');
+  buildProductionInfoPath = path.join(tmpDir, 'tsconfig.build.production.tsbuildinfo');
 }, 120_000);
+
+afterAll(async () => {
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+});
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(toolRepoPath);
+  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
 });
 
 describe('repo.tool — real operations', () => {

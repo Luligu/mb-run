@@ -1,26 +1,26 @@
-// This test suite intentionally writes to vendor/monorepo (real builds, version bumps, cleans).
-// It is the only test file permitted to do so. All other tests must use temporary directories.
-import { execSync } from 'node:child_process';
 import { access, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
 
-const monorepoPath = path.join(process.cwd(), 'vendor', 'monorepo');
-const distPath = path.join(monorepoPath, 'dist');
-const pkgOneDist = path.join(monorepoPath, 'packages', 'one', 'dist');
-const pkgTwoDist = path.join(monorepoPath, 'packages', 'two', 'dist');
-const packageJsonPath = path.join(monorepoPath, 'package.json');
-const pkgOneJsonPath = path.join(monorepoPath, 'packages', 'one', 'package.json');
-const pkgTwoJsonPath = path.join(monorepoPath, 'packages', 'two', 'package.json');
-const packageLockPath = path.join(monorepoPath, 'package-lock.json');
-const buildInfoPath = path.join(monorepoPath, 'tsconfig.build.tsbuildinfo');
-const buildProductionInfoPath = path.join(monorepoPath, 'tsconfig.build.production.tsbuildinfo');
-const pkgOneBuildInfoPath = path.join(monorepoPath, 'packages', 'one', 'tsconfig.build.tsbuildinfo');
-const pkgTwoBuildInfoPath = path.join(monorepoPath, 'packages', 'two', 'tsconfig.build.tsbuildinfo');
+const vendorMonorepoPath = path.join(process.cwd(), 'vendor', 'monorepo');
+
+let tmpDir: string;
+let distPath: string;
+let pkgOneDist: string;
+let pkgTwoDist: string;
+let packageJsonPath: string;
+let pkgOneJsonPath: string;
+let pkgTwoJsonPath: string;
+let packageLockPath: string;
+let buildInfoPath: string;
+let buildProductionInfoPath: string;
+let pkgOneBuildInfoPath: string;
+let pkgTwoBuildInfoPath: string;
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -36,15 +36,28 @@ function setArgs(...args: string[]): void {
 }
 
 beforeAll(async () => {
-  if (!(await exists(path.join(monorepoPath, 'node_modules')))) {
-    execSync('npm install --no-fund --no-audit', { cwd: monorepoPath, stdio: 'inherit' });
-  }
+  tmpDir = await copyRepo(vendorMonorepoPath, { gitInit: true });
+  distPath = path.join(tmpDir, 'dist');
+  pkgOneDist = path.join(tmpDir, 'packages', 'one', 'dist');
+  pkgTwoDist = path.join(tmpDir, 'packages', 'two', 'dist');
+  packageJsonPath = path.join(tmpDir, 'package.json');
+  pkgOneJsonPath = path.join(tmpDir, 'packages', 'one', 'package.json');
+  pkgTwoJsonPath = path.join(tmpDir, 'packages', 'two', 'package.json');
+  packageLockPath = path.join(tmpDir, 'package-lock.json');
+  buildInfoPath = path.join(tmpDir, 'tsconfig.build.tsbuildinfo');
+  buildProductionInfoPath = path.join(tmpDir, 'tsconfig.build.production.tsbuildinfo');
+  pkgOneBuildInfoPath = path.join(tmpDir, 'packages', 'one', 'tsconfig.build.tsbuildinfo');
+  pkgTwoBuildInfoPath = path.join(tmpDir, 'packages', 'two', 'tsconfig.build.tsbuildinfo');
 }, 120_000);
+
+afterAll(async () => {
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+});
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(process, 'cwd').mockReturnValue(monorepoPath);
+  vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
 });
 
 describe('repo.monorepo — real operations', () => {
@@ -141,7 +154,7 @@ describe('repo.monorepo — real operations', () => {
       await expect(main()).resolves.toBeUndefined();
 
       // tgz should exist
-      const entries = await readdir(monorepoPath);
+      const entries = await readdir(tmpDir);
       expect(entries.filter((e) => e.endsWith('.tgz')).length).toBeGreaterThan(0);
 
       // package.json should be fully restored (no bundleDependencies, scripts present)
@@ -154,8 +167,8 @@ describe('repo.monorepo — real operations', () => {
       if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
       else await rm(packageLockPath, { force: true });
       // clean up generated tgz files
-      const entries = await readdir(monorepoPath);
-      await Promise.all(entries.filter((e) => e.endsWith('.tgz')).map((e) => rm(path.join(monorepoPath, e), { force: true })));
+      const entries = await readdir(tmpDir);
+      await Promise.all(entries.filter((e) => e.endsWith('.tgz')).map((e) => rm(path.join(tmpDir, e), { force: true })));
     }
   }, 120_000);
 });

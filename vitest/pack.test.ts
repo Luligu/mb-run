@@ -79,7 +79,7 @@ function makeOpts(overrides?: Partial<PackOptions>): PackOptions {
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  mockReadFile.mockResolvedValue(simplePkg as unknown as Buffer);
+  mockReadFile.mockResolvedValue(simplePkg as unknown as string);
   mockWriteFile.mockClear();
   mockRunCommand.mockResolvedValue(undefined);
   mockRunWorkspaceBuild.mockResolvedValue(undefined);
@@ -159,12 +159,12 @@ describe('runPack', () => {
       beforeEach(() => {
         mockResolveWorkspacePackageJsonPaths.mockResolvedValue([ws1, ws2]);
         mockReadFile
-          .mockResolvedValueOnce(rootPkg as unknown as Buffer) // step 4: strip devDeps/scripts
-          .mockResolvedValueOnce(rootPkgStripped as unknown as Buffer) // step 4b: root for merging
-          .mockResolvedValueOnce(ws1Pkg as unknown as Buffer) // dep loop: ws1
-          .mockResolvedValueOnce(ws2Pkg as unknown as Buffer) // dep loop: ws2
-          .mockResolvedValueOnce(ws1Pkg as unknown as Buffer) // name loop: ws1
-          .mockResolvedValueOnce(ws2Pkg as unknown as Buffer); // name loop: ws2
+          .mockResolvedValueOnce(rootPkg as unknown as string) // step 4: strip devDeps/scripts
+          .mockResolvedValueOnce(rootPkgStripped as unknown as string) // step 4b: root for merging
+          .mockResolvedValueOnce(ws1Pkg as unknown as string) // dep loop: ws1
+          .mockResolvedValueOnce(ws2Pkg as unknown as string) // dep loop: ws2
+          .mockResolvedValueOnce(ws1Pkg as unknown as string) // name loop: ws1
+          .mockResolvedValueOnce(ws2Pkg as unknown as string); // name loop: ws2
       });
 
       it('adds new workspace deps to root dependencies', async () => {
@@ -198,12 +198,12 @@ describe('runPack', () => {
         const wsNoDeps = JSON.stringify({}); // no name, no dependencies
         mockReadFile.mockReset();
         mockReadFile
-          .mockResolvedValueOnce(rootNoDeps as unknown as Buffer) // step 4: strip
-          .mockResolvedValueOnce(rootNoDeps as unknown as Buffer) // step 4b: root (no deps field)
-          .mockResolvedValueOnce(wsNoDeps as unknown as Buffer) // dep loop: ws1
-          .mockResolvedValueOnce(wsNoDeps as unknown as Buffer) // dep loop: ws2
-          .mockResolvedValueOnce(wsNoDeps as unknown as Buffer) // name loop: ws1
-          .mockResolvedValueOnce(wsNoDeps as unknown as Buffer); // name loop: ws2
+          .mockResolvedValueOnce(rootNoDeps as unknown as string) // step 4: strip
+          .mockResolvedValueOnce(rootNoDeps as unknown as string) // step 4b: root (no deps field)
+          .mockResolvedValueOnce(wsNoDeps as unknown as string) // dep loop: ws1
+          .mockResolvedValueOnce(wsNoDeps as unknown as string) // dep loop: ws2
+          .mockResolvedValueOnce(wsNoDeps as unknown as string) // name loop: ws1
+          .mockResolvedValueOnce(wsNoDeps as unknown as string); // name loop: ws2
         await runPack(makeOpts());
         const merged = JSON.parse(mockWriteFile.mock.calls[1]?.[1] as string) as Record<string, unknown>;
         expect(merged['dependencies']).toEqual({});

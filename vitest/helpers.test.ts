@@ -1,10 +1,15 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isMonorepo, isPlugin, parsePackageJson } from '../src/helpers.js';
+import { copyRepo, isMonorepo, isPlugin, parsePackageJson } from '../src/helpers.js';
+
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>();
+  return { ...actual, execSync: vi.fn(actual.execSync) };
+});
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
@@ -100,5 +105,104 @@ describe('parsePackageJson', () => {
     const fsp = await import('node:fs/promises');
     vi.mocked(fsp.readFile).mockRejectedValueOnce('disk failure');
     await expect(parsePackageJson(tmpDir)).rejects.toThrow('disk failure');
+  });
+});
+
+describe('copyRepo', () => {
+  let destDir = '';
+
+  afterEach(async () => {
+    if (destDir) await rm(destDir, { recursive: true, force: true });
+    destDir = '';
+  });
+
+  it('copies files and directories to a new temp directory', async () => {
+    await mkdir(path.join(tmpDir, 'src'));
+    await writeFile(path.join(tmpDir, 'package.json'), '{"name":"test"}');
+    await writeFile(path.join(tmpDir, 'src', 'index.ts'), '');
+    destDir = await copyRepo(tmpDir, { install: false });
+    await expect(access(path.join(destDir, 'package.json'))).resolves.toBeUndefined();
+    await expect(access(path.join(destDir, 'src', 'index.ts'))).resolves.toBeUndefined();
+  });
+
+  it('returns an absolute path', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    destDir = await copyRepo(tmpDir, { install: false });
+    expect(path.isAbsolute(destDir)).toBe(true);
+  });
+
+  it('excludes node_modules directory', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    await mkdir(path.join(tmpDir, 'node_modules'));
+    await writeFile(path.join(tmpDir, 'node_modules', 'pkg.js'), '');
+    destDir = await copyRepo(tmpDir, { install: false });
+    await expect(access(path.join(destDir, 'node_modules'))).rejects.toThrow();
+  });
+
+  it('excludes dist, dist-jest, .cache, coverage directories', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    for (const dir of ['dist', 'dist-jest', '.cache', 'coverage']) {
+      await mkdir(path.join(tmpDir, dir));
+      await writeFile(path.join(tmpDir, dir, 'file.js'), '');
+    }
+    destDir = await copyRepo(tmpDir, { install: false });
+    for (const dir of ['dist', 'dist-jest', '.cache', 'coverage']) {
+      await expect(access(path.join(destDir, dir))).rejects.toThrow();
+    }
+  });
+
+  it('excludes .tsbuildinfo and .tgz files', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    await writeFile(path.join(tmpDir, 'tsconfig.build.tsbuildinfo'), '');
+    await writeFile(path.join(tmpDir, 'package.tgz'), '');
+    destDir = await copyRepo(tmpDir, { install: false });
+    await expect(access(path.join(destDir, 'tsconfig.build.tsbuildinfo'))).rejects.toThrow();
+    await expect(access(path.join(destDir, 'package.tgz'))).rejects.toThrow();
+  });
+
+  it('copies nested directories recursively', async () => {
+    await mkdir(path.join(tmpDir, 'packages', 'one'), { recursive: true });
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    await writeFile(path.join(tmpDir, 'packages', 'one', 'package.json'), '{"name":"one"}');
+    destDir = await copyRepo(tmpDir, { install: false });
+    await expect(access(path.join(destDir, 'packages', 'one', 'package.json'))).resolves.toBeUndefined();
+  });
+
+  it('falls back to npm install when npm link throws (linkMatterbridge branch)', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    const cp = await import('node:child_process');
+    const execSyncMock = vi.mocked(cp.execSync);
+    // install succeeds; link throws; fallback install succeeds
+    execSyncMock
+      .mockImplementationOnce(() => Buffer.from('')) // npm install
+      .mockImplementationOnce(() => {
+        throw new Error('link failed');
+      }) // npm link
+      .mockImplementationOnce(() => Buffer.from('')); // npm install fallback
+    destDir = await copyRepo(tmpDir, { install: true, linkMatterbridge: true });
+    expect(execSyncMock).toHaveBeenCalledTimes(3);
+    expect(execSyncMock.mock.calls[2]?.[0]).toContain('npm install');
+    execSyncMock.mockRestore();
+  });
+
+  it('runs git init when gitInit is true', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    const cp = await import('node:child_process');
+    const execSyncMock = vi.mocked(cp.execSync);
+    execSyncMock.mockImplementation(() => Buffer.from(''));
+    destDir = await copyRepo(tmpDir, { install: false, gitInit: true });
+    const gitCall = execSyncMock.mock.calls.find((c) => String(c[0]).includes('git init'));
+    expect(gitCall).toBeDefined();
+    execSyncMock.mockRestore();
+  });
+
+  it('skips symlinks (neither directory nor file) silently', async () => {
+    await writeFile(path.join(tmpDir, 'package.json'), '{}');
+    await writeFile(path.join(tmpDir, 'real.txt'), 'content');
+    await symlink(path.join(tmpDir, 'real.txt'), path.join(tmpDir, 'link.txt'));
+    destDir = await copyRepo(tmpDir, { install: false });
+    // real file is copied, symlink is skipped (no throw)
+    await expect(access(path.join(destDir, 'real.txt'))).resolves.toBeUndefined();
+    await expect(access(path.join(destDir, 'link.txt'))).rejects.toThrow();
   });
 });

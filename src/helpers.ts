@@ -21,7 +21,9 @@
  * limitations under the License.
  */
 
-import { readFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
+import { copyFile, mkdir, mkdtemp, readdir, readFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 /**
@@ -63,4 +65,79 @@ export async function isMonorepo(rootDir: string): Promise<boolean> {
   const pkg = await parsePackageJson(rootDir);
 
   return pkg?.workspaces !== undefined;
+}
+
+/** Names and extensions excluded when copying a repository tree with {@link copyRepo}. */
+const COPY_REPO_SKIP_NAMES = new Set(['node_modules', 'dist', 'dist-jest', '.cache', 'coverage']);
+const COPY_REPO_SKIP_EXTS = ['.tsbuildinfo', '.tgz'];
+
+/** Options for {@link copyRepo}. */
+export interface CopyRepoOptions {
+  /** When false, skip `npm install` after copying. Defaults to `true`. */
+  install?: boolean;
+  /** When true, run `npm link matterbridge` after `npm install` (for plugin repos). Defaults to `false`. */
+  linkMatterbridge?: boolean;
+  /** When true, run `git init` + an initial commit so git-based commands (e.g. `git rev-parse`) work in the copy. Defaults to `false`. */
+  gitInit?: boolean;
+}
+
+/**
+ * Copies a repository source tree to a fresh temp directory, excluding build outputs,
+ * node_modules, and generated artefacts, then optionally runs `npm install`.
+ *
+ * Intended for use in test `beforeAll` hooks to obtain a disposable, isolated copy
+ * of a vendor fixture repo so tests never write to the checked-in vendor tree.
+ *
+ * @param {string} sourceDir Absolute path to the source repository to copy.
+ * @param {CopyRepoOptions} [opts] Copy options.
+ * @returns {Promise<string>} Absolute path to the new temp directory.
+ */
+export async function copyRepo(sourceDir: string, opts: CopyRepoOptions = {}): Promise<string> {
+  const { install = true, linkMatterbridge = false, gitInit = false } = opts;
+
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-repo-'));
+
+  /**
+   * Recursively copies src into dest, respecting the skip lists.
+   *
+   * @param {string} src Source directory.
+   * @param {string} dest Destination directory.
+   * @returns {Promise<void>} Resolves when done.
+   */
+  async function copyDir(src: string, dest: string): Promise<void> {
+    const entries = await readdir(src, { withFileTypes: true });
+    await mkdir(dest, { recursive: true });
+    for (const entry of entries) {
+      const base = entry.name;
+      if (COPY_REPO_SKIP_NAMES.has(base)) continue;
+      if (COPY_REPO_SKIP_EXTS.some((ext) => base.endsWith(ext))) continue;
+      const srcPath = path.join(src, base);
+      const destPath = path.join(dest, base);
+      if (entry.isDirectory()) {
+        await copyDir(srcPath, destPath);
+      } else if (entry.isFile()) {
+        await copyFile(srcPath, destPath);
+      }
+    }
+  }
+
+  await copyDir(sourceDir, tmpDir);
+
+  if (install) {
+    execSync('npm install --no-fund --no-audit', { cwd: tmpDir, stdio: 'inherit' });
+  }
+
+  if (linkMatterbridge) {
+    try {
+      execSync('npm link --no-fund --no-audit matterbridge', { cwd: tmpDir, stdio: 'inherit' });
+    } catch {
+      execSync('npm install --no-fund --no-audit matterbridge', { cwd: tmpDir, stdio: 'inherit' });
+    }
+  }
+
+  if (gitInit) {
+    execSync('git init -b main && git add -A && git commit --no-verify -m init', { cwd: tmpDir, stdio: 'ignore', shell: '/bin/sh' });
+  }
+
+  return tmpDir;
 }
