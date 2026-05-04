@@ -52,6 +52,7 @@
     "node": ">=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0"
   },
   "bin": {
+    "mb-run": "bin/mb-run",
     "pesto-run": "bin/mb-run",
     "barba-run": "bin/mb-run",
     "chips-run": "bin/mb-run"

@@ -30,6 +30,7 @@ import { cleanOnly, emptyDir } from './clean.js';
 import { isPlugin } from './helpers.js';
 import { logDelete, logWriteFile } from './logger.js';
 import { runCommand } from './spawn.js';
+import { updateRootVersion, updateWorkspaceDependencyVersions } from './version.js';
 
 /** Context shared by all publish operations. */
 export interface PublishOptions {
@@ -39,6 +40,8 @@ export interface PublishOptions {
   isWindows: boolean;
   /** When true, log but skip command execution and file-system writes. */
   dryRun: boolean;
+  /** Optional prerelease tag; when set, bumps the version before publishing. */
+  tag?: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null;
 }
 
 /**
@@ -76,6 +79,7 @@ async function stripPackageJson(pkgPath: string, opts: PublishOptions): Promise<
  *
  * Steps performed in order:
  * 1. Back up `package.json` (and tsconfig files) into memory
+ * 1b. If `opts.tag` is set, bump the version via `updateRootVersion` + `updateWorkspaceDependencyVersions` + `npm install --package-lock-only`
  * 2. Strip `devDependencies` and `scripts` from the root `package.json`
  * 3. Strip `devDependencies` and `scripts` from each workspace `package.json`
  * 4. Clean build artifacts
@@ -97,6 +101,17 @@ export async function runPublish(opts: PublishOptions): Promise<void> {
   // Step 1: Back up package.json files into memory.
   if (!opts.dryRun) {
     await backup(opts.rootDir);
+  }
+
+  // Step 1b: Bump version (if tag provided) — must be after backup so restore works.
+  if (opts.tag != null) {
+    const versionOpts = { rootDir: opts.rootDir, dryRun: opts.dryRun };
+    const nextVersion = await updateRootVersion(opts.tag, versionOpts);
+    await updateWorkspaceDependencyVersions(nextVersion, versionOpts);
+    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund', '--prefer-offline', '--silent'], {
+      cwd: opts.rootDir,
+      dryRun: opts.dryRun,
+    });
   }
 
   try {
@@ -132,9 +147,11 @@ export async function runPublish(opts: PublishOptions): Promise<void> {
     // Step 8: npm publish for each workspace then root.
     for (const wPkgPath of workspacePkgPaths) {
       const wDir = path.dirname(wPkgPath);
-      await runCommand('npm', ['publish', '--dry-run'], { cwd: wDir, dryRun: opts.dryRun });
+      const publishArgs = opts.tag != null ? ['publish', '--tag', opts.tag] : ['publish'];
+      await runCommand('npm', publishArgs, { cwd: wDir, dryRun: opts.dryRun });
     }
-    await runCommand('npm', ['publish', '--dry-run'], { cwd: opts.rootDir, dryRun: opts.dryRun });
+    const rootPublishArgs = opts.tag != null ? ['publish', '--tag', opts.tag] : ['publish'];
+    await runCommand('npm', rootPublishArgs, { cwd: opts.rootDir, dryRun: opts.dryRun });
   } finally {
     // Step 9: Restore all package.json files from memory (always, even on error).
     if (!opts.dryRun) {

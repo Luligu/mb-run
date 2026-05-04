@@ -28,7 +28,7 @@ import { clearEnd, getElapsed, green, log, moveUp, savePos, shouldUseAnsi } from
 import { runBin, runWorkspaceBuild } from './build.js';
 import { cleanOnly, fileExists, resetClean } from './clean.js';
 import { runEsbuild } from './esbuild.js';
-import { printUsage, printVersionUsage } from './help.js';
+import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from './help.js';
 import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
 import { initLogger } from './logger.js';
@@ -103,13 +103,27 @@ export async function main(): Promise<void> {
   const candidateVersionArg = versionIndex >= 0 ? rawArgs[versionIndex + 1] : undefined;
   const rawVersionTag = typeof candidateVersionArg === 'string' && !candidateVersionArg.startsWith('-') ? candidateVersionArg : undefined;
 
+  const packIndex = rawArgs.indexOf('--pack');
+  const candidatePackArg = packIndex >= 0 ? rawArgs[packIndex + 1] : undefined;
+  const rawPackTag = typeof candidatePackArg === 'string' && !candidatePackArg.startsWith('-') ? candidatePackArg : undefined;
+
+  const publishIndex = rawArgs.indexOf('--publish');
+  const candidatePublishArg = publishIndex >= 0 ? rawArgs[publishIndex + 1] : undefined;
+  const rawPublishTag = typeof candidatePublishArg === 'string' && !candidatePublishArg.startsWith('-') ? candidatePublishArg : undefined;
+
   const unknownFlags = rawArgs.filter((a) => a.startsWith('-') && !known.has(a));
   if (unknownFlags.length > 0) {
     printUsage();
     throw new ExitError(1, `Unknown argument(s): ${unknownFlags.join(' ')}`);
   }
 
-  const unknownPositionals = rawArgs.filter((a, i) => !a.startsWith('-') && !(versionIndex >= 0 && rawVersionTag !== undefined && i === versionIndex + 1));
+  const unknownPositionals = rawArgs.filter(
+    (a, i) =>
+      !a.startsWith('-') &&
+      !(versionIndex >= 0 && rawVersionTag !== undefined && i === versionIndex + 1) &&
+      !(packIndex >= 0 && rawPackTag !== undefined && i === packIndex + 1) &&
+      !(publishIndex >= 0 && rawPublishTag !== undefined && i === publishIndex + 1),
+  );
   if (unknownPositionals.length > 0) {
     printUsage();
     throw new ExitError(1, `Unknown argument(s): ${unknownPositionals.join(' ')}`);
@@ -122,6 +136,26 @@ export async function main(): Promise<void> {
     } catch {
       printVersionUsage();
       throw new ExitError(1, 'Invalid --version usage');
+    }
+  }
+
+  let packTag: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null = null;
+  if (packIndex >= 0 && rawPackTag !== undefined) {
+    try {
+      packTag = parseVersionTag(rawPackTag);
+    } catch {
+      printPackUsage();
+      throw new ExitError(1, 'Invalid --pack tag');
+    }
+  }
+
+  let publishTag: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null = null;
+  if (publishIndex >= 0 && rawPublishTag !== undefined) {
+    try {
+      publishTag = parseVersionTag(rawPublishTag);
+    } catch {
+      printPublishUsage();
+      throw new ExitError(1, 'Invalid --publish tag');
     }
   }
 
@@ -279,13 +313,13 @@ export async function main(): Promise<void> {
 
   if (want.pack) {
     log(`${savePos()}⏳ Packing...`);
-    await runPack(buildOpts);
+    await runPack({ ...buildOpts, tag: packTag });
     log(`${restorePos(0)}${green('✅')} Pack complete in ${getElapsed()}.${clearEnd()}`);
   }
 
   if (want.publish) {
     log(`${savePos()}⏳ Publishing...`);
-    await runPublish({ rootDir: repoRoot, isWindows, dryRun: dryRunMode });
+    await runPublish({ rootDir: repoRoot, isWindows, dryRun: dryRunMode, tag: publishTag });
     log(`${restorePos(0)}${green('✅')} Publish complete in ${getElapsed()}.${clearEnd()}`);
   }
 

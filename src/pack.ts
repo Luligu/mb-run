@@ -31,6 +31,7 @@ import { runEsbuild } from './esbuild.js';
 import { isPlugin } from './helpers.js';
 import { logDelete, logWriteFile } from './logger.js';
 import { runCommand } from './spawn.js';
+import { updateRootVersion, updateWorkspaceDependencyVersions } from './version.js';
 
 /** Context shared by all pack operations. */
 export interface PackOptions {
@@ -40,6 +41,8 @@ export interface PackOptions {
   isWindows: boolean;
   /** When true, log but skip command execution and file-system writes. */
   dryRun: boolean;
+  /** Optional prerelease tag; when set, bumps the version before packing. */
+  tag?: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null;
 }
 
 /**
@@ -60,6 +63,7 @@ async function removeFile(filePath: string, opts: PackOptions): Promise<void> {
  *
  * Steps performed in order:
  * 1. Back up `package.json` (and tsconfig files) into memory
+ * 1b. If `opts.tag` is set, bump the version via `updateRootVersion` + `updateWorkspaceDependencyVersions` + `npm install --package-lock-only`
  * 2. Clean build artifacts
  * 3. Build the workspace for production
  * 3b. Bundle with esbuild
@@ -88,6 +92,17 @@ export async function runPack(opts: PackOptions): Promise<void> {
   // Step 1: Back up package.json (and tsconfig files) into memory.
   if (!opts.dryRun) {
     await backup(opts.rootDir);
+  }
+
+  // Step 1b: Bump version (if tag provided) — must be after backup so restore works.
+  if (opts.tag != null) {
+    const versionOpts = { rootDir: opts.rootDir, dryRun: opts.dryRun };
+    const nextVersion = await updateRootVersion(opts.tag, versionOpts);
+    await updateWorkspaceDependencyVersions(nextVersion, versionOpts);
+    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund', '--prefer-offline', '--silent'], {
+      cwd: opts.rootDir,
+      dryRun: opts.dryRun,
+    });
   }
 
   try {
