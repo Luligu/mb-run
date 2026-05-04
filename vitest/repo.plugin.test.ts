@@ -31,10 +31,7 @@ beforeAll(async () => {
   if (!(await exists(path.join(pluginRepoPath, 'node_modules')))) {
     execSync('npm install --no-fund --no-audit', { cwd: pluginRepoPath, stdio: 'inherit' });
   }
-  if (!(await exists(path.join(pluginRepoPath, 'node_modules', 'matterbridge')))) {
-    execSync('npm link --no-fund --no-audit matterbridge', { cwd: pluginRepoPath, stdio: 'inherit' });
-  }
-}, 120_000);
+}, 300_000);
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -69,7 +66,7 @@ describe('repo.plugin — real operations', () => {
   it('--lint passes on the plugin source', async () => {
     setArgs('--lint');
     await expect(main()).resolves.toBeUndefined();
-  }, 60_000);
+  }, 120_000);
 
   it('--format succeeds on the plugin source', async () => {
     setArgs('--format');

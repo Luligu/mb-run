@@ -27,8 +27,8 @@ import path from 'node:path';
 import { runBin, runWorkspaceBuild } from './build.js';
 import { backup, resolveWorkspacePackageJsonPaths, restore } from './cache.js';
 import { cleanOnly, emptyDir } from './clean.js';
+import { isPlugin } from './helpers.js';
 import { logDelete, logWriteFile } from './logger.js';
-import { isPlugin } from './module.js';
 import { runCommand } from './spawn.js';
 
 /** Context shared by all publish operations. */

@@ -27,6 +27,7 @@ import path from 'node:path';
 import { build, type BuildOptions } from 'esbuild';
 
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
+import { parsePackageJson } from './helpers.js';
 import { logEsbuild } from './logger.js';
 
 /** Context shared by all esbuild operations. */
@@ -91,8 +92,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   }
 
   // Step 4: Read root package.json to resolve main entry and bin entries.
-  const rootRaw = await readFile(path.join(opts.rootDir, 'package.json'), 'utf8');
-  const rootPkg = JSON.parse(rootRaw) as { main?: string; exports?: Record<string, unknown> | string; bin?: Record<string, string> };
+  const rootPkg = (await parsePackageJson(opts.rootDir)) as { main?: string; exports?: Record<string, unknown> | string; bin?: Record<string, string> };
 
   // Derive the TypeScript source path from a dist output path.
   // e.g. "./dist/module.js" → in: "src/module.ts", out: "module"

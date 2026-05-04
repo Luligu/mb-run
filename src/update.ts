@@ -21,10 +21,9 @@
  * limitations under the License.
  */
 
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-
 import { run as ncuRun } from 'npm-check-updates';
+
+import { parsePackageJson } from './helpers.js';
 
 /** Context shared by all update operations. */
 export interface UpdateOptions {
@@ -49,8 +48,7 @@ export interface UpdateOptions {
 export async function runUpdate(opts: UpdateOptions): Promise<void> {
   if (opts.dryRun) return;
 
-  const raw = await readFile(path.join(opts.rootDir, 'package.json'), 'utf8');
-  const rootPkg = JSON.parse(raw) as { workspaces?: unknown };
+  const rootPkg = (await parsePackageJson(opts.rootDir)) as { workspaces?: unknown };
   const isWorkspace = Array.isArray(rootPkg.workspaces) ? rootPkg.workspaces.length > 0 : false;
 
   if (isWorkspace) {

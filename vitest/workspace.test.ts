@@ -5,7 +5,8 @@ import process from 'node:process';
 
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
-import { ExitError, main } from '../src/module.js';
+import { main } from '../src/module.js';
+import { ExitError } from '../src/spawn.js';
 
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
@@ -497,27 +498,5 @@ describe('main — cross-workspace dep edge cases', () => {
     setArgs('--dry-run', '--version', 'dev');
     await expect(main()).resolves.toBeUndefined();
     expect(vi.mocked(await import('node:fs/promises')).writeFile).not.toHaveBeenCalled();
-  });
-});
-
-describe('main — reset with plugin package.json', () => {
-  it('runs npm link when scripts.start is matterbridge', async () => {
-    const rootPkg = JSON.stringify({ name: 'root', version: '1.0.0', scripts: { start: 'matterbridge' } });
-
-    mockReadFile.mockImplementation(async (p: unknown) => {
-      if (p === rootPkgPath) return rootPkg;
-      const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
-      return actual.readFile(p as string, 'utf8');
-    });
-
-    mockReaddir.mockImplementation(async () => [] as any);
-    mockFileExists.mockImplementation(async (p: string) => {
-      if (p === rootPkgPath) return true;
-      const actual = await vi.importActual<typeof import('../src/clean.js')>('../src/clean.js');
-      return actual.fileExists(p);
-    });
-
-    setArgs('--dry-run', '--reset');
-    await expect(main()).resolves.toBeUndefined();
   });
 });

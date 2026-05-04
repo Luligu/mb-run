@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { ExitError, main } from '../dist/module.js';
+import { main } from '../dist/module.js';
+import { ExitError } from '../dist/spawn.js';
 
 try {
   await main();

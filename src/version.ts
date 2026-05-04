@@ -26,6 +26,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileExists } from './clean.js';
+import { parsePackageJson } from './helpers.js';
 import { logCommand, logWriteFile } from './logger.js';
 import { ExitError, runCommand } from './spawn.js';
 
@@ -127,10 +128,7 @@ function extractBaseSemver(version: unknown): string {
  * @returns {Promise<string[]>} Absolute paths to workspace package.json files.
  */
 async function getWorkspacePackageJsonPaths(opts: VersionOptions): Promise<string[]> {
-  const rootPackageJsonPath = path.join(opts.rootDir, 'package.json');
-  const raw = await readFile(rootPackageJsonPath, 'utf8');
-
-  const rootPkg = JSON.parse(raw);
+  const rootPkg = await parsePackageJson(opts.rootDir);
 
   const workspacesConfig = rootPkg?.workspaces;
   let patterns: string[] = [];
@@ -194,10 +192,7 @@ async function getWorkspacePackageJsonPaths(opts: VersionOptions): Promise<strin
  * @returns {Promise<string>} The version that was applied.
  */
 export async function updateRootVersion(tag: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null, opts: VersionOptions): Promise<string> {
-  const packageJsonPath = path.join(opts.rootDir, 'package.json');
-  const raw = await readFile(packageJsonPath, 'utf8');
-
-  const pkg = JSON.parse(raw);
+  const pkg = await parsePackageJson(opts.rootDir);
 
   const currentVersion = pkg.version;
   const baseVersion = extractBaseSemver(currentVersion);
@@ -205,7 +200,8 @@ export async function updateRootVersion(tag: 'dev' | 'edge' | 'git' | 'local' | 
 
   const workspacesConfig = pkg?.workspaces;
 
-  const hasWorkspaces = Array.isArray(workspacesConfig) || (workspacesConfig && typeof workspacesConfig === 'object' && Array.isArray(workspacesConfig.packages));
+  const hasWorkspaces =
+    Array.isArray(workspacesConfig) || (workspacesConfig && typeof workspacesConfig === 'object' && Array.isArray((workspacesConfig as Record<string, unknown>).packages));
 
   // Use npm so package-lock.json is updated too.
   // Allow same version so re-running can resync package-lock.json or out-of-sync workspace versions.
@@ -251,8 +247,7 @@ export async function updateWorkspaceDependencyVersions(targetVersion: string, o
 
   // Include the root package.json so that its references to workspace packages are updated too.
   const rootPackageJsonPath = path.join(opts.rootDir, 'package.json');
-  const rootRaw = await readFile(rootPackageJsonPath, 'utf8');
-  const rootParsed = JSON.parse(rootRaw) as { name?: string };
+  const rootParsed = (await parsePackageJson(opts.rootDir)) as { name?: string };
   const rootName = typeof rootParsed.name === 'string' ? rootParsed.name : '';
   const pkgsToUpdate = [...workspacePkgs, { path: rootPackageJsonPath, name: rootName }];
 

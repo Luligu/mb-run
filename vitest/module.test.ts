@@ -5,7 +5,8 @@ import process from 'node:process';
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ExitError, main } from '../src/module.js';
+import { main } from '../src/module.js';
+import { ExitError } from '../src/spawn.js';
 
 const toolRepoPath = path.join(process.cwd(), 'vendor', 'tool');
 
@@ -226,13 +227,5 @@ describe('main — --sort', () => {
     } finally {
       await writeFile(pkgPath, original);
     }
-  });
-});
-
-describe('main — ExitError re-export', () => {
-  it('ExitError imported from module is the same class as the one in spawn', async () => {
-    const err = new ExitError(1, 'test');
-    expect(err).toBeInstanceOf(ExitError);
-    expect(err.code).toBe(1);
   });
 });

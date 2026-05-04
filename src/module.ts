@@ -21,7 +21,6 @@
  * limitations under the License.
  */
 
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -30,6 +29,7 @@ import { runBin, runWorkspaceBuild } from './build.js';
 import { cleanOnly, fileExists, resetClean } from './clean.js';
 import { runEsbuild } from './esbuild.js';
 import { printUsage, printVersionUsage } from './help.js';
+import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
 import { initLogger } from './logger.js';
 import { runPack } from './pack.js';
@@ -39,26 +39,9 @@ import { ExitError, runCommand } from './spawn.js';
 import { runUpdate } from './update.js';
 import { parseVersionTag, updateRootVersion, updateWorkspaceDependencyVersions } from './version.js';
 
-export { ExitError };
-
 // IMPORTANT: This script operates on the package.json in the current working directory.
 // It may be executed from other repos/packages, so do not assume the script's own path.
 const isWindows = process.platform === 'win32';
-
-/**
- * Checks if the current package.json scripts indicate we're running in a plugin context.
- *
- * @param {string} rootDir Repository root directory containing the package.json to inspect.
- * @returns {Promise<boolean>} True if we're in a plugin context.
- */
-export async function isPlugin(rootDir: string): Promise<boolean> {
-  const packageJsonPath = path.join(rootDir, 'package.json');
-  const raw = await readFile(packageJsonPath, 'utf8');
-
-  const pkg = JSON.parse(raw);
-
-  return pkg?.scripts?.start === 'matterbridge' || pkg?.scripts?.['dev:link'] === 'npm link --no-fund --no-audit matterbridge';
-}
 
 /**
  * CLI entrypoint.

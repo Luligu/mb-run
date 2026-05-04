@@ -25,6 +25,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileExists } from './clean.js';
+import { parsePackageJson } from './helpers.js';
 import { logBackup, logRestore } from './logger.js';
 
 /**
@@ -51,8 +52,7 @@ const packageJsonPaths: Map<string, string> = new Map();
  * @returns {Promise<string[]>} Absolute paths to workspace package.json files.
  */
 export async function resolveWorkspacePackageJsonPaths(rootDir: string): Promise<string[]> {
-  const raw = await readFile(path.join(rootDir, 'package.json'), 'utf8');
-  const rootPkg = JSON.parse(raw) as Record<string, unknown>;
+  const rootPkg = await parsePackageJson(rootDir);
   const workspacesConfig = rootPkg.workspaces;
 
   let patterns: string[] = [];
@@ -118,7 +118,7 @@ export async function backup(rootDir: string): Promise<void> {
 
   // --- package.json: root ---
   const rootPkgPath = path.join(rootDir, 'package.json');
-  const rootPkg = JSON.parse(await readFile(rootPkgPath, 'utf8')) as Record<string, unknown>;
+  const rootPkg = await parsePackageJson(rootDir);
   const rootName = String(rootPkg.name ?? '');
   packageJsonMap.set(rootName, rootPkg);
   packageJsonPaths.set(rootName, rootPkgPath);

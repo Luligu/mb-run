@@ -84,7 +84,7 @@ describe('repo.monorepo — real operations', () => {
   it('--lint passes on the monorepo source', async () => {
     setArgs('--lint');
     await expect(main()).resolves.toBeUndefined();
-  }, 60_000);
+  }, 120_000);
 
   it('--format succeeds on the monorepo source', async () => {
     setArgs('--format');

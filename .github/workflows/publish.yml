@@ -1,3 +1,5 @@
+# Publish to npm v. 2.0.1
+
 name: Publish to npm
 
 on:
