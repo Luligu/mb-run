@@ -4,25 +4,62 @@
 cd vendor
 
 cd tool
-pesto-run --clean
+npm run clean
 cd ..
 
 cd library
-pesto-run --clean
+npm run clean
 cd ..
 
 cd plugin
-pesto-run --clean
+npm run clean
 cd ..
 
 cd monorepo
-pesto-run --clean
+npm run clean
+cd ..
+
+cd ..
+```
+
+# Reset all mocked repos
+
+```shell
+cd vendor
+
+cd tool
+npm install --no-fund --no-audit
+npm run build
+cd ..
+
+cd library
+npm install --no-fund --no-audit
+npm run build
+cd ..
+
+cd plugin
+npm install --no-fund --no-audit --global matterbridge
+npm install --no-fund --no-audit
+npm link --no-fund --no-audit matterbridge
+npm run build
+cd ..
+
+cd monorepo
+npm install --no-fund --no-audit
+npm run build
+cd ..
+
 cd ..
 ```
 
 # Build and typecheck with tsc and tsgo
 
 ```shell
+npm install --no-fund --no-audit --global @typescript/native-preview oxlint oxlint-tsgolint oxfmt
+```
+
+```shell
+cd vendor
 cd tool
 tsgo -build tsconfig.build.json
 tsgo -build tsconfig.build.production.json
@@ -39,9 +76,11 @@ npx tsc -build tsconfig.build.json --clean
 npx tsc -build tsconfig.build.production.json --clean
 npx tsc -build tsconfig.json --clean
 cd ..
+cd ..
 ```
 
 ```shell
+cd vendor
 cd library
 tsgo -build tsconfig.build.json
 tsgo -build tsconfig.build.production.json
@@ -58,9 +97,11 @@ npx tsc -build tsconfig.build.json --clean
 npx tsc -build tsconfig.build.production.json --clean
 npx tsc -build tsconfig.json --clean
 cd ..
+cd ..
 ```
 
 ```shell
+cd vendor
 cd plugin
 tsgo -build tsconfig.build.json
 tsgo -build tsconfig.build.production.json
@@ -77,9 +118,11 @@ npx tsc -build tsconfig.build.json --clean
 npx tsc -build tsconfig.build.production.json --clean
 npx tsc -build tsconfig.json --clean
 cd ..
+cd ..
 ```
 
 ```shell
+cd vendor
 cd monorepo
 tsgo -build tsconfig.build.json
 tsgo -build tsconfig.build.production.json
@@ -95,5 +138,6 @@ npx tsc -build tsconfig.json
 npx tsc -build tsconfig.build.json --clean
 npx tsc -build tsconfig.build.production.json --clean
 npx tsc -build tsconfig.json --clean
+cd ..
 cd ..
 ```
