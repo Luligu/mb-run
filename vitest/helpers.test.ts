@@ -1,4 +1,5 @@
-import { access, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -13,7 +14,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
-  return { ...actual, readFile: vi.fn((...args: Parameters<typeof actual.readFile>) => actual.readFile(...args)) };
+  return { ...actual, readFile: vi.fn((...args: Parameters<typeof actual.readFile>) => actual.readFile(...args)), readdir: vi.fn(actual.readdir) };
 });
 
 let tmpDir: string;
@@ -199,9 +200,15 @@ describe('copyRepo', () => {
   it('skips symlinks (neither directory nor file) silently', async () => {
     await writeFile(path.join(tmpDir, 'package.json'), '{}');
     await writeFile(path.join(tmpDir, 'real.txt'), 'content');
-    await symlink(path.join(tmpDir, 'real.txt'), path.join(tmpDir, 'link.txt'));
+    const fsp = await import('node:fs/promises');
+    const actualFsp = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+    vi.mocked(fsp.readdir).mockImplementationOnce(async (dirPath, opts) => {
+      const entries = (await actualFsp.readdir(dirPath as string, opts as { withFileTypes: true })) as Dirent[];
+      entries.push({ name: 'link.txt', isDirectory: () => false, isFile: () => false } as unknown as Dirent);
+      return entries as never;
+    });
     destDir = await copyRepo(tmpDir, { install: false });
-    // real file is copied, symlink is skipped (no throw)
+    // real file is copied, symlink-like entry is skipped (no throw)
     await expect(access(path.join(destDir, 'real.txt'))).resolves.toBeUndefined();
     await expect(access(path.join(destDir, 'link.txt'))).rejects.toThrow();
   });

@@ -51,8 +51,8 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
-});
+  if (tmpDir) await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+}, 30_000);
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
