@@ -4,8 +4,10 @@ import process from 'node:process';
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as buildModule from '../src/build.js';
 import { copyRepo } from '../src/helpers.js';
 import { main } from '../src/module.js';
+import * as spawnModule from '../src/spawn.js';
 
 const vendorMonorepoPath = path.join(process.cwd(), 'vendor', 'monorepo');
 
@@ -149,6 +151,21 @@ describe('repo.monorepo — real operations', () => {
   it('--pack produces a tgz, sets bundleDependencies, and restores package.json', async () => {
     const savedRoot = await readFile(packageJsonPath, 'utf8');
     const savedLock = (await exists(packageLockPath)) ? await readFile(packageLockPath, 'utf8') : null;
+
+    // Mock the slow restore/build steps — they are pointless since tmpDir is cleaned up in afterAll.
+    // runWorkspaceBuild and runBin are mocked entirely (their assertBinExists check would also fail
+    // since node_modules is emptied during the pack flow before the restore install runs).
+    // runCommand is intercepted to allow only `npm pack` through; all npm install / shrinkwrap
+    // calls (both the omit-dev install and the restore install) are skipped.
+    const realRunCommand = spawnModule.runCommand;
+    vi.spyOn(spawnModule, 'runCommand').mockImplementation(async (cmd, args, opts) => {
+      if (cmd === 'npm' && Array.isArray(args) && args[0] === 'pack') {
+        return realRunCommand(cmd, args, opts);
+      }
+    });
+    vi.spyOn(buildModule, 'runWorkspaceBuild').mockResolvedValue(undefined);
+    vi.spyOn(buildModule, 'runBin').mockResolvedValue(undefined);
+
     try {
       setArgs('--pack');
       await expect(main()).resolves.toBeUndefined();
