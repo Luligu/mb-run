@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "declarationMap": false,
+    "sourceMap": false,
+    "removeComments": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__test__/*"],
+  "references": [
+    {
+      "path": "./packages/one/tsconfig.build.production.json"
+    },
+    {
+      "path": "./packages/two/tsconfig.build.production.json"
+    }
+  ]
+}

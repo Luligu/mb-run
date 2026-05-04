@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+import { ExitError, main } from '../dist/module.js';
+
+try {
+  await main();
+} catch (error) {
+  const exitCode = error instanceof ExitError ? error.code : 1;
+
+  // eslint-disable-next-line no-console
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = exitCode;
+}
