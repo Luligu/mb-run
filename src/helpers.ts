@@ -136,7 +136,14 @@ export async function copyRepo(sourceDir: string, opts: CopyRepoOptions = {}): P
   }
 
   if (gitInit) {
-    execSync('git init -b main && git add -A && git commit --no-verify -m init', { cwd: tmpDir, stdio: 'ignore', shell: '/bin/sh' });
+    const gitEnv = {
+      ...process.env,
+      GIT_AUTHOR_NAME: 'mb-run',
+      GIT_AUTHOR_EMAIL: 'mb-run@localhost',
+      GIT_COMMITTER_NAME: 'mb-run',
+      GIT_COMMITTER_EMAIL: 'mb-run@localhost',
+    };
+    execSync('git init && git symbolic-ref HEAD refs/heads/main && git add -A && git commit --no-verify -m init', { cwd: tmpDir, stdio: 'ignore', env: gitEnv, shell: '/bin/sh' });
   }
 
   return tmpDir;
