@@ -41,8 +41,10 @@ for (const vendor of ['tool', 'library', 'monorepo', 'plugin']) {
       console.log('vendor/plugin: linking matterbridge');
       try {
         execSync('npm link --no-fund --no-audit matterbridge', { cwd: vendorDir, stdio: 'inherit' });
+        console.log('vendor/plugin: linked matterbridge');
       } catch {
         execSync('npm install --no-fund --no-audit matterbridge', { cwd: vendorDir, stdio: 'inherit' });
+        console.log('vendor/plugin: installed matterbridge');
       }
       console.log('vendor/plugin: matterbridge ready');
     }
