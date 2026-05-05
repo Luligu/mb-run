@@ -40,6 +40,7 @@ for (const vendor of ['tool', 'library', 'monorepo', 'plugin']) {
     if (!existsSync(matterbridgePath)) {
       console.log('vendor/plugin: linking matterbridge');
       try {
+        execSync('npm install --no-fund --no-audit --global matterbridge', { cwd: vendorDir, stdio: 'inherit' });
         execSync('npm link --no-fund --no-audit matterbridge', { cwd: vendorDir, stdio: 'inherit' });
         console.log('vendor/plugin: linked matterbridge');
       } catch {
