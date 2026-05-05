@@ -1,4 +1,5 @@
 // vite.config.ts
+// vite.config.ts 2.0.0
 
 // This Vitest configuration is designed for a TypeScript project.
 
@@ -8,7 +9,7 @@ export default defineConfig({
   cacheDir: '.cache/vite',
   test: {
     include: ['vitest/**/*.test.ts', 'vitest/**/*.spec.ts'],
-    exclude: ['dist', 'node_modules', 'src/mock'],
+    exclude: ['.cache', 'dist', 'build', 'node_modules', '/scripts/', '/apps/', 'src/mock'],
     globals: true,
     clearMocks: true,
     restoreMocks: true,
