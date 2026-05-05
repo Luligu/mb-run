@@ -73,6 +73,19 @@ describe('repo.tool — real operations', () => {
     await expect(main()).resolves.toBeUndefined();
   }, 30_000);
 
+  it('--sort succeeds on the tool source', async () => {
+    const savedPkg = await readFile(packageJsonPath, 'utf8');
+    const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);
+    try {
+      setArgs('--sort');
+      await expect(main()).resolves.toBeUndefined();
+    } finally {
+      await writeFile(packageJsonPath, savedPkg, 'utf8');
+      if (savedLock !== null) await writeFile(packageLockPath, savedLock, 'utf8');
+      else await rm(packageLockPath, { force: true });
+    }
+  }, 30_000);
+
   it('--version dev tags the version with the dev prerelease format', async () => {
     const savedPkg = await readFile(packageJsonPath, 'utf8');
     const savedLock = await readFile(packageLockPath, 'utf8').catch(() => null);

@@ -1,9 +1,13 @@
+import path from 'node:path';
 import process from 'node:process';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as ansiModule from '../src/ansi.js';
 import { main } from '../src/module.js';
 import { ExitError } from '../src/spawn.js';
+
+const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
 
 // Suppress all console output produced by dryRun logging and help text.
 beforeEach(() => {
@@ -50,6 +54,18 @@ describe('main — argument validation', () => {
 describe('main — --dry-run build operations', () => {
   it('--dry-run --build resolves without error', async () => {
     setArgs('--dry-run', '--build');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --verbose --build resolves without error', async () => {
+    setArgs('--dry-run', '--verbose', '--build');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--clean with ANSI enabled covers the moveUp branch of restorePos', async () => {
+    vi.spyOn(ansiModule, 'shouldUseAnsi').mockReturnValue(true);
+    vi.spyOn(process, 'cwd').mockReturnValue(vendorLibraryPath);
+    setArgs('--clean');
     await expect(main()).resolves.toBeUndefined();
   });
 
