@@ -1,7 +1,7 @@
 ---
-name: 'Testing Standards v.1.0.1'
-description: 'Testing standards for unit tests in the project.'
-applyTo: '**/*.test.ts'
+name: 'Testing Standards v.1.0.2'
+description: 'Testing standards for unit tests in the project'
+applyTo: '**/*.test.ts, **/*.spec.ts, **/test/**/*.ts, **/vitest/**/*.ts'
 ---
 
 # Testing Standards for Unit Tests
@@ -9,8 +9,8 @@ applyTo: '**/*.test.ts'
 ## 1. Test Framework
 
 - Use Jest (with ts-jest) or Vitest as the testing framework for all unit tests.
-- Jest is available in the repository when the file `tsconfig.jest.json` exists.
-- Vitest is available in the repository when the file `tsconfig.vitest.json` exists.
+- Jest is available in the repository when the file `jest.config.js` exists.
+- Vitest is available in the repository when the file `vite.config.ts` exists.
 - Avoid using both Jest and Vitest in the same project to prevent conflicts. When both are available, prefer Vitest for new tests and consider migrating existing Jest tests to Vitest over time.
 - Jest tests live adjacent to the code being tested with a `.test.ts` suffix or in `test` folders. Follow the existing convention in the repository for test file placement.
 - Vitest tests live adjacent to the code being tested with a `.test.ts` suffix or in `vitest` folders. Follow the existing convention in the repository for test file placement.
@@ -43,7 +43,7 @@ applyTo: '**/*.test.ts'
 
 - Run the relevant full test unit from start to finish rather than assuming isolated single-test execution is reliable.
 - If only one test framework is installed, use `npm run test -- yourTest.test.ts` or `npm run test:coverage -- yourTest.test.ts` when the touched area can be validated by running the full relevant test file.
-- When both Jest and Vitest are installed, use `npm run test:jest -- yourTest.test.ts` or `npm run test:vitest -- yourTest.test.ts` to specify the test framework when the touched area can be validated by running the full relevant test file.
+- When both Jest and Vitest are installed, use `npm run test -- yourTest.test.ts` for Jest or `npm run test:vitest -- yourTest.test.ts` for Vitest.
 - Use the existing `tasks.json` test tasks for areas that require grouped test files, custom coverage targets, or custom ignore-pattern handling.
 - Avoid running all tests unnecessarily to save time and tokens.
 
