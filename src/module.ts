@@ -338,7 +338,9 @@ export async function main(): Promise<void> {
   if (want.oxformat) {
     log(`${savePos()}⏳ Formatting with oxfmt...`);
     const oxResult = await runOxFormat(buildOpts);
-    log(`${restorePos()}${green('✅')} Oxfmt format complete in ${getElapsed()} (${oxResult.filesScanned} files, ${oxResult.totalErrors} errors).${clearEnd()}`);
+    log(
+      `${restorePos()}${green('✅')} Oxfmt format complete in ${getElapsed()} (${oxResult.filesScanned} files, ${oxResult.filesChanged} changed, ${oxResult.totalErrors} errors).${clearEnd()}`,
+    );
   }
 
   if (want.lintFix) {

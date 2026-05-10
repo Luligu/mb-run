@@ -93,6 +93,8 @@ async function collectFiles(dir: string): Promise<string[]> {
 export interface OxFormatResult {
   /** Total number of files scanned. */
   filesScanned: number;
+  /** Total number of files whose content was changed. */
+  filesChanged: number;
   /** Total number of format errors across all files. */
   totalErrors: number;
 }
@@ -110,7 +112,7 @@ export interface OxFormatResult {
  * @returns {Promise<OxFormatResult>} Resolves with the total files scanned and total errors.
  */
 export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult> {
-  if (opts.dryRun) return { filesScanned: 0, totalErrors: 0 };
+  if (opts.dryRun) return { filesScanned: 0, filesChanged: 0, totalErrors: 0 };
 
   let config: FormatConfig = {
     printWidth: 180,
@@ -140,7 +142,7 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
   }
 
   const files = await collectFiles(opts.rootDir);
-  const errorCounts = await Promise.all(
+  const results = await Promise.all(
     files.map(async (filePath) => {
       const sourceText = await readFile(filePath, 'utf8');
       logOxFormatFile(filePath);
@@ -150,16 +152,19 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
           logOxFormatError(err.severity, filePath, err.message);
         }
       }
+      let changed = 0;
       if (result.code !== sourceText) {
+        changed = 1;
         logWriteFile(filePath);
         await writeFile(filePath, result.code, 'utf8');
       }
-      return result.errors.length;
+      return { errors: result.errors.length, changed };
     }),
   );
 
   return {
     filesScanned: files.length,
-    totalErrors: errorCounts.reduce((sum, n) => sum + n, 0),
+    filesChanged: results.reduce((sum, r) => sum + r.changed, 0),
+    totalErrors: results.reduce((sum, r) => sum + r.errors, 0),
   };
 }
