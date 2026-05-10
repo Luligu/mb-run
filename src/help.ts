@@ -29,7 +29,7 @@ import { brightBlack, brightCyan, brightWhite, brightYellow, cyan, green, log } 
  */
 export function printUsage(): void {
   const title = `${brightCyan('mb-run')} ${brightBlack('version')} ${brightWhite(pkg.version)}`;
-  const usageLine = `${brightYellow('Usage:')} ${green('mb-run')} [--install] [--reset [--production]] [--clean] [--deep-clean] [--build [--production]] [--watch] [--test] [--lint|--lint-fix] [--format|--format-check] [--sort] [--update] [--upgrade [jest] [vitest] [promiserules] [typeaware] [experimental]] [--pack [dev|edge|git|local|next|alpha|beta]] [--publish [dev|edge|git|local|next|alpha|beta]] [--dry-run] [--version [dev|edge|git|local|next|alpha|beta]] [--info]`;
+  const usageLine = `${brightYellow('Usage:')} ${green('mb-run')} [--install] [--reset [--production]] [--clean] [--deep-clean] [--build [--production]] [--watch] [--test] [--lint|--lint-fix] [--format|--format-check] [--oxformat] [--sort] [--update] [--upgrade [jest] [vitest] [promiserules] [typeaware] [experimental]] [--pack [dev|edge|git|local|next|alpha|beta]] [--publish [dev|edge|git|local|next|alpha|beta]] [--dry-run] [--version [dev|edge|git|local|next|alpha|beta]] [--info]`;
   const msg = `\
 ${title}
 
@@ -39,13 +39,14 @@ binaries in node_modules/.bin directly (does not call npm scripts).
 ${usageLine}
 
 ${brightYellow('Notes:')}
-- ${cyan('Multiple flags')} are run in this order: ${brightBlack('install → update → deep-clean → reset → clean → build → test → format → lint → sort → watch')}
+- ${cyan('Multiple flags')} are run in this order: ${brightBlack('install → update → deep-clean → reset → clean → build → test → format → oxformat → lint → sort → watch')}
 - ${green('--install')} runs npm install --no-fund --no-audit
 - ${green('--reset')} empties .cache/ and node_modules/ (keeps directories for devcontainer named volumes), then runs npm install and build
 - ${green('--deep-clean')} empties .cache/ and node_modules/ like --reset but skips the install and build steps
 - ${green('--test')} sets NODE_OPTIONS="--experimental-vm-modules --no-warnings" like the existing scripts
 - ${green('--lint-fix')} runs eslint with --fix
 - ${green('--format-check')} runs prettier with --check
+- ${green('--oxformat')} formats all source files using the oxfmt JS API; reads configuration from .oxfmtrc.json in the project root when present
 - ${green('--build')} prefers per-workspace tsconfig.build.json when present
 - ${green('--build --production')} prefers tsconfig.build.production.json, else tsconfig.build.json, else tsconfig.json
 - ${green('--reset --production')} performs a reset and rebuilds using the production tsconfig

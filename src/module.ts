@@ -32,6 +32,7 @@ import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from
 import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
 import { initLogger } from './logger.js';
+import { runOxFormat } from './oxfmt.js';
 import { runPack } from './pack.js';
 import { runPublish } from './publish.js';
 import { sortAll } from './sort.js';
@@ -77,6 +78,7 @@ export async function main(): Promise<void> {
     '--lint-fix',
     '--format',
     '--format-check',
+    '--oxformat',
     '--dry-run',
     '--sort',
     '--update',
@@ -188,6 +190,7 @@ export async function main(): Promise<void> {
     lintFix: rawArgs.includes('--lint-fix'),
     format: rawArgs.includes('--format'),
     formatCheck: rawArgs.includes('--format-check'),
+    oxformat: rawArgs.includes('--oxformat'),
     sort: rawArgs.includes('--sort'),
     update: rawArgs.includes('--update'),
     upgrade: rawArgs.includes('--upgrade'),
@@ -330,6 +333,12 @@ export async function main(): Promise<void> {
     log(`${savePos()}⏳ Checking format...`);
     await runBin('prettier', ['--log-level=silent', '--cache', '--cache-location', '.cache/.prettiercache', '--check', '.'], { ...buildOpts, mode: 'build', watch: false });
     log(`${restorePos()}${green('✅')} Format check complete in ${getElapsed()}.${clearEnd()}`);
+  }
+
+  if (want.oxformat) {
+    log(`${savePos()}⏳ Formatting with oxfmt...`);
+    const oxResult = await runOxFormat(buildOpts);
+    log(`${restorePos()}${green('✅')} Oxfmt format complete in ${getElapsed()} (${oxResult.filesScanned} files, ${oxResult.totalErrors} errors).${clearEnd()}`);
   }
 
   if (want.lintFix) {
