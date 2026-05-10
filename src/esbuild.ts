@@ -29,7 +29,7 @@ import { build, type BuildOptions } from 'esbuild';
 import { log } from './ansi.js';
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
-import { parsePackageJson } from './helpers.js';
+import { isPlugin, parsePackageJson } from './helpers.js';
 import { logEsbuild } from './logger.js';
 
 /** Context shared by all esbuild operations. */
@@ -92,6 +92,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   for (const localName of localNames) {
     externalSet.delete(localName);
   }
+  if (await isPlugin(opts.rootDir)) externalSet.add('matterbridge'); // Always external, not bundled.
 
   // Step 4: Read root package.json to resolve main entry and bin entries.
   const rootPkg = (await parsePackageJson(opts.rootDir)) as { main?: string; exports?: Record<string, unknown> | string; bin?: Record<string, string> };
