@@ -132,8 +132,10 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
     endOfLine: 'lf',
     embeddedLanguageFormatting: 'auto',
     singleAttributePerLine: false,
-    sortImports: true,
-    sortPackageJson: true,
+    sortImports: {
+      groups: ['side_effect', 'builtin', 'external', ['internal', 'subpath'], ['parent', 'sibling', 'index'], 'style', 'unknown'],
+    },
+    sortPackageJson: false,
   };
   const configPath = path.join(opts.rootDir, '.oxfmtrc.json');
   if (await fileExists(configPath)) {

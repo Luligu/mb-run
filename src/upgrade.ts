@@ -259,7 +259,7 @@ export async function runPackageJsonUpgrade(
       log(`${magenta('No Jest flag set, removing Jest Eslint...')}`);
       fileReplace('eslint.config.js', `import jest from 'eslint-plugin-jest';\n`, ``);
       fileReplace('eslint.config.js', `name: 'Global Ignores',\n    ignores: [`, `name: 'Global Ignores',\n    ignores: [...jestTestFiles, `);
-      fileReplaceFromTo('eslint.config.js', `{\n    name: 'Jest Test Files',`, `// Disable JSDoc rule in test files\n    },\n  },\n`, ``, { includeBounds: true });
+      fileReplaceFromTo('eslint.config.js', `  {\n    name: 'Jest Test Files',`, `// Disable JSDoc rule in test files\n    },\n  },\n`, ``, { includeBounds: true });
       unlinkSafe('tsconfig.jest.json');
       unlinkSafe('jest.config.js');
       if (!opts.enableVitest) {
@@ -274,7 +274,7 @@ export async function runPackageJsonUpgrade(
       log(`${magenta('No Vitest flag set, removing Vitest Eslint...')}`);
       fileReplace('eslint.config.js', `import vitest from '@vitest/eslint-plugin';\n`, ``);
       fileReplace('eslint.config.js', `name: 'Global Ignores',\n    ignores: [`, `name: 'Global Ignores',\n    ignores: [...vitestTestFiles, `);
-      fileReplaceFromTo('eslint.config.js', `{\n    name: 'Vitest Test Files',`, `// Disable JSDoc rule in test files\n    },\n  },\n`, ``, { includeBounds: true });
+      fileReplaceFromTo('eslint.config.js', `  {\n    name: 'Vitest Test Files',`, `// Disable JSDoc rule in test files\n    },\n  },\n`, ``, { includeBounds: true });
       unlinkSafe('tsconfig.vitest.json');
       unlinkSafe('vite.config.ts');
       if (!opts.enableJest) {
@@ -550,7 +550,7 @@ export async function runPackageJsonUpgrade(
     'checkDependencies': 'npx npm-check-updates',
     'updateDependencies': 'npx npm-check-updates -u && npm run reset',
     'automator': automator ? automator : 'node scripts/run-automator.mjs',
-    'runMeBeforePublish': 'npm run cleanBuild && npm run format && npm run lint && npm run test:typecheck && npm run test:coverage && npm run build',
+    'runMeBeforePublish': 'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run test:typecheck && npm run test:coverage',
     'prepublishOnly':
       'npm run cleanBuildProduction && npm pkg delete devDependencies scripts && npx shx rm -rf node_modules/* node_modules/.[!.]* node_modules/..?* package-lock.json npm-shrinkwrap.json && npm install --omit=dev && npm shrinkwrap --omit=dev',
     'npmPack':

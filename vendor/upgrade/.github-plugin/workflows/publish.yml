@@ -1,4 +1,4 @@
-# Publish to npm (plugin) v. 2.0.1
+# Publish to npm (plugin) v. 2.0.2
 
 name: Publish to npm
 
@@ -23,8 +23,8 @@ jobs:
     name: Publish release to npm and trigger matterbridge docker build latest
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    env:
-      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+    # env:
+    #   PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 
     steps:
       - name: Checkout repository
