@@ -221,6 +221,43 @@ describe('main — --esbuild', () => {
   });
 });
 
+describe('main — --upgrade', () => {
+  it('--dry-run --upgrade (no sub-args) resolves without error', async () => {
+    setArgs('--dry-run', '--upgrade');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --upgrade jest resolves without error', async () => {
+    setArgs('--dry-run', '--upgrade', 'jest');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --upgrade jest vitest promiserules typeaware experimental resolves without error', async () => {
+    setArgs('--dry-run', '--upgrade', 'jest', 'vitest', 'promiserules', 'typeaware', 'experimental');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --upgrade vitest experimental resolves without error', async () => {
+    setArgs('--dry-run', '--upgrade', 'vitest', 'experimental');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('keywords after --upgrade stop at the next flag', async () => {
+    setArgs('--dry-run', '--upgrade', 'jest', '--build');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('unrecognized token after --upgrade throws ExitError', async () => {
+    setArgs('--dry-run', '--upgrade', 'unknownword');
+    await expect(main()).rejects.toBeInstanceOf(ExitError);
+  });
+
+  it('--upgrade suppresses --install', async () => {
+    setArgs('--dry-run', '--upgrade', '--install');
+    await expect(main()).resolves.toBeUndefined();
+  });
+});
+
 describe('main — --pack', () => {
   it('--dry-run --pack resolves without error', async () => {
     setArgs('--dry-run', '--pack');

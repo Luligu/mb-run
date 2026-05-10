@@ -37,6 +37,7 @@ import { runPublish } from './publish.js';
 import { sortAll } from './sort.js';
 import { ExitError, runCommand } from './spawn.js';
 import { runUpdate } from './update.js';
+import { runUpgrade } from './upgrade.js';
 import { parseVersionTag, updateRootVersion, updateWorkspaceDependencyVersions } from './version.js';
 
 // IMPORTANT: This script operates on the package.json in the current working directory.
@@ -79,6 +80,7 @@ export async function main(): Promise<void> {
     '--dry-run',
     '--sort',
     '--update',
+    '--upgrade',
     '--reset',
     '--deep-clean',
     '--version',
@@ -111,6 +113,20 @@ export async function main(): Promise<void> {
   const candidatePublishArg = publishIndex >= 0 ? rawArgs[publishIndex + 1] : undefined;
   const rawPublishTag = typeof candidatePublishArg === 'string' && !candidatePublishArg.startsWith('-') ? candidatePublishArg : undefined;
 
+  const upgradeIndex = rawArgs.indexOf('--upgrade');
+  const upgradeValidKeywords = new Set(['jest', 'vitest', 'promiserules', 'typeaware', 'experimental']);
+  const upgradeArgIndices = new Set<number>();
+  const upgradeArgs = new Set<string>();
+  if (upgradeIndex >= 0) {
+    for (let i = upgradeIndex + 1; i < rawArgs.length; i++) {
+      if (rawArgs[i].startsWith('-')) break;
+      if (upgradeValidKeywords.has(rawArgs[i])) {
+        upgradeArgs.add(rawArgs[i]);
+        upgradeArgIndices.add(i);
+      }
+    }
+  }
+
   const unknownFlags = rawArgs.filter((a) => a.startsWith('-') && !known.has(a));
   if (unknownFlags.length > 0) {
     printUsage();
@@ -122,7 +138,8 @@ export async function main(): Promise<void> {
       !a.startsWith('-') &&
       !(versionIndex >= 0 && rawVersionTag !== undefined && i === versionIndex + 1) &&
       !(packIndex >= 0 && rawPackTag !== undefined && i === packIndex + 1) &&
-      !(publishIndex >= 0 && rawPublishTag !== undefined && i === publishIndex + 1),
+      !(publishIndex >= 0 && rawPublishTag !== undefined && i === publishIndex + 1) &&
+      !upgradeArgIndices.has(i),
   );
   if (unknownPositionals.length > 0) {
     printUsage();
@@ -173,6 +190,7 @@ export async function main(): Promise<void> {
     formatCheck: rawArgs.includes('--format-check'),
     sort: rawArgs.includes('--sort'),
     update: rawArgs.includes('--update'),
+    upgrade: rawArgs.includes('--upgrade'),
     reset: rawArgs.includes('--reset'),
     deepClean: rawArgs.includes('--deep-clean'),
     pack: rawArgs.includes('--pack'),
@@ -187,6 +205,11 @@ export async function main(): Promise<void> {
 
   // --update runs npm install internally; skip the redundant standalone install.
   if (want.update) {
+    want.install = false;
+  }
+
+  // --upgrade only rewrites package.json files; a subsequent install is still needed.
+  if (want.upgrade) {
     want.install = false;
   }
 
@@ -211,6 +234,23 @@ export async function main(): Promise<void> {
     await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { dryRun: dryRunMode });
     if (await isPlugin(repoRoot)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: repoRoot, dryRun: dryRunMode });
     log(`${restorePos()}${green('✅')} Update complete in ${getElapsed()}.${clearEnd()}`);
+  }
+
+  if (want.upgrade) {
+    log(`${savePos()}⏳ Upgrading package...`);
+    await runUpgrade({
+      rootDir: repoRoot,
+      isWindows,
+      dryRun: dryRunMode,
+      enableJest: upgradeArgs.has('jest'),
+      enableVitest: upgradeArgs.has('vitest'),
+      enablePromiseRules: upgradeArgs.has('promiserules'),
+      enableExperimental: upgradeArgs.has('experimental'),
+      enableTypeAware: upgradeArgs.has('typeaware'),
+    });
+    await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { dryRun: dryRunMode });
+    if (await isPlugin(repoRoot)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: repoRoot, dryRun: dryRunMode });
+    log(`${restorePos(0)}${green('✅')} Upgrade complete in ${getElapsed()}.${clearEnd()}`);
   }
 
   if (want.deepClean) {
