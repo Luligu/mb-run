@@ -164,6 +164,32 @@ export class Logger {
     if (!this.shouldLogActions()) return;
     log(`${this.logPrefix()} ${cyan(dir)}> ${brightYellow('restore')}`);
   };
+
+  /**
+   * Logs an oxfmt format diagnostic (always shown, regardless of verbose/dry-run state).
+   *
+   * @param {string} severity Oxfmt severity string (e.g. `'Error'`, `'Warning'`, `'Advice'`).
+   * @param {string} filePath File in which the diagnostic was reported.
+   * @param {string} message Diagnostic message text.
+   * @returns {void}
+   */
+  logOxFormat = (severity: string, filePath: string, message: string): void => {
+    const resolvedPath = path.resolve(filePath);
+    const coloredSeverity = severity === 'Error' ? brightRed(severity) : severity === 'Warning' ? brightYellow(severity) : cyan(severity);
+    log(`${this.logPrefix()} ${cyan(path.dirname(resolvedPath))}> ${magenta('oxfmt')} ${coloredSeverity} ${formatCommandArg(path.basename(resolvedPath))}: ${message}`);
+  };
+
+  /**
+   * Logs a file being processed by oxfmt when verbose or dry-run mode is active.
+   *
+   * @param {string} filePath File being processed.
+   * @returns {void}
+   */
+  logOxFormatFile = (filePath: string): void => {
+    if (!this.shouldLogActions()) return;
+    const resolvedPath = path.resolve(filePath);
+    log(`${this.logPrefix()} ${cyan(path.dirname(resolvedPath))}> ${magenta('oxfmt')} ${formatCommandArg(path.basename(resolvedPath))}`);
+  };
 }
 
 // Module-level logger instance; initialized with safe defaults until initLogger() is called.
@@ -242,4 +268,26 @@ export function logBackup(dir: string): void {
  */
 export function logRestore(dir: string): void {
   logger.logRestore(dir);
+}
+
+/**
+ * Logs an oxfmt format diagnostic (always shown, regardless of verbose/dry-run state).
+ *
+ * @param {string} severity Oxfmt severity string (e.g. `'Error'`, `'Warning'`, `'Advice'`).
+ * @param {string} filePath File in which the diagnostic was reported.
+ * @param {string} message Diagnostic message text.
+ * @returns {void}
+ */
+export function logOxFormat(severity: string, filePath: string, message: string): void {
+  logger.logOxFormat(severity, filePath, message);
+}
+
+/**
+ * Logs a file being processed by oxfmt when verbose or dry-run mode is active.
+ *
+ * @param {string} filePath File being processed.
+ * @returns {void}
+ */
+export function logOxFormatFile(filePath: string): void {
+  logger.logOxFormatFile(filePath);
 }

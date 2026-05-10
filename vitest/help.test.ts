@@ -19,7 +19,7 @@ describe('printUsage', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     printUsage();
     const output = spy.mock.calls[0][0] as string;
-    for (const flag of ['--reset', '--deep-clean', '--clean', '--build', '--test', '--lint', '--format', '--dry-run', '--version', '--verbose']) {
+    for (const flag of ['--reset', '--deep-clean', '--clean', '--build', '--test', '--lint', '--format', '--oxformat', '--dry-run', '--version', '--verbose']) {
       expect(output).toContain(flag);
     }
   });

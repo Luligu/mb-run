@@ -3,7 +3,9 @@
     "incremental": true,
     "composite": true,
     "target": "esnext",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolveJsonModule": true,

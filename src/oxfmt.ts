@@ -26,8 +26,8 @@ import path from 'node:path';
 
 import { format, type FormatConfig } from 'oxfmt';
 
-import { log } from './ansi.js';
 import { fileExists } from './clean.js';
+import { logOxFormat, logOxFormatFile, logWriteFile } from './logger.js';
 
 /** Context shared by all oxformat operations. */
 export interface OxFormatOptions {
@@ -128,7 +128,7 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
     insertPragma: false,
     proseWrap: 'preserve',
     endOfLine: 'lf',
-    embeddedLanguageFormatting: 'off',
+    embeddedLanguageFormatting: 'auto',
     singleAttributePerLine: false,
     sortImports: true,
     sortPackageJson: true,
@@ -143,13 +143,15 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
   const errorCounts = await Promise.all(
     files.map(async (filePath) => {
       const sourceText = await readFile(filePath, 'utf8');
+      logOxFormatFile(filePath);
       const result = await format(filePath, sourceText, config);
       if (result.errors.length > 0) {
         for (const err of result.errors) {
-          log(`oxfmt: ${err.severity} in ${filePath}: ${err.message}`);
+          logOxFormat(err.severity, filePath, err.message);
         }
       }
       if (result.code !== sourceText) {
+        logWriteFile(filePath);
         await writeFile(filePath, result.code, 'utf8');
       }
       return result.errors.length;

@@ -222,6 +222,13 @@ describe('main — --esbuild', () => {
   });
 });
 
+describe('main — --oxformat', () => {
+  it('--dry-run --oxformat resolves without error', async () => {
+    setArgs('--dry-run', '--oxformat');
+    await expect(main()).resolves.toBeUndefined();
+  });
+});
+
 describe('main — --upgrade', () => {
   it('--dry-run --upgrade (no sub-args) resolves without error', async () => {
     setArgs('--dry-run', '--upgrade');
