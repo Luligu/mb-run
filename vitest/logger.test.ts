@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatCommandArg, initLogger, logBackup, logCommand, logDelete, logEsbuild, Logger, logOxFormat, logOxFormatFile, logRestore, logWriteFile } from '../src/logger.js';
+import { formatCommandArg, initLogger, logBackup, logCommand, logDelete, logEsbuild, Logger, logOxFormatError, logOxFormatFile, logRestore, logWriteFile } from '../src/logger.js';
 
 describe('formatCommandArg', () => {
   it('wraps an empty string as ""', () => {
@@ -205,16 +205,16 @@ describe('Logger', () => {
     });
   });
 
-  describe('logOxFormat', () => {
+  describe('logOxFormatError', () => {
     it('always logs regardless of verbose/dryRun state', () => {
       const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
-      logger.logOxFormat('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
+      logger.logOxFormatError('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
       expect(lines).toHaveLength(1);
     });
 
     it('contains "oxfmt", the file name, and the message', () => {
       const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
-      logger.logOxFormat('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
+      logger.logOxFormatError('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
       expect(lines[0]).toContain('oxfmt');
       expect(lines[0]).toContain('file.ts');
       expect(lines[0]).toContain('unexpected token');
@@ -222,13 +222,13 @@ describe('Logger', () => {
 
     it('includes the severity in the output', () => {
       const logger = new Logger({ dryRun: false, verbose: false, rootDir: '/root' });
-      logger.logOxFormat('Warning', path.join('/some', 'dir', 'file.ts'), 'trailing comma');
+      logger.logOxFormatError('Warning', path.join('/some', 'dir', 'file.ts'), 'trailing comma');
       expect(lines[0]).toContain('Warning');
     });
 
     it('also logs when verbose is true', () => {
       const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
-      logger.logOxFormat('Advice', path.join('/some', 'dir', 'file.ts'), 'use semicolons');
+      logger.logOxFormatError('Advice', path.join('/some', 'dir', 'file.ts'), 'use semicolons');
       expect(lines).toHaveLength(1);
       expect(lines[0]).toContain('Advice');
     });
@@ -343,9 +343,9 @@ describe('module-level logger (initLogger + free functions)', () => {
     expect(lines[0]).toContain('restore');
   });
 
-  it('logOxFormat always logs regardless of verbose/dryRun', () => {
+  it('logOxFormatError always logs regardless of verbose/dryRun', () => {
     initLogger({ dryRun: false, verbose: false, rootDir: '/root' });
-    logOxFormat('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
+    logOxFormatError('Error', path.join('/some', 'dir', 'file.ts'), 'unexpected token');
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain('oxfmt');
     expect(lines[0]).toContain('file.ts');

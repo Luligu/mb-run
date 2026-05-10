@@ -173,7 +173,7 @@ export class Logger {
    * @param {string} message Diagnostic message text.
    * @returns {void}
    */
-  logOxFormat = (severity: string, filePath: string, message: string): void => {
+  logOxFormatError = (severity: string, filePath: string, message: string): void => {
     const resolvedPath = path.resolve(filePath);
     const coloredSeverity = severity === 'Error' ? brightRed(severity) : severity === 'Warning' ? brightYellow(severity) : cyan(severity);
     log(`${this.logPrefix()} ${cyan(path.dirname(resolvedPath))}> ${magenta('oxfmt')} ${coloredSeverity} ${formatCommandArg(path.basename(resolvedPath))}: ${message}`);
@@ -278,8 +278,8 @@ export function logRestore(dir: string): void {
  * @param {string} message Diagnostic message text.
  * @returns {void}
  */
-export function logOxFormat(severity: string, filePath: string, message: string): void {
-  logger.logOxFormat(severity, filePath, message);
+export function logOxFormatError(severity: string, filePath: string, message: string): void {
+  logger.logOxFormatError(severity, filePath, message);
 }
 
 /**

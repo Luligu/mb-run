@@ -27,7 +27,7 @@ import path from 'node:path';
 import { format, type FormatConfig } from 'oxfmt';
 
 import { fileExists } from './clean.js';
-import { logOxFormat, logOxFormatFile, logWriteFile } from './logger.js';
+import { logOxFormatError, logOxFormatFile, logWriteFile } from './logger.js';
 
 /** Context shared by all oxformat operations. */
 export interface OxFormatOptions {
@@ -147,7 +147,7 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<OxFormatResult
       const result = await format(filePath, sourceText, config);
       if (result.errors.length > 0) {
         for (const err of result.errors) {
-          logOxFormat(err.severity, filePath, err.message);
+          logOxFormatError(err.severity, filePath, err.message);
         }
       }
       if (result.code !== sourceText) {
