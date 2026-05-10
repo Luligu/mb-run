@@ -110,7 +110,7 @@
     "npmPublishTagLatest": "npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset"
   },
   "dependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "@typescript/native-preview": "7.0.0-dev.20260510.1",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.0",
     "npm-check-updates": "22.1.1",

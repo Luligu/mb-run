@@ -1,5 +1,5 @@
 // @ts-check
-// eslint.config.js 2.0.1
+// eslint.config.js 2.0.2
 
 // This ESLint configuration is designed for a TypeScript project using ESM modules.
 
@@ -79,7 +79,7 @@ export default defineConfig([
       'n/prefer-node-protocol': 'error', // Prefer using 'node:' protocol for built-in modules
       'n/no-unsupported-features/node-builtins': ['error', { ignores: ['fetch'] }],
       'n/no-extraneous-import': ['error', { allowModules: ['matterbridge'] }], // Allow imports from matterbridge package
-      // 'n/no-unpublished-import': 'off', // Allow imports from unpublished packages
+      'n/no-unpublished-import': 'error',
       'n/hashbang': [
         'error',
         {
@@ -150,6 +150,8 @@ export default defineConfig([
     rules: {
       'no-undef': 'off', // Disable no-undef for TypeScript files since TypeScript already checks for undefined variables
       'no-unused-vars': 'off', // Disable base rule for unused variables and use the TypeScript-specific rule instead
+      'n/no-extraneous-import': 'off', // Allow imports from devDependencies in test files
+      'n/no-unpublished-import': 'off', // Allow imports from unpublished packages
       '@typescript-eslint/no-unused-vars': 'off', // Disable TypeScript rule for unused variables in test files
       '@typescript-eslint/no-explicit-any': 'off', // Allow 'any' type in test files
       '@typescript-eslint/no-empty-function': 'off', // Allow empty functions in test files
