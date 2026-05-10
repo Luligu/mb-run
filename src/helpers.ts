@@ -55,9 +55,9 @@ export async function isPlugin(rootDir: string): Promise<boolean> {
 }
 
 /**
- * Checks if the current package.json scripts indicate we're running in a library context.
+ * Checks if the current tsconfig.build.production.json indicates we're running in a library context.
  *
- * @param {string} rootDir Repository root directory containing the package.json to inspect.
+ * @param {string} rootDir Repository root directory containing the tsconfig.build.production.json to inspect.
  * @returns {Promise<boolean>} True if we're in a library context.
  */
 export async function isLibrary(rootDir: string): Promise<boolean> {
