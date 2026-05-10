@@ -50,7 +50,7 @@ describe('runOxFormat — dryRun', () => {
   it('returns early with zero counts when dryRun is true', async () => {
     await writeSource('src/index.ts');
     const result = await runOxFormat({ rootDir: tmpDir, isWindows: false, dryRun: true });
-    expect(result).toEqual({ filesScanned: 0, totalErrors: 0 });
+    expect(result).toEqual({ filesScanned: 0, filesChanged: 0, totalErrors: 0 });
   });
 
   it('does not call format when dryRun is true', async () => {
