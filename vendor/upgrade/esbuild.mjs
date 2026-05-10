@@ -20,14 +20,10 @@ const dirs = argv.filter((arg) => !arg.startsWith('--'));
 // "electron" must stay external when bundling the tray main process.
 const external = ['matterbridge', 'matterbridge/*', 'node-ansi-logger', 'archiver', 'moment', 'electron'];
 
-console.log(
-  `[esbuild] processing ${dirs.length} dist director${dirs.length === 1 ? 'y' : 'ies'}; obfuscate=${shouldObfuscate}; bundle-deps=${shouldBundleDeps}`
-);
+console.log(`[esbuild] processing ${dirs.length} dist director${dirs.length === 1 ? 'y' : 'ies'}; obfuscate=${shouldObfuscate}; bundle-deps=${shouldBundleDeps}`);
 
 if (dirs.length === 0) {
-  throw new Error(
-    'Usage: node scripts/esbuild.mjs <distDir...> [--obfuscate] [--bundle-deps] (expects module.js in each distDir)'
-  );
+  throw new Error('Usage: node scripts/esbuild.mjs <distDir...> [--obfuscate] [--bundle-deps] (expects module.js in each distDir)');
 }
 
 /**
@@ -116,18 +112,16 @@ const bundleDir = async (distDir) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const JavaScriptObfuscator = require('javascript-obfuscator');
 
-      outputCode = JavaScriptObfuscator
-        .obfuscate(outputCode, {
-          compact: true,
-          renameGlobals: false,
-          identifierNamesGenerator: 'hexadecimal',
-          stringArray: true,
-          stringArrayThreshold: 0.8,
-          splitStrings: true,
-          splitStringsChunkLength: 10,
-          sourceMap: false,
-        })
-        .getObfuscatedCode();
+      outputCode = JavaScriptObfuscator.obfuscate(outputCode, {
+        compact: true,
+        renameGlobals: false,
+        identifierNamesGenerator: 'hexadecimal',
+        stringArray: true,
+        stringArrayThreshold: 0.8,
+        splitStrings: true,
+        splitStringsChunkLength: 10,
+        sourceMap: false,
+      }).getObfuscatedCode();
     }
 
     builtOutputs.set(fileName, outputCode);
@@ -158,9 +152,7 @@ const bundleDir = async (distDir) => {
     await writeFile(path.join(distDir, fileName), `${outputCode}\n`, 'utf8');
   }
 
-  console.log(
-    `[esbuild] done: ${distDir} (kept: ${keepJs.join(', ')}; removed: ${removedEntries.length})`
-  );
+  console.log(`[esbuild] done: ${distDir} (kept: ${keepJs.join(', ')}; removed: ${removedEntries.length})`);
 };
 
 for (const distDir of dirs) {

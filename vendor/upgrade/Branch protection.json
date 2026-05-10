@@ -5,10 +5,7 @@
   "conditions": {
     "ref_name": {
       "exclude": [],
-      "include": [
-        "refs/heads/main",
-        "refs/heads/dev"
-      ]
+      "include": ["refs/heads/main", "refs/heads/dev"]
     }
   },
   "rules": [
@@ -27,10 +24,7 @@
         "require_code_owner_review": true,
         "require_last_push_approval": true,
         "required_review_thread_resolution": true,
-        "allowed_merge_methods": [
-          "merge",
-          "squash"
-        ]
+        "allowed_merge_methods": ["merge", "squash"]
       }
     },
     {

@@ -13,10 +13,9 @@
 
 ---
 
-This plugin allows you to 
+This plugin allows you to
 
 Features:
-
 
 If you like this project and find it useful, please consider giving it a star on GitHub at https://github.com/Luligu/matterbridge-hass and sponsoring it.
 
