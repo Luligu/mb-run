@@ -29,7 +29,7 @@ import { brightBlack, brightCyan, brightWhite, brightYellow, cyan, green, log } 
  */
 export function printUsage(): void {
   const title = `${brightCyan('mb-run')} ${brightBlack('version')} ${brightWhite(pkg.version)}`;
-  const usageLine = `${brightYellow('Usage:')} ${green('mb-run')} [--install] [--reset [--production]] [--clean] [--deep-clean] [--build [--production]] [--watch] [--test] [--lint|--lint-fix] [--format|--format-check] [--sort] [--update] [--pack [dev|edge|git|local|next|alpha|beta]] [--publish [dev|edge|git|local|next|alpha|beta]] [--dry-run] [--version [dev|edge|git|local|next|alpha|beta]] [--info]`;
+  const usageLine = `${brightYellow('Usage:')} ${green('mb-run')} [--install] [--reset [--production]] [--clean] [--deep-clean] [--build [--production]] [--watch] [--test] [--lint|--lint-fix] [--format|--format-check] [--sort] [--update] [--upgrade [jest] [vitest] [promiserules] [typeaware] [experimental]] [--pack [dev|edge|git|local|next|alpha|beta]] [--publish [dev|edge|git|local|next|alpha|beta]] [--dry-run] [--version [dev|edge|git|local|next|alpha|beta]] [--info]`;
   const msg = `\
 ${title}
 
@@ -51,6 +51,7 @@ ${brightYellow('Notes:')}
 - ${green('--reset --production')} performs a reset and rebuilds using the production tsconfig
 - ${green('--sort')} sorts top-level keys in all package.json files (root and workspaces) using the canonical key order
 - ${green('--update')} installs npm-check-updates (--no-save) then runs ncu -u across all workspaces
+- ${green('--upgrade')} [jest] [vitest] [promiserules] [typeaware] [experimental] upgrades config files in the target repo; when keywords are provided only those features are enabled, otherwise jest/vitest are auto-detected and promise-rules is enabled by default
 - ${green('--pack')} [tag] backs up package.json, cleans, builds for production, strips devDependencies and scripts, empties node_modules, runs npm install --omit=dev, npm shrinkwrap, npm pack, then restores package.json and reinstalls; if a tag is provided it first bumps the version
 - ${green('--publish')} [tag] backs up all package.json files (root and workspaces), strips devDependencies and scripts from each, runs npm publish --dry-run for root and every workspace, then restores all package.json files; if a tag is provided it first bumps the version
 - ${green('--dry-run')} logs intended actions without changing files or executing commands
