@@ -122,6 +122,21 @@ describe('runEsbuild — external dependencies', () => {
     expect(opts.external).toContain('fsevents');
     expect(opts.external).toContain('react');
   });
+
+  it('adds matterbridge to external when the package is a plugin (scripts.start = matterbridge)', async () => {
+    await writePkg(tmpDir, {
+      name: 'my-plugin',
+      version: '1.0.0',
+      main: './dist/module.js',
+      scripts: { start: 'matterbridge' },
+    });
+    await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+
+    await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
+
+    const opts = mockedBuild.mock.calls[0][0] as { external: string[] };
+    expect(opts.external).toContain('matterbridge');
+  });
 });
 
 // ---------------------------------------------------------------------------

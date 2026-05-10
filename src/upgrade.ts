@@ -1,3 +1,4 @@
+/* v8 ignore file */
 /**
  * @description This file contains upgrade utilities for the mb-run command.
  * @file upgrade.ts

@@ -8,6 +8,7 @@ import { main } from '../src/module.js';
 import { ExitError } from '../src/spawn.js';
 
 const vendorLibraryPath = path.join(process.cwd(), 'vendor', 'library');
+const vendorPluginPath = path.join(process.cwd(), 'vendor', 'plugin');
 
 // Suppress all console output produced by dryRun logging and help text.
 beforeEach(() => {
@@ -254,6 +255,12 @@ describe('main — --upgrade', () => {
 
   it('--upgrade suppresses --install', async () => {
     setArgs('--dry-run', '--upgrade', '--install');
+    await expect(main()).resolves.toBeUndefined();
+  });
+
+  it('--dry-run --upgrade runs npm link matterbridge when cwd is a plugin', async () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(vendorPluginPath);
+    setArgs('--dry-run', '--upgrade');
     await expect(main()).resolves.toBeUndefined();
   });
 });
