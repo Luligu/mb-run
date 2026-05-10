@@ -49,7 +49,7 @@
     }
   },
   "engines": {
-    "node": ">=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0"
+    "node": ">=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0"
   },
   "bin": {
     "mb-run": "bin/mb-run",
@@ -110,12 +110,12 @@
     "npmPublishTagLatest": "npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset"
   },
   "dependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260504.1",
+    "@typescript/native-preview": "7.0.0-dev.20260509.2",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.0",
-    "npm-check-updates": "22.1.0",
-    "oxfmt": "0.47.0",
-    "oxlint": "1.62.0",
+    "npm-check-updates": "22.1.1",
+    "oxfmt": "0.48.0",
+    "oxlint": "1.63.0",
     "oxlint-tsgolint": "0.22.1"
   },
   "devDependencies": {
@@ -123,14 +123,14 @@
     "@eslint/json": "1.2.0",
     "@eslint/markdown": "8.0.1",
     "@types/cross-spawn": "6.0.6",
-    "@types/node": "25.6.0",
+    "@types/node": "25.6.2",
     "@vitest/coverage-v8": "4.1.5",
-    "@vitest/eslint-plugin": "1.6.16",
+    "@vitest/eslint-plugin": "1.6.17",
     "cross-env": "10.1.0",
     "eslint": "10.3.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-jsdoc": "62.9.0",
-    "eslint-plugin-n": "18.0.0",
+    "eslint-plugin-n": "18.0.1",
     "eslint-plugin-prettier": "5.5.5",
     "eslint-plugin-simple-import-sort": "13.0.0",
     "prettier": "3.8.3",
