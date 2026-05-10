@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyRepo, isMonorepo, isPlugin, parsePackageJson } from '../src/helpers.js';
+import { copyRepo, isLibrary, isMonorepo, isPlugin, parsePackageJson } from '../src/helpers.js';
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
@@ -56,6 +56,44 @@ describe('isPlugin', () => {
   it('returns false when dev:link value does not match exactly', async () => {
     await writeFile(path.join(tmpDir, 'package.json'), JSON.stringify({ name: 'my-lib', scripts: { 'dev:link': 'npm link matterbridge' } }));
     expect(await isPlugin(tmpDir)).toBe(false);
+  });
+});
+
+describe('isLibrary', () => {
+  const libraryOptions = { declaration: true, declarationMap: true, sourceMap: true, removeComments: false };
+
+  it('returns true when all four compiler options match the library pattern', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({ compilerOptions: libraryOptions }));
+    expect(await isLibrary(tmpDir)).toBe(true);
+  });
+
+  it('returns false when declaration is false', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({ compilerOptions: { ...libraryOptions, declaration: false } }));
+    expect(await isLibrary(tmpDir)).toBe(false);
+  });
+
+  it('returns false when declarationMap is false', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({ compilerOptions: { ...libraryOptions, declarationMap: false } }));
+    expect(await isLibrary(tmpDir)).toBe(false);
+  });
+
+  it('returns false when sourceMap is false', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({ compilerOptions: { ...libraryOptions, sourceMap: false } }));
+    expect(await isLibrary(tmpDir)).toBe(false);
+  });
+
+  it('returns false when removeComments is true', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({ compilerOptions: { ...libraryOptions, removeComments: true } }));
+    expect(await isLibrary(tmpDir)).toBe(false);
+  });
+
+  it('returns false when compilerOptions is absent', async () => {
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), JSON.stringify({}));
+    expect(await isLibrary(tmpDir)).toBe(false);
+  });
+
+  it('throws when tsconfig.build.production.json does not exist', async () => {
+    await expect(isLibrary(tmpDir)).rejects.toThrow();
   });
 });
 

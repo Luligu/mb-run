@@ -51,8 +51,25 @@ export async function parsePackageJson(rootDir: string): Promise<Record<string, 
  */
 export async function isPlugin(rootDir: string): Promise<boolean> {
   const pkg = (await parsePackageJson(rootDir)) as { scripts?: Record<string, string> };
-
   return pkg?.scripts?.start === 'matterbridge' || pkg?.scripts?.['dev:link'] === 'npm link --no-fund --no-audit matterbridge';
+}
+
+/**
+ * Checks if the current package.json scripts indicate we're running in a library context.
+ *
+ * @param {string} rootDir Repository root directory containing the package.json to inspect.
+ * @returns {Promise<boolean>} True if we're in a library context.
+ */
+export async function isLibrary(rootDir: string): Promise<boolean> {
+  const production = JSON.parse(await readFile(path.join(rootDir, 'tsconfig.build.production.json'), 'utf8')) as {
+    compilerOptions?: { declaration: boolean; declarationMap: boolean; sourceMap: boolean; removeComments: boolean };
+  };
+  return (
+    production?.compilerOptions?.declaration === true &&
+    production.compilerOptions.declarationMap === true &&
+    production.compilerOptions.sourceMap === true &&
+    production.compilerOptions.removeComments === false
+  );
 }
 
 /**
