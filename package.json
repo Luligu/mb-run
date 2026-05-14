@@ -73,12 +73,7 @@
     "cleanBuildProduction": "npm run clean && npm run buildProduction",
     "deepClean": "npm run clean && npx shx rm -rf coverage jest temp package-lock.json npm-shrinkwrap.json .cache/* .cache/.[!.]* .cache/..?* node_modules/* node_modules/.[!.]* node_modules/..?*",
     "watch": "tsc --project tsconfig.build.json --watch",
-    "pretest": "node scripts/pretest.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest --reporter verbose",
-    "test:verbose": "npm run test -- --reporter verbose",
-    "test:coverage": "npm run test -- --reporter verbose --coverage",
-    "test:typecheck": "tsc --project tsconfig.vitest.json --isolatedModules false --noEmit",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "lint": "eslint --cache --cache-location .cache/.eslintcache --max-warnings=0 .",
     "lint:fix": "eslint --cache --cache-location .cache/.eslintcache --fix --max-warnings=0 .",
     "lint:debug": "eslint --cache --cache-location .cache/.eslintcache --max-warnings=0 --debug",
@@ -107,15 +102,20 @@
     "npmPack": "npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm pack && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset",
     "npmPublishTagDev": "npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm publish --tag dev && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset",
     "npmPublishTagEdge": "npx shx cp package.json package.json.backup && node scripts/version.mjs edge && npm run prepublishOnly && npm publish --tag edge && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset",
-    "npmPublishTagLatest": "npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset"
+    "npmPublishTagLatest": "npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset",
+    "pretest": "node scripts/pretest.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest --reporter verbose",
+    "test:verbose": "npm run test -- --reporter verbose",
+    "test:coverage": "npm run test -- --reporter verbose --coverage",
+    "test:typecheck": "tsc --project tsconfig.vitest.json --isolatedModules false --noEmit"
   },
   "dependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260510.1",
+    "@typescript/native-preview": "7.0.0-dev.20260514.1",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.0",
-    "npm-check-updates": "22.1.1",
-    "oxfmt": "0.48.0",
-    "oxlint": "1.63.0",
+    "oxfmt": "0.49.0",
+    "oxlint": "1.64.0",
     "oxlint-tsgolint": "0.22.1"
   },
   "devDependencies": {
@@ -123,8 +123,8 @@
     "@eslint/json": "1.2.0",
     "@eslint/markdown": "8.0.1",
     "@types/cross-spawn": "6.0.6",
-    "@types/node": "25.6.2",
-    "@vitest/coverage-v8": "4.1.5",
+    "@types/node": "25.7.0",
+    "@vitest/coverage-v8": "4.1.6",
     "@vitest/eslint-plugin": "1.6.17",
     "cross-env": "10.1.0",
     "eslint": "10.3.0",
@@ -133,10 +133,11 @@
     "eslint-plugin-n": "18.0.1",
     "eslint-plugin-prettier": "5.5.5",
     "eslint-plugin-simple-import-sort": "13.0.0",
+    "npm-check-updates": "22.2.0",
     "prettier": "3.8.3",
     "shx": "0.4.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.2",
-    "vitest": "4.1.5"
+    "typescript-eslint": "8.59.3",
+    "vitest": "4.1.6"
   }
 }
