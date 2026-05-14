@@ -1,5 +1,17 @@
+/**
+ * pack-workspaces.mjs
+ * Version: 1.0.1
+ *
+ * Packs all workspace packages into tarballs.
+ *
+ * Usage:
+ *   node scripts/pack-workspaces.mjs [--dry-run]
+ */
+
+/* eslint-disable n/no-extraneous-import */
 /* eslint-disable no-console */
 /* eslint-disable jsdoc/require-jsdoc */
+
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -53,7 +65,7 @@ function readJson(text, filePathForErrors) {
   try {
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`Invalid JSON in ${filePathForErrors}: ${err instanceof Error ? err.message : String(err)}`);
+    throw new Error(`Invalid JSON in ${filePathForErrors}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
   }
 }
 
@@ -205,9 +217,9 @@ if (tag !== 'dev' && tag !== 'edge' && tag !== 'git' && tag !== 'local' && tag !
   throw new Error('Missing or invalid --tag (expected dev, edge, git, local, or latest).');
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
+const repoRoot = path.resolve(dirname, '..');
 const rootPackageJsonPath = path.join(repoRoot, 'package.json');
 
 const rootRaw = await fs.readFile(rootPackageJsonPath, 'utf8');
@@ -292,6 +304,10 @@ try {
   console.log(`package.json files stripped: ${stripSummary.changedFiles}`);
   console.log(`fields removed (total): ${stripSummary.removedCount}`);
   console.log('');
+
+  runCmd(repoRoot, false, 'npm', ['install', '--package-lock-only', '--no-fund', '--no-audit', '--omit=dev']);
+  runCmd(repoRoot, false, 'npm', ['pkg', 'delete', 'overrides', 'devDependencies', 'scripts', 'workspaces']);
+  runCmd(repoRoot, false, 'npm', ['shrinkwrap']);
 
   console.log('packing root package: package.json');
   runCmd(repoRoot, dryRun, 'npm', ['pack']);
