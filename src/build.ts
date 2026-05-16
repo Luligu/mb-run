@@ -32,6 +32,7 @@ const BIN_ENTRYPOINTS: Record<string, [string, string]> = {
   tsc: ['typescript', 'bin/tsc'],
   jest: ['jest', 'bin/jest.js'],
   eslint: ['eslint', 'bin/eslint.js'],
+  oxlint: ['oxlint', 'bin/oxlint'],
   prettier: ['prettier', 'bin/prettier.cjs'],
 };
 

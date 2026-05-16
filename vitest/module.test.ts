@@ -229,6 +229,13 @@ describe('main — --oxformat', () => {
   });
 });
 
+describe('main — --oxlint', () => {
+  it('--dry-run --oxlint resolves without error', async () => {
+    setArgs('--dry-run', '--oxlint');
+    await expect(main()).resolves.toBeUndefined();
+  });
+});
+
 describe('main — --upgrade', () => {
   it('--dry-run --upgrade (no sub-args) resolves without error', async () => {
     setArgs('--dry-run', '--upgrade');

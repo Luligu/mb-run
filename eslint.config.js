@@ -163,6 +163,8 @@ export default defineConfig([
       '@typescript-eslint/promise-function-async': 'off', // Require Promise-returning functions to be async
       '@typescript-eslint/require-await': 'off', // Disallow async functions without any await expression
       'jsdoc/require-jsdoc': 'off', // Disable JSDoc rule in test files
+      'no-console': 'off', // Allow console references in test files (e.g. vi.mocked(console.log))
+      'vitest/valid-expect': ['error', { maxArgs: 2 }], // Allow expect(value, message) — Vitest supports the 2-arg form
     },
   },
   {

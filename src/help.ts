@@ -29,36 +29,51 @@ import { brightBlack, brightCyan, brightWhite, brightYellow, cyan, green, log } 
  */
 export function printUsage(): void {
   const title = `${brightCyan('mb-run')} ${brightBlack('version')} ${brightWhite(pkg.version)}`;
-  const usageLine = `${brightYellow('Usage:')} ${green('mb-run')} [--install] [--reset [--production]] [--clean] [--deep-clean] [--build [--production]] [--watch] [--test] [--lint|--lint-fix] [--format|--format-check] [--oxformat] [--sort] [--update] [--upgrade [jest] [vitest] [promiserules] [typeaware] [experimental]] [--pack [dev|edge|git|local|next|alpha|beta]] [--publish [dev|edge|git|local|next|alpha|beta]] [--dry-run] [--version [dev|edge|git|local|next|alpha|beta]] [--info]`;
+
+  // Formats one option row with a 26-char visible flag+args column.
+  const f = (flag: string, args = ''): string => {
+    const visible = args ? `${flag} ${args}` : flag;
+    const pad = ' '.repeat(Math.max(1, 26 - visible.length));
+    return args ? `${green(flag)} ${brightBlack(args)}${pad}` : `${green(flag)}${pad}`;
+  };
+
   const msg = `\
 ${title}
 
 Runs the same operations as the package.json scripts in the current working directory, but executes the local
 binaries in node_modules/.bin directly (does not call npm scripts).
 
-${usageLine}
+${brightYellow('Usage:')} ${green('mb-run')} ${brightBlack('[options...]')}
 
-${brightYellow('Notes:')}
-- ${cyan('Multiple flags')} are run in this order: ${brightBlack('install → update → deep-clean → reset → clean → build → test → format → oxformat → lint → sort → watch')}
-- ${green('--install')} runs npm install --no-fund --no-audit
-- ${green('--reset')} empties .cache/ and node_modules/ (keeps directories for devcontainer named volumes), then runs npm install and build
-- ${green('--deep-clean')} empties .cache/ and node_modules/ like --reset but skips the install and build steps
-- ${green('--test')} sets NODE_OPTIONS="--experimental-vm-modules --no-warnings" like the existing scripts
-- ${green('--lint-fix')} runs eslint with --fix
-- ${green('--format-check')} runs prettier with --check
-- ${green('--oxformat')} formats all source files using the oxfmt JS API; reads configuration from .oxfmtrc.json in the project root when present
-- ${green('--build')} prefers per-workspace tsconfig.build.json when present
-- ${green('--build --production')} prefers tsconfig.build.production.json, else tsconfig.build.json, else tsconfig.json
-- ${green('--reset --production')} performs a reset and rebuilds using the production tsconfig
-- ${green('--sort')} sorts top-level keys in all package.json files (root and workspaces) using the canonical key order
-- ${green('--update')} installs npm-check-updates (--no-save) then runs ncu -u across all workspaces
-- ${green('--upgrade')} [jest] [vitest] [promiserules] [typeaware] [experimental] upgrades config files in the target repo; when keywords are provided only those features are enabled, otherwise jest/vitest are auto-detected and promise-rules is enabled by default
-- ${green('--pack')} [tag] backs up package.json, cleans, builds for production, strips devDependencies and scripts, empties node_modules, runs npm install --omit=dev, npm shrinkwrap, npm pack, then restores package.json and reinstalls; if a tag is provided it first bumps the version
-- ${green('--publish')} [tag] backs up all package.json files (root and workspaces), strips devDependencies and scripts from each, runs npm publish --dry-run for root and every workspace, then restores all package.json files; if a tag is provided it first bumps the version
-- ${green('--dry-run')} logs intended actions without changing files or executing commands
-- ${green('--version')} updates versions for the current package and all configured workspaces
-- ${green('--verbose')} prints each external command before it is executed
-- ${green('--info')} prints system information (platform, hostname, memory, network, Node.js/npm versions)
+${brightYellow('Execution order:')} ${brightBlack('install → update → deep-clean → reset → clean → build → test → format → oxformat → lint → oxlint → sort → watch')}
+
+${brightYellow('Options:')}
+  ${f('--install')}run npm install --no-fund --no-audit
+  ${f('--reset', '[--production]')}empty .cache/ and node_modules/, run npm install and build; --production uses tsconfig.build.production.json
+  ${f('--deep-clean')}empty .cache/ and node_modules/ like --reset but skips install and build
+  ${f('--clean')}remove build output directories
+  ${f('--build', '[--production]')}compile with tsc; prefers tsconfig.build.json; --production prefers tsconfig.build.production.json
+  ${f('--watch')}run tsc in watch mode
+  ${f('--test')}run tests with NODE_OPTIONS="--experimental-vm-modules --no-warnings"
+  ${f('--lint')}run eslint --max-warnings=0
+  ${f('--lint-fix')}run eslint --fix --max-warnings=0
+  ${f('--format')}run prettier --write
+  ${f('--format-check')}run prettier --check
+  ${f('--oxformat')}format source files via oxfmt JS API (reads .oxfmtrc.json when present)
+  ${f('--oxlint')}lint source files via oxlint (reads .oxlintrc.json when present, otherwise uses bundled default)
+  ${f('--sort')}sort top-level keys in all package.json files
+  ${f('--update')}run ncu -u across all workspaces then npm install
+  ${f('--upgrade', '[keywords...]')}upgrade config files; keywords: jest | vitest | promiserules | typeaware | experimental
+  ${f('--pack', '[tag]')}back up, clean, build, npm pack, and restore; bumps version first if tag is provided
+  ${f('--publish', '[tag]')}back up, npm publish for root and all workspaces, and restore; bumps version first if tag is provided
+  ${f('--esbuild')}bundle with esbuild
+  ${f('--version', '[tag]')}update versions for the current package and all workspaces
+  ${f('--dry-run')}log intended actions without executing commands or writing files
+  ${f('--verbose')}print each command before it is executed
+  ${f('--info')}print system information (platform, hostname, memory, network, Node.js/npm versions)
+  ${green('--help')}, ${green('-h')}${' '.repeat(16)}print this help message
+
+  ${brightBlack('Version tags:')} dev | edge | git | local | next | alpha | beta
 `;
 
   log(msg);

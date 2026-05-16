@@ -48,6 +48,10 @@
   "git.autoRepositoryDetection": false,
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "js/ts.tsdk.promptToUseWorkspaceVersion": false,
+  "js/ts.experimental.useTsgo": false,
+  "oxc.enable": false,
+  "oxc.enable.oxlint": false,
+  "oxc.enable.oxfmt": false,
   "chat.useCustomizationsInParentRepositories": false,
   "chat.useClaudeMdFile": true,
   "chat.instructionsFilesLocations": {

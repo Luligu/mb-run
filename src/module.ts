@@ -33,6 +33,7 @@ import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
 import { initLogger } from './logger.js';
 import { runOxFormat } from './oxfmt.js';
+import { runOxLint } from './oxlint.js';
 import { runPack } from './pack.js';
 import { runPublish } from './publish.js';
 import { sortAll } from './sort.js';
@@ -79,6 +80,7 @@ export async function main(): Promise<void> {
     '--format',
     '--format-check',
     '--oxformat',
+    '--oxlint',
     '--dry-run',
     '--sort',
     '--update',
@@ -191,6 +193,7 @@ export async function main(): Promise<void> {
     format: rawArgs.includes('--format'),
     formatCheck: rawArgs.includes('--format-check'),
     oxformat: rawArgs.includes('--oxformat'),
+    oxlint: rawArgs.includes('--oxlint'),
     sort: rawArgs.includes('--sort'),
     update: rawArgs.includes('--update'),
     upgrade: rawArgs.includes('--upgrade'),
@@ -351,6 +354,12 @@ export async function main(): Promise<void> {
     log(`${savePos()}⏳ Linting...`);
     await runBin('eslint', ['--cache', '--cache-location', '.cache/.eslintcache', '--max-warnings=0', '.'], { ...buildOpts, mode: 'build', watch: false });
     log(`${restorePos()}${green('✅')} Lint complete in ${getElapsed()}.${clearEnd()}`);
+  }
+
+  if (want.oxlint) {
+    log(`${savePos()}⏳ Linting with oxlint...`);
+    await runOxLint(buildOpts);
+    log(`${restorePos()}${green('✅')} Oxlint complete in ${getElapsed()}.${clearEnd()}`);
   }
 
   if (want.sort) {
