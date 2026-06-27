@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+import { main } from "../dist/module.js";
+import { ExitError } from "../dist/spawn.js";
+
+try {
+  await main();
+} catch (error) {
+  const exitCode = error instanceof ExitError ? error.code : 1;
+
+  // oxlint-disable-next-line no-console
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = exitCode;
+}

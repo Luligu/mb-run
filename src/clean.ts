@@ -1,0 +1,245 @@
+/**
+ * @description This file contains file-system clean utilities for the mb-run command.
+ * @file clean.ts
+ * @author Luca Liguori
+ * @created 2026-05-01
+ * @version 1.0.0
+ * @license Apache-2.0
+ *
+ * Copyright 2026, 2027, 2028 Luca Liguori.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Clean modes at a glance:
+ *
+ * --clean:
+ * - removes .tsbuildinfo files below the root, skipping node_modules
+ * - removes root build, dist, coverage, jest, temp, and npm-shrinkwrap.json
+ * - empties root .cache when it exists
+ * - removes build, dist, coverage, jest, temp, .cache, node_modules,
+ *   package-lock.json, and npm-shrinkwrap.json from each package workspace
+ * - leaves app workspaces alone; the apps cleanup call is kept below but disabled
+ *
+ * --deep-clean:
+ * - does everything --clean does
+ * - also empties root node_modules without removing the directory
+ */
+
+import { access, readdir, rm } from 'node:fs/promises';
+import path from 'node:path';
+
+import { logDelete, logWarning } from './logger.js';
+
+const LOCKED_REMOVE_ERROR_CODES = new Set(['EPERM', 'EBUSY', 'ENOTEMPTY']);
+
+/** Context shared by all clean operations. */
+export interface CleanOptions {
+  /** Root directory of the project. */
+  rootDir: string;
+  /** When true, log but skip file-system writes. */
+  dryRun: boolean;
+}
+
+/**
+ * Checks if a file path exists.
+ *
+ * @param {string} filePath File path.
+ * @returns {Promise<boolean>} True if exists.
+ */
+export async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gets locked-path removal details from an error.
+ *
+ * @param {unknown} error Error thrown by `rm`.
+ * @param {string} targetPath Path removal was attempted on.
+ * @returns {{ code: string; path: string } | null} Locked-path details when the error should warn and continue.
+ */
+function getLockedRemoveError(error: unknown, targetPath: string): { code: string; path: string } | null {
+  if (typeof error !== 'object' || error === null || !('code' in error) || typeof error.code !== 'string' || !LOCKED_REMOVE_ERROR_CODES.has(error.code)) return null;
+  const errorPath = 'path' in error && typeof error.path === 'string' ? error.path : targetPath;
+  return { code: error.code, path: errorPath };
+}
+
+/**
+ * Removes a path if it exists.
+ *
+ * @param {string} targetPath Path to remove.
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when removed.
+ */
+async function removePath(targetPath: string, opts: CleanOptions): Promise<void> {
+  logDelete(targetPath);
+  if (opts.dryRun) return;
+  try {
+    await rm(targetPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 10 });
+  } catch (error) {
+    const lockedError = getLockedRemoveError(error, targetPath);
+    if (lockedError) {
+      logWarning(`Skipped locked path (${lockedError.code}): ${lockedError.path} - likely held by a running process.`);
+      return;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Empties a directory without removing it (devcontainer volume friendly).
+ *
+ * @param {string} dirPath Directory path.
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when emptied.
+ */
+export async function emptyDir(dirPath: string, opts: CleanOptions): Promise<void> {
+  if (!(await fileExists(dirPath))) return;
+  const entries = await readdir(dirPath, { withFileTypes: true });
+  await Promise.all(
+    entries.map(async (entry) => {
+      await removePath(path.join(dirPath, entry.name), opts);
+    }),
+  );
+}
+
+/**
+ * Removes all `.tsbuildinfo` files under a root, skipping node_modules.
+ *
+ * @param {string} rootDir Root directory.
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when done.
+ */
+async function removeTsBuildInfo(rootDir: string, opts: CleanOptions): Promise<void> {
+  const stack = [rootDir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    /* v8 ignore next -- TypeScript type-guard; stack.pop() on a non-empty array never returns undefined at runtime */
+    if (!current) break;
+
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      // Missing directory or unreadable; ignore.
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules') continue;
+        stack.push(path.join(current, entry.name));
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith('.tsbuildinfo')) {
+        await removePath(path.join(current, entry.name), opts);
+      }
+    }
+  }
+}
+
+/**
+ * Removes common build/test artifacts from workspace folders.
+ *
+ * @param {string} parentDir Parent directory that contains workspaces.
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when done.
+ */
+export async function cleanWorkspaceArtifacts(parentDir: string, opts: CleanOptions): Promise<void> {
+  let workspaces;
+  try {
+    workspaces = await readdir(parentDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  await Promise.all(
+    workspaces
+      .filter((d) => d.isDirectory())
+      .map(async (d) => {
+        const wsRoot = path.join(parentDir, d.name);
+        await Promise.all([
+          removePath(path.join(wsRoot, 'build'), opts),
+          removePath(path.join(wsRoot, 'dist'), opts),
+          removePath(path.join(wsRoot, 'coverage'), opts),
+          removePath(path.join(wsRoot, 'jest'), opts),
+          removePath(path.join(wsRoot, 'temp'), opts),
+          removePath(path.join(wsRoot, '.cache'), opts),
+          removePath(path.join(wsRoot, 'node_modules'), opts),
+          removePath(path.join(wsRoot, 'package-lock.json'), opts),
+          removePath(path.join(wsRoot, 'npm-shrinkwrap.json'), opts),
+        ]);
+
+        await Promise.all([emptyDir(path.join(wsRoot, '.cache'), opts), emptyDir(path.join(wsRoot, 'node_modules'), opts)]);
+      }),
+  );
+}
+
+/**
+ * Shared clean pipeline for both --clean and --reset.
+ *
+ * @param {boolean} emptyRootNodeModules Whether to empty root node_modules.
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when done.
+ */
+export async function commonClean(emptyRootNodeModules: boolean, opts: CleanOptions): Promise<void> {
+  await removeTsBuildInfo(opts.rootDir, opts);
+
+  await Promise.all([
+    removePath(path.join(opts.rootDir, 'build'), opts),
+    removePath(path.join(opts.rootDir, 'dist'), opts),
+    removePath(path.join(opts.rootDir, 'coverage'), opts),
+    removePath(path.join(opts.rootDir, 'jest'), opts),
+    removePath(path.join(opts.rootDir, 'temp'), opts),
+    removePath(path.join(opts.rootDir, 'npm-shrinkwrap.json'), opts),
+  ]);
+
+  // oxlint-disable-next-line unicorn/no-single-promise-in-promise-methods
+  await Promise.all([
+    cleanWorkspaceArtifacts(path.join(opts.rootDir, 'packages'), opts),
+    // cleanWorkspaceArtifacts(path.join(opts.rootDir, 'apps'), opts),
+  ]);
+
+  // Always empty root .cache (don't create it on clean).
+  await emptyDir(path.join(opts.rootDir, '.cache'), opts);
+
+  if (emptyRootNodeModules) {
+    await emptyDir(path.join(opts.rootDir, 'node_modules'), opts);
+  }
+}
+
+/**
+ * Performs a reset-style clean without relying on node_modules tools.
+ *
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when done.
+ */
+export async function resetClean(opts: CleanOptions): Promise<void> {
+  await commonClean(true, opts);
+}
+
+/**
+ * Clean artifacts (like package.json clean) without reinstalling.
+ *
+ * @param {CleanOptions} opts Clean options.
+ * @returns {Promise<void>} Resolves when done.
+ */
+export async function cleanOnly(opts: CleanOptions): Promise<void> {
+  await commonClean(false, opts);
+}
