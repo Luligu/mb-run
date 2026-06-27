@@ -282,10 +282,7 @@ function main() {
   console.log();
 
   section('Tag reachability');
-  const tagOnlyCount =
-    git(['rev-list', '--tags', '--not', '--branches', '--count'], {
-      allowFailure: true,
-    }) || '0';
+  const tagOnlyCount = git(['rev-list', '--tags', '--not', '--branches', '--count'], { allowFailure: true }) || '0';
   printKeyValue('Tag-only commits (should be 0):', tagOnlyCount, Number(tagOnlyCount) === 0 ? colors.green : colors.yellow);
   if (git(['remote', 'get-url', remote], { allowFailure: true }) !== undefined) {
     const remoteTagCount = parseRemoteTagCount(remote);

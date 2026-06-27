@@ -180,10 +180,7 @@ function printTagTable(tags, colorizer = (value) => value) {
 }
 
 async function confirmPrompt() {
-  const reader = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const reader = createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await new Promise((resolve) => {
       reader.question(colors.bold(colors.yellow('Proceed? [y/N] ')), resolve);

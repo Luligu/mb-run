@@ -23,15 +23,10 @@ const root = process.cwd();
 // away, so warn and continue instead of aborting the whole clean.
 const rm = (dir, target) => {
   try {
-    rmSync(resolve(dir, target), {
-      recursive: true,
-      force: true,
-      maxRetries: 5,
-      retryDelay: 100,
-    });
+    rmSync(resolve(dir, target), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   } catch (error) {
     if (error.code === 'EPERM' || error.code === 'EBUSY' || error.code === 'ENOTEMPTY') {
-      // oxlint-disable-next-line no-console
+      // eslint-disable-next-line no-console
       console.warn(`Skipped locked path (${error.code}): ${error.path ?? target} — likely held by a running process.`);
       return;
     }

@@ -220,14 +220,8 @@ async function main() {
 
   const [lastMonthData, currentDayData] = await Promise.all([fetchLastMonthDownloads(name), fetchCurrentDayDownloads(name)]);
 
-  const rows = lastMonthData.downloads.map((r) => ({
-    day: String(r.day),
-    downloads: Number(r.downloads) || 0,
-  }));
-  const currentDayRow = {
-    day: String(currentDayData.end),
-    downloads: Number(currentDayData.downloads) || 0,
-  };
+  const rows = lastMonthData.downloads.map((r) => ({ day: String(r.day), downloads: Number(r.downloads) || 0 }));
+  const currentDayRow = { day: String(currentDayData.end), downloads: Number(currentDayData.downloads) || 0 };
   const currentDayPending = currentDayRow.day > lastMonthData.end && currentDayRow.downloads === 0;
   if (!rows.some((r) => r.day === currentDayRow.day)) {
     rows.push(currentDayRow);

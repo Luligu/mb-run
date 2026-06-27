@@ -102,10 +102,7 @@ async function promptToContinue({ tag, title, description }) {
   // eslint-disable-next-line no-console
   console.log('---');
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await rl.question('Press Enter to create the release, or type "no" to abort: ');
     const normalized = (answer ?? '').trim().toLowerCase();

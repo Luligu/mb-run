@@ -27,12 +27,7 @@ const root = process.cwd();
 // so warn and continue instead of aborting the whole clean.
 const rm = (dir, target) => {
   try {
-    rmSync(resolve(dir, target), {
-      recursive: true,
-      force: true,
-      maxRetries: 5,
-      retryDelay: 100,
-    });
+    rmSync(resolve(dir, target), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   } catch (error) {
     if (error.code === 'EPERM' || error.code === 'EBUSY' || error.code === 'ENOTEMPTY') {
       // eslint-disable-next-line no-console

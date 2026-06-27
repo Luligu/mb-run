@@ -33,12 +33,7 @@ Dev containers have networking limitations depending on the host OS and Docker s
     "source=${localWorkspaceFolderBasename}-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
     "source=${localWorkspaceFolderBasename}-cache,target=${containerWorkspaceFolder}/.cache,type=volume",
     "source=claude-code,target=/home/node/.claude,type=volume",
-    "source=codex,target=/home/node/.codex,type=volume",
-    /* Add additional mounts for the node_modules of the library, monorepo, plugin and tool packages to improve performance when working on them. */
-    "source=${localWorkspaceFolderBasename}-library-node_modules,target=${containerWorkspaceFolder}/vendor/library/node_modules,type=volume",
-    "source=${localWorkspaceFolderBasename}-monorepo-node_modules,target=${containerWorkspaceFolder}/vendor/monorepo/node_modules,type=volume",
-    "source=${localWorkspaceFolderBasename}-plugin-node_modules,target=${containerWorkspaceFolder}/vendor/plugin/node_modules,type=volume",
-    "source=${localWorkspaceFolderBasename}-tool-node_modules,target=${containerWorkspaceFolder}/vendor/tool/node_modules,type=volume"
+    "source=codex,target=/home/node/.codex,type=volume"
   ],
   // Create the matterbridge Docker network if it doesn't exist, then pull the base image (runs on the HOST before the container starts).
   "initializeCommand": "(docker network inspect matterbridge || docker network create matterbridge) && docker pull mcr.microsoft.com/devcontainers/javascript-node:24-trixie",

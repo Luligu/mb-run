@@ -130,10 +130,7 @@ function printKeyValue(key, value, colorizer) {
 }
 
 async function confirmPrompt() {
-  const reader = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const reader = createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await new Promise((resolve) => {
       reader.question(colors.bold(colors.yellow('Proceed? [y/N] ')), resolve);
@@ -187,9 +184,7 @@ function normalizeRepositoryUrl(remoteUrl) {
  * @returns {Promise<string | null>} Repository in owner/repo form, or null.
  */
 function getRepositoryFromGit() {
-  const result = runCapture('git', ['remote', 'get-url', 'origin'], {
-    allowFailure: true,
-  });
+  const result = runCapture('git', ['remote', 'get-url', 'origin'], { allowFailure: true });
   if (result.status !== 0) {
     return null;
   }
