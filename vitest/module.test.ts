@@ -382,8 +382,8 @@ describe('module', () => {
       await expect(main()).resolves.toBeUndefined();
     });
 
-    it('--dry-run --upgrade jest vitest promiserules typeaware experimental resolves without error', async () => {
-      setArgs('--dry-run', '--upgrade', 'jest', 'vitest', 'promiserules', 'typeaware', 'experimental');
+    it('--dry-run --upgrade known keywords resolves without error', async () => {
+      setArgs('--dry-run', '--upgrade', 'node', 'bun', 'jest', 'vitest', 'buntest', 'bundle', 'obfuscate', 'promiserules', 'typeaware', 'experimental');
       await expect(main()).resolves.toBeUndefined();
     });
 

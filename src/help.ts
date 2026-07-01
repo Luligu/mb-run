@@ -62,7 +62,7 @@ ${brightYellow('Options:')}
   ${f('--fix')}with --lint, apply automatic fixes
   ${f('--sort')}sort top-level keys in all package.json files
   ${f('--update')}run ncu -u across all workspaces then npm install
-  ${f('--upgrade', '[keywords...]')}upgrade config files; keywords: jest | vitest | promiserules | typeaware | experimental
+  ${f('--upgrade', '[keywords...]')}upgrade config files; keywords: node | bun | jest | vitest | buntest | bundle | obfuscate | promiserules | typeaware | experimental
   ${f('--pack', '[tag] [minify]')}back up, clean, build, npm pack, and restore; bumps version first if tag is provided
   ${f('--publish', '[tag]')}back up, npm publish for root and all workspaces, and restore; bumps version first if tag is provided
   ${f('--esbuild', '[minify]')}bundle with esbuild; minify compresses output and removes comments

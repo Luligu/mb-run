@@ -163,7 +163,7 @@ describe('help', () => {
     it('documents --upgrade keywords', () => {
       printUsage();
       expect(output).toContain('--upgrade');
-      for (const kw of ['jest', 'vitest', 'promiserules', 'typeaware', 'experimental']) {
+      for (const kw of ['node', 'bun', 'jest', 'vitest', 'buntest', 'bundle', 'obfuscate', 'promiserules', 'typeaware', 'experimental']) {
         expect(output, `missing upgrade keyword ${kw}`).toContain(kw);
       }
     });

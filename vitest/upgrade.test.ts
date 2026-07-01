@@ -45,6 +45,7 @@ import {
   fileReplace,
   fileReplaceFromTo,
   findMatchAfter,
+  mkDirSafe,
   pressyAnyKey,
   removeDirSafe,
   resolveDstPath,
@@ -200,6 +201,7 @@ describe('upgrade', () => {
     expect(vi.mocked(copyFileSync)).toHaveBeenCalled();
 
     expect(resolveDstPath(path.resolve('target.txt'))).toBe(path.resolve('target.txt'));
+    expect(mkDirSafe(path.resolve('target-dir'))).toBe(false);
     expect(unlinkSafe(path.resolve('target.txt'))).toBe(true);
     expect(removeDirSafe(path.resolve('target-dir'))).toBe(true);
     expect(vi.mocked(unlinkSync)).toHaveBeenCalled();
@@ -292,7 +294,9 @@ describe('upgrade', () => {
     expect(unlinkSafe(path.resolve('missing.txt'))).toBe(true);
     vi.mocked(existsSync).mockReturnValue(false);
     expect(unlinkSafe(path.resolve('missing.txt'))).toBe(false);
+    expect(mkDirSafe(path.resolve('missing-dir'))).toBe(true);
     expect(removeDirSafe(path.resolve('missing-dir'))).toBe(false);
+    expect(vi.mocked(mkdirSync)).toHaveBeenCalledWith(path.resolve('missing-dir'), { recursive: true });
   });
 
   it('copies directories and appends non-empty local files', () => {
@@ -329,6 +333,30 @@ describe('upgrade', () => {
       );
     }
     expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('workspaces field found'));
+  });
+
+  it('enables Bun test scaffolding and Bun tsconfig types from automator settings', async () => {
+    vi.clearAllMocks();
+    vi.mocked(parsePackageJson).mockResolvedValue({ ...structuredClone(packageJson), automator: { node: true, bun: true, buntest: true } });
+    vi.mocked(isMonorepo).mockResolvedValue(false);
+    vi.mocked(isPlugin).mockResolvedValue(false);
+    vi.mocked(isLibrary).mockResolvedValue(false);
+    vi.mocked(resolveWorkspacePackageJsonPaths).mockResolvedValue([]);
+    vi.mocked(existsSync).mockImplementation((filePath) => {
+      const normalizedPath = String(filePath).replaceAll('\\', '/');
+      if (normalizedPath.endsWith('/packages') || normalizedPath.endsWith('/buntest')) return false;
+      return true;
+    });
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{"compilerOptions":{"types":["node"]}}');
+
+    await runUpgrade({ rootDir: path.resolve('bun-enabled'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false });
+
+    expect(vi.mocked(copyFileSync)).toHaveBeenCalledWith(expect.stringContaining('bunfig.toml'), expect.stringContaining('bunfig.toml'));
+    expect(vi.mocked(mkdirSync)).toHaveBeenCalledWith(path.resolve('bun-enabled/buntest'), { recursive: true });
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.json'), expect.stringContaining('"bun"'), 'utf8');
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.build.json'), expect.stringContaining('"bun"'), 'utf8');
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.build.production.json'), expect.stringContaining('"bun"'), 'utf8');
   });
 
   it('covers terminal, destination-directory, and unchanged replacement paths', async () => {

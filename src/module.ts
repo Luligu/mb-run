@@ -136,7 +136,7 @@ export async function main(): Promise<void> {
   const rawPublishTag = typeof candidatePublishArg === 'string' && !candidatePublishArg.startsWith('-') ? candidatePublishArg : undefined;
 
   const upgradeIndex = rawArgs.indexOf('--upgrade');
-  const upgradeValidKeywords = new Set(['jest', 'vitest', 'promiserules', 'typeaware', 'experimental']);
+  const upgradeValidKeywords = new Set(['node', 'bun', 'jest', 'vitest', 'buntest', 'bundle', 'obfuscate', 'promiserules', 'typeaware', 'experimental']);
   const upgradeArgIndices = new Set<number>();
   const upgradeArgs = new Set<string>();
   if (upgradeIndex >= 0) {
@@ -295,8 +295,11 @@ export async function main(): Promise<void> {
       rootDir: repoRoot,
       isWindows,
       dryRun: dryRunMode,
+      useNode: upgradeArgs.has('node'),
+      useBun: upgradeArgs.has('bun'),
       enableJest: upgradeArgs.has('jest'),
       enableVitest: upgradeArgs.has('vitest'),
+      enableBuntest: upgradeArgs.has('buntest'),
       enableBundle: upgradeArgs.has('bundle'),
       enableObfuscate: upgradeArgs.has('obfuscate'),
     });

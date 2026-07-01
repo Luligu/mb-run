@@ -47,10 +47,16 @@ export interface UpgradeOptions {
   isWindows: boolean;
   /** When true, log but skip command execution and file-system writes. */
   dryRun: boolean;
+  /** When true, use Node.js for execution. */
+  useNode?: boolean;
+  /** When true, use Bun for execution. */
+  useBun?: boolean;
   /** When true, enable Jest tests. */
   enableJest: boolean;
   /** When true, enable Vitest tests. */
   enableVitest: boolean;
+  /** When true, enable Bun tests. */
+  enableBuntest?: boolean;
   /** When true, enable bundling for production builds */
   enableBundle?: boolean;
   /** When true, enable obfuscation for production builds */
@@ -107,6 +113,7 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<void> {
  * @param {boolean} [isLibrary] Whether the package.json belongs to a library (not an application or plugin).
  * @returns {Promise<void>} Resolves if the check passes, rejects with an error message if it fails.
  */
+// oxlint-disable-next-line max-lines-per-function
 export async function runPackageJsonUpgrade(
   opts: UpgradeOptions,
   pkgPath: string,
@@ -118,8 +125,11 @@ export async function runPackageJsonUpgrade(
 ): Promise<void> {
   const automator = pkgJson.automator as
     | {
+        node?: boolean;
+        bun?: boolean;
         jest?: boolean;
         vitest?: boolean;
+        buntest?: boolean;
         git?: boolean;
         version?: boolean;
         publish?: boolean;
@@ -129,8 +139,11 @@ export async function runPackageJsonUpgrade(
   log(`Automator:${reset()}\n${inspect(automator, true, 2, true)}`);
   const coverage = automator?.coverage;
   log(`Automator coverage:${reset()}\n${inspect(coverage, true, 2, true)}`);
+  if (automator?.node !== undefined) opts.useNode = automator.node;
+  if (automator?.bun !== undefined) opts.useBun = automator.bun;
   if (automator?.jest !== undefined) opts.enableJest = automator.jest;
   if (automator?.vitest !== undefined) opts.enableVitest = automator.vitest;
+  if (automator?.buntest !== undefined) opts.enableBuntest = automator.buntest;
   log(`Upgrading dependencies in ${magenta(dstDir)} ${isMonorepo ? '(monorepo)' : isWorkspace ? '(workspace)' : isPlugin ? '(plugin)' : isLibrary ? '(library)' : ''}...`);
 
   // Check package.json for existing keywords
@@ -287,8 +300,18 @@ export async function runPackageJsonUpgrade(
     unlinkSafe('prettier.config.js');
 
     // Copy config files
-    if (opts.enableJest) copyRecursive('jest.config.js', 'jest.config.js');
-    if (opts.enableVitest) copyRecursive('vite.config.ts', 'vite.config.ts');
+    if (opts.enableJest) {
+      copyRecursive('jest.config.js', 'jest.config.js');
+      mkDirSafe(path.join(dstDir, 'test'));
+    }
+    if (opts.enableVitest) {
+      copyRecursive('vite.config.ts', 'vite.config.ts');
+      mkDirSafe(path.join(dstDir, 'vitest'));
+    }
+    if (opts.enableBuntest) {
+      copyRecursive('bunfig.toml', 'bunfig.toml');
+      mkDirSafe(path.join(dstDir, 'buntest'));
+    }
     if (!opts.enableJest) {
       log(magenta('No Jest flag set, removing Jest...'));
       unlinkSafe('tsconfig.jest.json');
@@ -298,6 +321,10 @@ export async function runPackageJsonUpgrade(
       log(magenta('No Vitest flag set, removing Vitest...'));
       unlinkSafe('tsconfig.vitest.json');
       unlinkSafe('vite.config.ts');
+    }
+    if (!opts.enableBuntest) {
+      log(magenta('No Bun test flag set, removing Bun test...'));
+      unlinkSafe('bunfig.toml');
     }
   }
 
@@ -318,6 +345,11 @@ export async function runPackageJsonUpgrade(
   } else {
     copyRecursive('tsconfig.build.json', 'tsconfig.build.json');
     copyRecursive(isLibrary ? 'tsconfig.build.production.library.json' : 'tsconfig.build.production.json', 'tsconfig.build.production.json');
+    if (opts.useBun) {
+      fileReplace('tsconfig.json', '["node"', '["node", "bun"');
+      fileReplace('tsconfig.build.json', '["node"]', '["node", "bun"]');
+      fileReplace('tsconfig.build.production.json', '["node"]', '["node", "bun"]');
+    }
     if (isWorkspace) {
       fileReplace('tsconfig.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
       fileReplace('tsconfig.build.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
@@ -725,6 +757,22 @@ export function copyRecursive(sourceFileName: string, destinationFileName: strin
  */
 export function resolveDstPath(filePath: string): string {
   return path.isAbsolute(filePath) ? filePath : path.join(dstDir, filePath);
+}
+
+/**
+ * Creates the directory at the given path if it does not exist, logging the action. The path is resolved relative to the current dstDir.
+ *
+ * @param {string} dirPath Relative or absolute path to the directory to create.
+ * @returns {boolean} True if the directory was created, false if it already existed.
+ * @throws {Error} If the directory cannot be created.
+ */
+export function mkDirSafe(dirPath: string): boolean {
+  const resolvedPath = resolveDstPath(dirPath);
+  if (existsSync(resolvedPath)) return false;
+
+  mkdirSync(resolvedPath, { recursive: true });
+  log(`${green('Created:')} ${path.relative(process.cwd(), resolvedPath)}`);
+  return true;
 }
 
 /**

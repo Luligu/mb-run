@@ -1,0 +1,49 @@
+# Matterbridge — Bun-native test runner config v 1.0.1.
+
+[test]
+# Optional setup run before any test (env, global mocks):
+# preload = ["./buntest/setup.ts"]
+
+# Bun scans root for *.test.{js|jsx|ts|tsx} *_test.{js|jsx|ts|tsx} *.spec.{js|jsx|ts|tsx} *_spec.{js|jsx|ts|tsx}.
+pathIgnorePatterns = [
+  '**/.cache/',
+  '**/apps/',
+  '**/build/',
+  '**/chip/',
+  '**/coverage/',
+  '**/dist/',
+  '**/node_modules/',
+  '**/screenshots/',
+  '**/scripts/',
+  '**/src/',
+  '**/temp/',
+  '**/test/',
+  '**/vendor/',
+  '**/vitest/',
+]
+
+coveragePathIgnorePatterns = [
+  '**/.cache/',
+  '**/apps/',
+  '**/build/',
+  '**/chip/',
+  '**/coverage/',
+  '**/dist/',
+  '**/node_modules/',
+  '**/screenshots/',
+  '**/scripts/',
+  '**/src/mock/',
+  '**/temp/',
+  '**/vendor/',
+  '**/vitest/**',
+  '**/src/**/*.d.ts',
+  '**/src/**/*.{spec,test}.{ts,mts,cts}',
+]
+coverage = true
+coverageReporter = ['lcov', 'text']
+coverageDir = "./coverage/bun"
+
+# Exclude test files from coverage reports
+coverageSkipTestFiles = true
+# Don't use sourcemaps for coverage analysis
+coverageIgnoreSourcemaps = true
