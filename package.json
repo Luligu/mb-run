@@ -65,12 +65,13 @@
     "CHANGELOG.md"
   ],
   "automator": {
+    "node": true,
     "vitest": true,
     "native": true,
     "git": true,
     "version": false,
     "publish": false,
-    "frontend": true,
+    "frontend": false,
     "coverage": {
       "lines": 100,
       "functions": 100,
@@ -112,18 +113,18 @@
   "dependencies": {
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.1",
-    "npm-check-updates": "22.2.7",
+    "npm-check-updates": "22.2.9",
     "rollup": "4.62.2",
     "rollup-plugin-dts": "6.4.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "6.0.6",
-    "@types/node": "26.0.1",
-    "@typescript/native-preview": "7.0.0-dev.20260626.1",
+    "@types/node": "26.1.0",
+    "@typescript/native-preview": "7.0.0-dev.20260701.1",
     "@vitest/coverage-v8": "4.1.9",
-    "oxfmt": "0.56.0",
-    "oxlint": "1.71.0",
-    "oxlint-tsgolint": "0.23.0",
+    "oxfmt": "0.57.0",
+    "oxlint": "1.72.0",
+    "oxlint-tsgolint": "0.24.0",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
   }
