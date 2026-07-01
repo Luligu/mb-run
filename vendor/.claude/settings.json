@@ -1,3 +1,4 @@
+// Claude settings v. 1.0.1
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
@@ -21,7 +22,24 @@
       "Bash(git push --force:*)",
       "Bash(git push -f:*)"
     ],
-    "ask": ["Bash(git commit:*)", "Bash(npm install:*)", "Bash(npm i:*)"],
-    "allow": ["Bash(npm run typecheck)", "Bash(npm run build)", "Bash(npm run test:*)", "Bash(npm run lint)", "Bash(npm run format)"]
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(npm i:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(bun install:*)",
+      "Bash(bun i:*)",
+      "Bash(bun uninstall:*)",
+      "Bash(bun add:*)",
+      "Bash(bun remove:*)"
+    ],
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run format)",
+      "Bash(bun test)"
+    ]
   }
 }
