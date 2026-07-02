@@ -29,6 +29,10 @@ If you like this project and find it useful, please consider giving it a star on
 - [workflows]: Set node-version matrix back to: [22.x, 24.x, 26.x].
 - [package]: Add vendor to files.
 
+### Fix
+
+- [claude]: Fix malformed settings.json.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [0.0.2] - 2026-07-01

@@ -1,11 +1,13 @@
-// Claude settings v. 1.0.1
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Claude settings v. 1.0.2",
   "permissions": {
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./**/secrets/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
       "Bash(git pull:*)",
       "Bash(git merge:*)",
       "Bash(git push:*)",
@@ -17,10 +19,7 @@
       "Bash(git branch -d:*)",
       "Bash(git tag -d:*)",
       "Bash(git reflog expire:*)",
-      "Bash(git reflog delete:*)",
-      "Bash(git push --delete:*)",
-      "Bash(git push --force:*)",
-      "Bash(git push -f:*)"
+      "Bash(git reflog delete:*)"
     ],
     "ask": [
       "Bash(git commit:*)",
