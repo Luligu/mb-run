@@ -23,6 +23,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [0.0.3] - Dev branch
 
+### Added
+
+- [copilot]: Update VS Code settings to version 1.0.6 and add terminal auto-approve configurations.
+
 ### Changed
 
 - [package]: Update dependencies.
