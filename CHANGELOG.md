@@ -26,6 +26,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Added
 
 - [copilot]: Update VS Code settings to version 1.0.6 and add terminal auto-approve configurations.
+- [claude]: Update Claude settings to version 1.0.3 and add terminal auto-approve configurations.
 
 ### Changed
 

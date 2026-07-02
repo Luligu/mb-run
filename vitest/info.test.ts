@@ -1,9 +1,15 @@
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { systemInfo } from '../src/info.js';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, readFileSync: vi.fn(actual.readFileSync) };
+});
 
 describe('systemInfo', () => {
   let lines: string[];
@@ -150,6 +156,9 @@ describe('systemInfo', () => {
 
   it('npm line shows version from npm_config_user_agent when package.json candidates are absent', () => {
     vi.spyOn(os, 'networkInterfaces').mockReturnValue({});
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
     // Point execPath to a directory with no npm package.json
     const origExecPath = process.execPath;
     Object.defineProperty(process, 'execPath', {
@@ -168,6 +177,9 @@ describe('systemInfo', () => {
   });
 
   it('npm line shows "unavailable" when agent string does not match the npm/ pattern', () => {
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
     const origExecPath = process.execPath;
     Object.defineProperty(process, 'execPath', {
       value: '/nonexistent-dir/node',
@@ -185,6 +197,9 @@ describe('systemInfo', () => {
   });
 
   it('npm line shows "unavailable" when no npm source is accessible', () => {
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
     const origExecPath = process.execPath;
     Object.defineProperty(process, 'execPath', {
       value: '/nonexistent-dir/node',
