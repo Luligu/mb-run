@@ -289,7 +289,7 @@ export async function runPackageJsonUpgrade(
   if (!isWorkspace) {
     copyRecursive('.gitattributes', '.gitattributes');
 
-    copyRecursive('.gitignore', '.gitignore');
+    copyRecursive('.gitignore.txt', '.gitignore');
     appendFileToFileIfExists('.localignore', '.gitignore');
     appendFileToFileIfExists('.gitlocalignore', '.gitignore');
 
