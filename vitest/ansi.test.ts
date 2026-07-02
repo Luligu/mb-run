@@ -37,8 +37,8 @@ const ESC = '';
 describe('ansi', () => {
   describe('ANSI disabled (no TTY)', () => {
     beforeEach(() => {
-      vi.stubEnv('NO_COLOR', undefined as unknown as string);
-      vi.stubEnv('FORCE_COLOR', undefined as unknown as string);
+      delete process.env.NO_COLOR;
+      delete process.env.FORCE_COLOR;
       Object.defineProperty(process.stdout, 'isTTY', { value: undefined, writable: true, configurable: true });
     });
 
@@ -203,7 +203,7 @@ describe('ansi', () => {
 
   describe('ANSI enabled', () => {
     beforeEach(() => {
-      vi.stubEnv('NO_COLOR', undefined as unknown as string);
+      delete process.env.NO_COLOR;
       vi.stubEnv('TERM', 'xterm-256color');
       Object.defineProperty(process.stdout, 'isTTY', {
         value: true,

@@ -93,7 +93,7 @@ describe('publish', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockReadFile.mockResolvedValue(simplePkg as unknown as string);
+    mockReadFile.mockResolvedValue(simplePkg);
     mockReadFile.mockClear();
     mockWriteFile.mockClear();
     mockRunWorkspaceBuild.mockResolvedValue(undefined);
@@ -164,7 +164,7 @@ describe('publish', () => {
           JSON.stringify({
             ...JSON.parse(simplePkg),
             workspaces: ['packages/*'],
-          }) as unknown as string,
+          }),
         );
         await runPublish(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -177,7 +177,7 @@ describe('publish', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': { import: './dist/module.js', types: './dist/module.d.ts' } },
-          }) as unknown as string,
+          }),
         );
         await runPublish(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -191,7 +191,7 @@ describe('publish', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': './dist/module.js' },
-          }) as unknown as string,
+          }),
         );
         await runPublish(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -206,7 +206,7 @@ describe('publish', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': { import: './dist/module.js', types: './dist/module.d.ts' } },
-          }) as unknown as string,
+          }),
         );
         await runPublish(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -258,11 +258,11 @@ describe('publish', () => {
         mockResolveWorkspacePackageJsonPaths.mockResolvedValue([workspacePkgPath]);
         mockFileExists.mockResolvedValue(true);
         mockReadFile
-          .mockResolvedValueOnce(rootPackageLock as never)
-          .mockResolvedValueOnce(rootShrinkwrap as never)
-          .mockResolvedValueOnce(workspacePackageLock as never)
-          .mockResolvedValueOnce(workspaceShrinkwrap as never)
-          .mockResolvedValue(simplePkg as unknown as string);
+          .mockResolvedValueOnce(rootPackageLock)
+          .mockResolvedValueOnce(rootShrinkwrap)
+          .mockResolvedValueOnce(workspacePackageLock)
+          .mockResolvedValueOnce(workspaceShrinkwrap)
+          .mockResolvedValue(simplePkg);
         await runPublish(makeOpts());
         const workspaceDir = path.dirname(workspacePkgPath);
         expect(mockWriteFile).toHaveBeenCalledWith(path.join(rootDir, 'package-lock.json'), rootPackageLock);

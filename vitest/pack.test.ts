@@ -104,7 +104,7 @@ describe('pack', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockReadFile.mockResolvedValue(simplePkg as unknown as string);
+    mockReadFile.mockResolvedValue(simplePkg);
     mockReadFile.mockClear();
     mockWriteFile.mockClear();
     mockRunCommand.mockClear();
@@ -214,12 +214,12 @@ describe('pack', () => {
         const ws2Pkg = JSON.stringify({ name: 'ws-two' });
         mockResolveWorkspacePackageJsonPaths.mockResolvedValue([ws1, ws2]);
         mockReadFile
-          .mockResolvedValueOnce(rootPkg as unknown as string)
-          .mockResolvedValueOnce(rootPkg as unknown as string)
-          .mockResolvedValueOnce(ws1Pkg as unknown as string)
-          .mockResolvedValueOnce(ws2Pkg as unknown as string)
-          .mockResolvedValueOnce(ws1Pkg as unknown as string)
-          .mockResolvedValueOnce(ws2Pkg as unknown as string);
+          .mockResolvedValueOnce(rootPkg)
+          .mockResolvedValueOnce(rootPkg)
+          .mockResolvedValueOnce(ws1Pkg)
+          .mockResolvedValueOnce(ws2Pkg)
+          .mockResolvedValueOnce(ws1Pkg)
+          .mockResolvedValueOnce(ws2Pkg);
 
         await runPack(makeOpts());
 
@@ -233,7 +233,7 @@ describe('pack', () => {
           JSON.stringify({
             ...JSON.parse(simplePkg),
             bin: { 'my-cli': 'bin/my-cli.js' },
-          }) as unknown as string,
+          }),
         );
 
         await runPack(makeOpts());
@@ -250,7 +250,7 @@ describe('pack', () => {
               bundled: 'dist/bin/bundled.js',
               missing: 'bin/missing.js',
             },
-          }) as unknown as string,
+          }),
         );
 
         await runPack(makeOpts());
@@ -268,7 +268,7 @@ describe('pack', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': { import: './dist/module.js', types: './dist/module.d.ts' } },
-          }) as unknown as string,
+          }),
         );
         await runPack(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -282,7 +282,7 @@ describe('pack', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': './dist/module.js' },
-          }) as unknown as string,
+          }),
         );
         await runPack(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -297,7 +297,7 @@ describe('pack', () => {
             ...JSON.parse(simplePkg),
             types: 'dist/module.d.ts',
             exports: { '.': { import: './dist/module.js', types: './dist/module.d.ts' } },
-          }) as unknown as string,
+          }),
         );
         await runPack(makeOpts());
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as Record<string, unknown>;
@@ -315,10 +315,7 @@ describe('pack', () => {
         const packageLock = Buffer.from('original package lock');
         const shrinkwrap = Buffer.from('original shrinkwrap');
         mockFileExists.mockResolvedValue(true);
-        mockReadFile
-          .mockResolvedValueOnce(packageLock as never)
-          .mockResolvedValueOnce(shrinkwrap as never)
-          .mockResolvedValue(simplePkg as unknown as string);
+        mockReadFile.mockResolvedValueOnce(packageLock).mockResolvedValueOnce(shrinkwrap).mockResolvedValue(simplePkg);
         await runPack(makeOpts());
         expect(mockWriteFile).toHaveBeenCalledWith(path.join(rootDir, 'package-lock.json'), packageLock);
         expect(mockWriteFile).toHaveBeenCalledWith(path.join(rootDir, 'npm-shrinkwrap.json'), shrinkwrap);
@@ -358,12 +355,12 @@ describe('pack', () => {
         beforeEach(() => {
           mockResolveWorkspacePackageJsonPaths.mockResolvedValue([ws1, ws2]);
           mockReadFile
-            .mockResolvedValueOnce(rootPkg as unknown as string) // step 4: strip devDeps/scripts
-            .mockResolvedValueOnce(rootPkgStripped as unknown as string) // step 4b: root for merging
-            .mockResolvedValueOnce(ws1Pkg as unknown as string) // dep loop: ws1
-            .mockResolvedValueOnce(ws2Pkg as unknown as string) // dep loop: ws2
-            .mockResolvedValueOnce(ws1Pkg as unknown as string) // name loop: ws1
-            .mockResolvedValueOnce(ws2Pkg as unknown as string); // name loop: ws2
+            .mockResolvedValueOnce(rootPkg) // step 4: strip devDeps/scripts
+            .mockResolvedValueOnce(rootPkgStripped) // step 4b: root for merging
+            .mockResolvedValueOnce(ws1Pkg) // dep loop: ws1
+            .mockResolvedValueOnce(ws2Pkg) // dep loop: ws2
+            .mockResolvedValueOnce(ws1Pkg) // name loop: ws1
+            .mockResolvedValueOnce(ws2Pkg); // name loop: ws2
         });
 
         it('adds new workspace deps to root dependencies', async () => {
@@ -402,12 +399,12 @@ describe('pack', () => {
           const wsNoDeps = JSON.stringify({}); // no name, no dependencies
           mockReadFile.mockReset();
           mockReadFile
-            .mockResolvedValueOnce(rootNoDeps as unknown as string) // step 4: strip
-            .mockResolvedValueOnce(rootNoDeps as unknown as string) // step 4b: root (no deps field)
-            .mockResolvedValueOnce(wsNoDeps as unknown as string) // dep loop: ws1
-            .mockResolvedValueOnce(wsNoDeps as unknown as string) // dep loop: ws2
-            .mockResolvedValueOnce(wsNoDeps as unknown as string) // name loop: ws1
-            .mockResolvedValueOnce(wsNoDeps as unknown as string); // name loop: ws2
+            .mockResolvedValueOnce(rootNoDeps) // step 4: strip
+            .mockResolvedValueOnce(rootNoDeps) // step 4b: root (no deps field)
+            .mockResolvedValueOnce(wsNoDeps) // dep loop: ws1
+            .mockResolvedValueOnce(wsNoDeps) // dep loop: ws2
+            .mockResolvedValueOnce(wsNoDeps) // name loop: ws1
+            .mockResolvedValueOnce(wsNoDeps); // name loop: ws2
           await runPack(makeOpts());
           const merged = JSON.parse(mockWriteFile.mock.calls[1]?.[1] as string) as Record<string, unknown>;
           expect(merged['dependencies']).toEqual({});
