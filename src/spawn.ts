@@ -1,6 +1,6 @@
 /**
+ * @file src/spawn.ts
  * @description This file contains spawn utilities for running external commands.
- * @file spawn.ts
  * @author Luca Liguori
  * @created 2026-05-01
  * @version 1.0.0

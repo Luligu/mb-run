@@ -1,6 +1,6 @@
 /**
+ * @file src/clean.ts
  * @description This file contains file-system clean utilities for the mb-run command.
- * @file clean.ts
  * @author Luca Liguori
  * @created 2026-05-01
  * @version 1.0.0

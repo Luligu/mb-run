@@ -1,6 +1,6 @@
 /**
+ * @file src/eslint.ts
  * @description This file contains eslint linting utilities for the mb-run command.
- * @file eslint.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

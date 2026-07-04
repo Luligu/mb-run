@@ -1,3 +1,9 @@
+/**
+ * @file vitest/ansi.test.ts
+ * @description This file contains the tests for the ANSI styling utilities.
+ * @author Luca Liguori
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {

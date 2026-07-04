@@ -1,6 +1,6 @@
 /**
+ * @file src/build.ts
  * @description This file contains build and binary-runner utilities for the mb-run command.
- * @file build.ts
  * @author Luca Liguori
  * @created 2026-05-01
  * @version 1.0.0

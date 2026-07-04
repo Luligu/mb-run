@@ -1,3 +1,9 @@
+/**
+ * @file vitest/help.test.ts
+ * @description This file contains the tests for the CLI help text.
+ * @author Luca Liguori
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from '../src/help.js';

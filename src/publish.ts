@@ -1,6 +1,6 @@
 /**
+ * @file src/publish.ts
  * @description This file contains publish utilities for the mb-run command.
- * @file publish.ts
  * @author Luca Liguori
  * @created 2026-05-03
  * @version 1.0.0

@@ -1,6 +1,6 @@
 /**
+ * @file src/oxfmt.ts
  * @description This file contains oxfmt formatting utilities for the mb-run command.
- * @file oxfmt.ts
  * @author Luca Liguori
  * @created 2026-05-10
  * @version 1.0.0

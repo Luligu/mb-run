@@ -1,6 +1,6 @@
 /**
+ * @file src/update.ts
  * @description This file contains dependency update utilities for the mb-run command.
- * @file update.ts
  * @author Luca Liguori
  * @created 2026-05-03
  * @version 1.0.0

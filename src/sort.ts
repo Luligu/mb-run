@@ -1,6 +1,6 @@
 /**
+ * @file src/sort.ts
  * @description This file contains package.json property-sorting utilities for the mb-run command.
- * @file sort.ts
  * @author Luca Liguori
  * @created 2026-05-02
  * @version 1.0.0

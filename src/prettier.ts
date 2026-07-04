@@ -1,6 +1,6 @@
 /**
+ * @file src/prettier.ts
  * @description This file contains prettier formatting utilities for the mb-run command.
- * @file prettier.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

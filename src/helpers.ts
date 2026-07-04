@@ -1,6 +1,6 @@
 /**
+ * @file src/helpers.ts
  * @description This file contains shared helper utilities for the mb-run command.
- * @file helpers.ts
  * @author Luca Liguori
  * @created 2026-05-04
  * @version 1.0.0

@@ -1,6 +1,6 @@
 /**
+ * @file src/upgrade.ts
  * @description This file contains upgrade utilities for the mb-run command.
- * @file upgrade.ts
  * @author Luca Liguori
  * @created 2026-05-03
  * @version 1.0.0
@@ -23,6 +23,7 @@
 
 // oxlint-disable typescript/no-unsafe-type-assertion
 // oxlint-disable complexity
+
 import { execSync } from 'node:child_process';
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

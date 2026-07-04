@@ -1,3 +1,9 @@
+/**
+ * @file vitest/clean.test.ts
+ * @description This file contains the tests for the file-system clean utilities.
+ * @author Luca Liguori
+ */
+
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';

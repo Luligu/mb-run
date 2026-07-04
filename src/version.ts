@@ -1,6 +1,6 @@
 /**
+ * @file src/version.ts
  * @description This file contains versioning utilities for the mb-run command.
- * @file version.ts
  * @author Luca Liguori
  * @created 2026-05-01
  * @version 1.0.0

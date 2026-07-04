@@ -1,6 +1,6 @@
 /**
+ * @file src/module.ts
  * @description This file contains the main entry point for the mb-run command.
- * @file module.ts
  * @author Luca Liguori
  * @created 2026-04-30
  * @version 1.0.0

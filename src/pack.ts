@@ -1,6 +1,6 @@
 /**
+ * @file src/pack.ts
  * @description This file contains pack utilities for the mb-run command.
- * @file pack.ts
  * @author Luca Liguori
  * @created 2026-05-03
  * @version 1.0.0

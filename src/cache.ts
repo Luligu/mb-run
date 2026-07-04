@@ -1,6 +1,6 @@
 /**
+ * @file src/cache.ts
  * @description This file contains in-memory backup and restore utilities for package.json and tsconfig files.
- * @file cache.ts
  * @author Luca Liguori
  * @created 2026-05-02
  * @version 1.0.0

@@ -1,4 +1,11 @@
+/**
+ * @file vitest/format.test.ts
+ * @description This file contains the tests for the formatter selection utility.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runFormatter } from '../src/format.js';

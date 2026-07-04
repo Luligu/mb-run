@@ -1,4 +1,11 @@
+/**
+ * @file vitest/vitest.test.ts
+ * @description This file contains the tests for the Vitest test-runner utilities.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runVitest } from '../src/vitest.js';

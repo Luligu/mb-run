@@ -1,6 +1,6 @@
 /**
+ * @file src/dts.ts
  * @description This file contains declaration-bundling utilities for packed libraries.
- * @file dts.ts
  * @author Luca Liguori
  * @created 2026-06-24
  * @version 1.0.0

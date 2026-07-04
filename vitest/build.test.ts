@@ -1,3 +1,9 @@
+/**
+ * @file vitest/build.test.ts
+ * @description This file contains the tests for the build and binary-runner utilities.
+ * @author Luca Liguori
+ */
+
 import { EventEmitter } from 'node:events';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';

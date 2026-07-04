@@ -1,4 +1,11 @@
+/**
+ * @file vitest/dts.test.ts
+ * @description This file contains the tests for the declaration-bundling utilities.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- mocked Rollup bundle methods resolve without a value
+
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';

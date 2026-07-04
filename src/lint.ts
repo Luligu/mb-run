@@ -1,6 +1,6 @@
 /**
+ * @file src/lint.ts
  * @description This file contains the linter selection utility for the mb-run command.
- * @file lint.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

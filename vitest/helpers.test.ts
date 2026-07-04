@@ -1,3 +1,9 @@
+/**
+ * @file vitest/helpers.test.ts
+ * @description This file contains the tests for the shared helper utilities.
+ * @author Luca Liguori
+ */
+
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';

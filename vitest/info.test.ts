@@ -1,3 +1,9 @@
+/**
+ * @file vitest/info.test.ts
+ * @description This file contains the tests for the system information utilities.
+ * @author Luca Liguori
+ */
+
 import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import process from 'node:process';

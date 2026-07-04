@@ -1,6 +1,6 @@
 /**
+ * @file src/ansi.ts
  * @description This file contains ANSI styling utilities.
- * @file ansi.ts
  * @author Luca Liguori
  * @created 2026-04-30
  * @version 1.0.0

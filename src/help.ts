@@ -1,6 +1,6 @@
 /**
+ * @file src/help.ts
  * @description This file contains CLI help text for the mb-run command.
- * @file help.ts
  * @author Luca Liguori
  * @created 2026-04-30
  * @version 1.0.0

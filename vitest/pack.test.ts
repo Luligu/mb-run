@@ -1,4 +1,11 @@
+/**
+ * @file vitest/pack.test.ts
+ * @description This file contains the tests for the pack utilities.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

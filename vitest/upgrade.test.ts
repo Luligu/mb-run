@@ -1,3 +1,9 @@
+/**
+ * @file vitest/upgrade.test.ts
+ * @description This file contains the tests for the upgrade utilities.
+ * @author Luca Liguori
+ */
+
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('node:child_process', () => ({ execSync: vi.fn() }));

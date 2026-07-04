@@ -1,6 +1,6 @@
 /**
+ * @file src/esbuild.ts
  * @description This file contains esbuild bundle utilities for the mb-run command.
- * @file esbuild.ts
  * @author Luca Liguori
  * @created 2026-05-03
  * @version 1.0.0

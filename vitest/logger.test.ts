@@ -1,3 +1,9 @@
+/**
+ * @file vitest/logger.test.ts
+ * @description This file contains the tests for the action-logging utilities.
+ * @author Luca Liguori
+ */
+
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

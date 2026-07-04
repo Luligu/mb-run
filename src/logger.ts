@@ -1,6 +1,6 @@
 /**
+ * @file src/logger.ts
  * @description This file contains action-logging utilities for the mb-run command.
- * @file logger.ts
  * @author Luca Liguori
  * @created 2026-05-02
  * @version 1.0.0

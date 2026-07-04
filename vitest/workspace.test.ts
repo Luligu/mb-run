@@ -1,3 +1,9 @@
+/**
+ * @file vitest/workspace.test.ts
+ * @description This file contains the tests for the mb-run command workspace main entry point.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
 
 import { EventEmitter } from 'node:events';

@@ -1,6 +1,6 @@
 /**
+ * @file src/jest.ts
  * @description This file contains Jest test-runner utilities for the mb-run command.
- * @file jest.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

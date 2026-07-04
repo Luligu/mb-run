@@ -1,4 +1,11 @@
+/**
+ * @file vitest/test.test.ts
+ * @description This file contains the tests for the test-runner selection utilities.
+ * @author Luca Liguori
+ */
+
 // oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExitError } from '../src/spawn.js';

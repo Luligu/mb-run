@@ -1,3 +1,9 @@
+/**
+ * @file vitest/spawn.test.ts
+ * @description This file contains the tests for the spawn utilities.
+ * @author Luca Liguori
+ */
+
 import { EventEmitter } from 'node:events';
 
 import crossSpawn from 'cross-spawn';

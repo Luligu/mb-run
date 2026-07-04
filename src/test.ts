@@ -1,6 +1,6 @@
 /**
+ * @file src/test.ts
  * @description This file contains test-runner selection utilities for the mb-run command.
- * @file test.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

@@ -1,6 +1,6 @@
 /**
+ * @file src/vitest.ts
  * @description This file contains Vitest test-runner utilities for the mb-run command.
- * @file vitest.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

@@ -1,6 +1,6 @@
 /**
+ * @file src/format.ts
  * @description This file contains the formatter selection utility for the mb-run command.
- * @file format.ts
  * @author Luca Liguori
  * @created 2026-06-23
  * @version 1.0.0

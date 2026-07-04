@@ -1,6 +1,6 @@
 /**
+ * @file src/info.ts
  * @description This file contains system information utilities for the mb-run command.
- * @file info.ts
  * @author Luca Liguori
  * @created 2026-05-02
  * @version 1.0.0

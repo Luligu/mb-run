@@ -1,6 +1,6 @@
 /**
+ * @file src/oxlint.ts
  * @description This file contains oxlint linting utilities for the mb-run command.
- * @file oxlint.ts
  * @author Luca Liguori
  * @created 2026-05-15
  * @version 1.0.0

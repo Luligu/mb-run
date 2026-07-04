@@ -1,3 +1,9 @@
+/**
+ * @file vitest/upgrade.plugin.test.ts
+ * @description This file contains the tests for upgrading plugin packages.
+ * @author Luca Liguori
+ */
+
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';

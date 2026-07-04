@@ -1,3 +1,9 @@
+/**
+ * @file vitest/esbuild.test.ts
+ * @description This file contains the tests for the esbuild bundle utilities.
+ * @author Luca Liguori
+ */
+
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
