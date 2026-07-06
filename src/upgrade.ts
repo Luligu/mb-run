@@ -94,7 +94,7 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<void> {
     dstDir = path.dirname(pkgPath);
     const pkgJson = await parsePackageJson(dstDir);
     // log(`Processing workspace package: ${magenta(pkgPath)} in ${magenta(dstDir)}...`);
-    await runPackageJsonUpgrade(opts, dstDir, pkgJson, false, true, false, false);
+    await runPackageJsonUpgrade(opts, path.join(dstDir, 'package.json'), pkgJson, false, true, false, false);
   }
 
   if (commandFailures.length > 0) {
@@ -508,7 +508,10 @@ export async function runPackageJsonUpgrade(
   fileReplace('CHANGELOG.md', '(https://nodejs.org/api/esm.html)', '(https://nodejs.org/)');
 
   // Skip script setup for monorepos, as they may have different requirements and scripts for each package.
-  if (isMonorepo) return;
+  if (isMonorepo) {
+    log(magenta('Monorepo detected, skipping script setup for the root package.json.'));
+    return;
+  }
 
   // Set scripts field.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -652,6 +655,7 @@ export async function runPackageJsonUpgrade(
   delete devDeps?.['esbuild'];
   delete devDeps?.['javascript-obfuscator'];
 
+  log(magenta(`Changing package.json "${pkgPath}" scripts and devDependencies...`));
   const packageJson = JSON.parse(readFileSync(pkgPath, 'utf8'));
   writeFileSync(
     pkgPath,
@@ -667,7 +671,15 @@ export async function runPackageJsonUpgrade(
     'utf8',
   );
 
+  log(magenta(`Emptying node_modules "${dstDir}"...`));
   await emptyDir('node_modules', { rootDir: dstDir, dryRun: false });
+
+  // Skip script setup for monorepos, as they may have different requirements and scripts for each package.
+  if (isWorkspace) {
+    log(magenta('Monorepo workspace detected, skipping install dependencies...'));
+    return;
+  }
+
   log(green('Installing devDependencies...'));
   const commands = [
     `npm pkg delete overrides`,
