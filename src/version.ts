@@ -205,7 +205,7 @@ export async function updateRootVersion(tag: 'dev' | 'edge' | 'git' | 'local' | 
 
   // Use npm so package-lock.json is updated too.
   // Allow same version so re-running can resync package-lock.json or out-of-sync workspace versions.
-  // prettier-ignore
+  // oxfmt-ignore
   const args = hasWorkspaces
     ? ['version', nextVersion, '--workspaces', '--include-workspace-root', '--no-workspaces-update', '--no-git-tag-version', '--ignore-scripts', '--allow-same-version']
     : ['version', nextVersion, '--no-git-tag-version', '--ignore-scripts', '--allow-same-version'];

@@ -756,10 +756,10 @@ export function copyRecursive(sourceFileName: string, destinationFileName: strin
     const destinationLooksLikeDir = destinationFileName.endsWith('/') || destinationFileName.endsWith('\\');
     if (destinationLooksLikeDir) {
       mkdirSync(destinationPath, { recursive: true });
-      // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       destinationPath = path.join(destinationPath, sourceFileName.split('/').pop()!);
     } else if (existsSync(destinationPath) && statSync(destinationPath).isDirectory()) {
-      // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       destinationPath = path.join(destinationPath, sourceFileName.split('/').pop()!);
     }
 

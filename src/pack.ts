@@ -193,7 +193,7 @@ export async function runPack(opts: PackOptions): Promise<void> {
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const wNamePkg = JSON.parse(wNameRaw) as { name?: string };
         if (wNamePkg.name) {
-          // oxlint-disable-next-line @typescript-eslint/no-dynamic-delete
+          // oxlint-disable-next-line typescript/no-dynamic-delete
           delete rootDeps[wNamePkg.name];
         }
       }
