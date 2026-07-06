@@ -114,7 +114,7 @@ Important behavior:
 
 ## Register the endpoint from a plugin
 
-In plugin code, prefer `this.registerDevice(device)` instead of calling Matterbridge internals directly.
+In plugin code, call `this.registerDevice(device)`.
 
 DynamicPlatform bridged device:
 
@@ -137,7 +137,7 @@ class ExamplePlatform extends MatterbridgeDynamicPlatform {
         'Matterbridge',
         'Matterbridge OnOffLight',
       )
-      .addRequiredClusterServers();
+      .addRequiredClusters();
 
     await this.registerDevice(device);
   }
@@ -166,7 +166,7 @@ class ExamplePlatform extends MatterbridgeAccessoryPlatform {
         0x8000,
         'Matterbridge Temperature Sensor',
       )
-      .addRequiredClusterServers();
+      .addRequiredClusters();
 
     await this.registerDevice(device);
   }
@@ -185,7 +185,7 @@ const device = new MatterbridgeEndpoint(pressureSensor, { id: 'ServerNodeDevice'
     0x8000,
     'Matterbridge Server Node Device',
   )
-  .addRequiredClusterServers();
+  .addRequiredClusters();
 
 await this.registerDevice(device);
 ```
@@ -202,14 +202,14 @@ const device = new MatterbridgeEndpoint(pressureSensor, { id: 'MatterNodeDevice'
     0x8000,
     'Matterbridge Matter Node Device',
   )
-  .addRequiredClusterServers();
+  .addRequiredClusters();
 
 await this.registerDevice(device);
 ```
 
 Plugin rules:
 
-- `await this.ready` before creating or registering devices.
+- Use `await this.ready` before creating or registering devices.
 - Always call `this.registerDevice(device)` from the platform.
 - Use `this.unregisterDevice(device)` or `this.unregisterAllDevices()` during shutdown or development resets.
 - AccessoryPlatform plugins can only expose one normal accessory device. If you need multiple bridged devices, use `MatterbridgeDynamicPlatform`.

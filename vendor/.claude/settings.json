@@ -49,6 +49,7 @@
       "Bash(tsc:*)",
       "Bash(npx tsgo:*)",
       "Bash(tsgo:*)",
+      "Bash(cd:*)",
       "Bash(tail:*)"
     ]
   }

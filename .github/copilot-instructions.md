@@ -15,3 +15,4 @@
 - For validation, run the relevant full test file or the matching suite/task for the touched area rather than assuming arbitrary isolated single-test execution is reliable.
 - When behavior changes, update the relevant tests and documentation.
 - Use dedicated instruction files under [.github/instructions](instructions/) when a rule applies only to specific file types or workflows.
+- The assistant may run non-destructive git read-only commands without asking, including `git status`, `git diff`, `git diff --check`, `git log`, `git show`, `git branch -vv`, and `git ls-files`.

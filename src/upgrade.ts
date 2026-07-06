@@ -248,7 +248,10 @@ export async function runPackageJsonUpgrade(
 
   // Copy .codex
   if (!isWorkspace) {
+    copyRecursive('.agents', '.agents');
     copyRecursive('.codex', '.codex');
+    copyRecursive('AGENTS.md', 'AGENTS.md');
+    if (!isPlugin) unlinkSafe(path.join(dstDir, '.agents', 'matterbridge.md'));
     if (!isPlugin) removeDirSafe(path.join(dstDir, '.codex', 'rules', 'matterbridge'));
   }
 
@@ -279,6 +282,7 @@ export async function runPackageJsonUpgrade(
   } else {
     copyRecursive('scripts', 'scripts');
   }
+  // Remove legacy scripts that are no longer needed
   unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
   unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
   unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
@@ -503,6 +507,9 @@ export async function runPackageJsonUpgrade(
   fileReplace('CHANGELOG.md', '(https://github.com/eslint/eslint)', '(https://eslint.org/)');
   fileReplace('CHANGELOG.md', '(https://nodejs.org/api/esm.html)', '(https://nodejs.org/)');
 
+  // Skip script setup for monorepos, as they may have different requirements and scripts for each package.
+  if (isMonorepo) return;
+
   // Set scripts field.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const scripts = pkgJson.scripts as Record<string, string> | undefined;
@@ -664,7 +671,7 @@ export async function runPackageJsonUpgrade(
   log(green('Installing devDependencies...'));
   const commands = [
     `npm pkg delete overrides`,
-    `npm install --no-fund --no-audit --save-dev --save-exact typescript @types/node @typescript/native-preview oxlint oxlint-tsgolint oxfmt`,
+    `npm install --no-fund --no-audit --save-dev --save-exact typescript ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} @typescript/native-preview oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
     opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild' : null,

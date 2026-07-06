@@ -21,12 +21,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [0.0.3] - Dev branch
+## [0.0.3] - 2026-07-06
 
 ### Added
 
-- [copilot]: Update VS Code settings to version 1.0.6 and add terminal auto-approve configurations.
-- [claude]: Update Claude settings to version 1.0.3 and add terminal auto-approve configurations.
+- [copilot]: Update VS Code settings to version 1.0.7 and add terminal auto-approve configurations.
+- [claude]: Update Claude settings to version 1.0.4 and add terminal auto-approve configurations.
 - [package]: Apply style.
 
 ### Changed
