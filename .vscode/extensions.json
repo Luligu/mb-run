@@ -12,3 +12,4 @@
     "openai.chatgpt"
   ],
   "unwantedRecommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "firsttris.vscode-jest-runner"]
+}
