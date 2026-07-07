@@ -25,6 +25,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [package]: Update agents instructions.
 - [package]: Update dependencies.
 - [package]: Upgrade package.
 - [codex]: Update codex configuration.
