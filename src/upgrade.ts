@@ -683,7 +683,8 @@ export async function runPackageJsonUpgrade(
   log(green('Installing devDependencies...'));
   const commands = [
     `npm pkg delete overrides`,
-    `npm install --no-fund --no-audit --save-dev --save-exact typescript ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} @typescript/native-preview oxlint oxlint-tsgolint oxfmt`,
+    `npm install --no-fund --no-audit --save-dev typescript@^6.0.3`,
+    `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} @typescript/native-preview oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
     opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild' : null,
