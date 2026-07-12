@@ -204,8 +204,8 @@ describe('helpers', () => {
       expect(await isLibrary(tmpDir)).toBe(false);
     });
 
-    it('throws when tsconfig.build.production.json does not exist', async () => {
-      await expect(isLibrary(tmpDir)).rejects.toThrow();
+    it('returns false when tsconfig.build.production.json does not exist', async () => {
+      expect(await isLibrary(tmpDir)).toBe(false);
     });
   });
 

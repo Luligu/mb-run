@@ -23,6 +23,21 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [0.0.5] - Dev branch
 
+### Added
+
+- [automator]: Add `app` flag to signal an app package, skipping the `scripts` folder copy, tsconfig modifications, script field setup, and the required `engines` field warning.
+- [automator]: Add `skipPackageJson` flag to skip package.json script field setup and `npm pkg set` updates.
+- [automator]: Add `skipTsconfig` flag to skip tsconfig file modifications.
+- [automator]: Add `skipDevContainer` flag to skip the `.devcontainer` copy.
+- [automator]: Add `private` flag to skip the required package.json field warnings (homepage, main, types, exports, bugs, funding, keywords) and the CODE_OF_CONDUCT.md, CONTRIBUTING.md, and LICENSE copy for private packages.
+- [automator]: Add `jestTypes` and `vitestTypes` flags to install `@types/jest` and `vitest` type packages independently of the Jest/Vitest test runners.
+- [automator]: Add `bundle` and `obfuscate` overrides to enable bundling and obfuscation from package.json.
+
+### Changed
+
+- [automator]: Workspace packages now run `npm install`/`npm prune` from the monorepo root instead of installing devDependencies per package.
+- [package]: Update agents instructions.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [0.0.4] - 2026-07-08

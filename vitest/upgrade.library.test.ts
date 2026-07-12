@@ -30,7 +30,6 @@ vi.mock('../src/helpers.js', async (importOriginal) => {
 import { execSync } from 'node:child_process';
 
 import { resolveWorkspacePackageJsonPaths } from '../src/cache.js';
-import { emptyDir } from '../src/clean.js';
 import { isLibrary, isMonorepo, isPlugin } from '../src/helpers.js';
 import { runUpgrade } from '../src/upgrade.js';
 
@@ -117,7 +116,8 @@ describe('upgrade library package', () => {
     for (const fileName of ['jest.config.js', 'vite.config.ts', 'tsconfig.jest.json', 'CODEOWNERS', 'CONTRIBUTING.md', 'STYLEGUIDE.md']) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
-    for (const fileName of ['CODE_OF_CONDUCT.md', 'yellow-button.png', 'bmc-button.svg', 'matterbridge.svg', 'scripts/runAutomator.mjs']) {
+    expect(existsSync(path.join(rootDir, 'CODE_OF_CONDUCT.md'))).toBe(true);
+    for (const fileName of ['yellow-button.png', 'bmc-button.svg', 'matterbridge.svg', 'scripts/runAutomator.mjs']) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(false);
     }
 
@@ -125,7 +125,6 @@ describe('upgrade library package', () => {
     expect(vi.mocked(isPlugin)).toHaveBeenCalledWith(rootDir);
     expect(vi.mocked(isMonorepo)).toHaveBeenCalledWith(rootDir);
     expect(vi.mocked(resolveWorkspacePackageJsonPaths)).toHaveBeenCalledWith(rootDir);
-    expect(vi.mocked(emptyDir)).toHaveBeenCalledWith('node_modules', { rootDir, dryRun: false });
     expect(vi.mocked(execSync)).toHaveBeenCalledWith('npm run typecheck', expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
   });
 });

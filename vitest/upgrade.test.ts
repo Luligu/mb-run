@@ -431,4 +431,55 @@ describe('upgrade', () => {
       );
     }
   });
+
+  it('skips script setup when automator.skipPackageJson or automator.app is set', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('skip-package-json'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('skip-package-json/package.json'),
+      { ...structuredClone(packageJson), automator: { skipPackageJson: true } },
+    );
+    expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('SkipPackageJson detected, skipping script setup'));
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('app-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('app-package/package.json'),
+      { ...structuredClone(packageJson), automator: { app: true } },
+    );
+    expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('App detected, skipping script setup'));
+  });
+
+  it('covers private-package script removal, Bun-only npm pkg sets, and skipped npm pkg set with pending updates', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    const { license: _license, ...packageJsonWithoutLicense } = structuredClone(packageJson);
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('private-bun-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('private-bun-package/package.json'),
+      { ...packageJsonWithoutLicense, private: true, automator: { bun: true, skipPackageJson: true, jestTypes: true, vitestTypes: true, bundle: true, obfuscate: true } },
+    );
+    expect(vi.mocked(unlinkSync)).not.toHaveBeenCalledWith(expect.stringContaining(path.join('scripts', 'downloads.mjs')));
+    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('npm pkg set "license='), expect.anything());
+  });
+
+  it('installs jestTypes and vitestTypes devDependencies for workspace packages', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('workspace-types'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('workspace-types/package.json'),
+      { ...structuredClone(packageJson), automator: { node: true, bun: true, jestTypes: true, vitestTypes: true } },
+      false,
+      true,
+    );
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/jest'), expect.anything());
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('vitest'), expect.anything());
+  });
 });

@@ -30,7 +30,6 @@ vi.mock('../src/helpers.js', async (importOriginal) => {
 import { execSync } from 'node:child_process';
 
 import { resolveWorkspacePackageJsonPaths } from '../src/cache.js';
-import { emptyDir } from '../src/clean.js';
 import { isLibrary, isMonorepo, isPlugin } from '../src/helpers.js';
 import { runUpgrade } from '../src/upgrade.js';
 
@@ -189,7 +188,6 @@ describe('upgrade tool package', () => {
     expect(vi.mocked(isLibrary)).toHaveBeenCalledWith(rootDir);
     expect(vi.mocked(isMonorepo)).toHaveBeenCalledWith(rootDir);
     expect(vi.mocked(resolveWorkspacePackageJsonPaths)).toHaveBeenCalledWith(rootDir);
-    expect(vi.mocked(emptyDir)).toHaveBeenCalledWith('node_modules', { rootDir, dryRun: false });
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('npm install'), expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
     expect(vi.mocked(execSync)).toHaveBeenCalledWith('npm run build', expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
   });
