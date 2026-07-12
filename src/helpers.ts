@@ -21,6 +21,7 @@
  * limitations under the License.
  */
 
+import { existsSync } from 'node:fs';
 import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -106,6 +107,7 @@ export async function isLibrary(rootDir: string): Promise<boolean> {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     if ((automator as Record<string, unknown>)['library'] === true) return true;
   }
+  if (!existsSync(path.join(rootDir, 'tsconfig.build.production.json'))) return false;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const production = JSON.parse(await readFile(path.join(rootDir, 'tsconfig.build.production.json'), 'utf8')) as {
     compilerOptions?: {

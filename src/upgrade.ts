@@ -32,7 +32,7 @@ import { inspect } from 'node:util';
 
 import { cyan, green, log, magenta, red, reset } from './ansi.js';
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
-import { emptyDir, fileExists } from './clean.js';
+import { fileExists } from './clean.js';
 import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js';
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
@@ -53,9 +53,9 @@ export interface UpgradeOptions {
   /** When true, use Bun for execution. */
   useBun?: boolean;
   /** When true, enable Jest tests. */
-  enableJest: boolean;
+  enableJest?: boolean;
   /** When true, enable Vitest tests. */
-  enableVitest: boolean;
+  enableVitest?: boolean;
   /** When true, enable Bun tests. */
   enableBuntest?: boolean;
   /** When true, enable bundling for production builds */
@@ -94,7 +94,13 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<void> {
     dstDir = path.dirname(pkgPath);
     const pkgJson = await parsePackageJson(dstDir);
     // log(`Processing workspace package: ${magenta(pkgPath)} in ${magenta(dstDir)}...`);
-    await runPackageJsonUpgrade(opts, path.join(dstDir, 'package.json'), pkgJson, false, true, false, false);
+    log(`Upgrading workspace ${dstDir}...`);
+    await runPackageJsonUpgrade({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun }, path.join(dstDir, 'package.json'), pkgJson, false, true, false, false);
+  }
+
+  if (rootPkgIsMonorepo) {
+    runSafe(`npm install --no-fund --no-audit`);
+    runSafe(`npm prune --no-fund --no-audit`);
   }
 
   if (commandFailures.length > 0) {
@@ -126,14 +132,41 @@ export async function runPackageJsonUpgrade(
 ): Promise<void> {
   const automator = pkgJson.automator as
     | {
+        /* use @types/node */
         node?: boolean;
+        /* use @types/bun */
         bun?: boolean;
+        /* use @types/jest */
+        jestTypes?: boolean;
+        /* use vitest/globals */
+        vitestTypes?: boolean;
+        /* signal is an app */
+        app?: boolean;
+        /* use Jest for testing */
         jest?: boolean;
+        /* use Vitest for testing */
         vitest?: boolean;
+        /* use Bun for testing */
         buntest?: boolean;
+        /* remove git scripts */
         git?: boolean;
+        /* remove version scripts */
         version?: boolean;
+        /* remove publish scripts */
         publish?: boolean;
+        /* use bundle */
+        bundle?: boolean;
+        /* use obfuscate */
+        obfuscate?: boolean;
+        /* signal package is private */
+        private?: boolean;
+        /* skip package.json modifications */
+        skipPackageJson?: boolean;
+        /* skip tsconfig modifications */
+        skipTsconfig?: boolean;
+        /* skip devcontainer modifications */
+        skipDevContainer?: boolean;
+        /* set coverage thresholds for tests */
         coverage?: { lines?: number; functions?: number; statements?: number; branches?: number };
       }
     | undefined;
@@ -145,6 +178,8 @@ export async function runPackageJsonUpgrade(
   if (automator?.jest !== undefined) opts.enableJest = automator.jest;
   if (automator?.vitest !== undefined) opts.enableVitest = automator.vitest;
   if (automator?.buntest !== undefined) opts.enableBuntest = automator.buntest;
+  if (automator?.bundle !== undefined) opts.enableBundle = automator.bundle;
+  if (automator?.obfuscate !== undefined) opts.enableObfuscate = automator.obfuscate;
   log(`Upgrading dependencies in ${magenta(dstDir)} ${isMonorepo ? '(monorepo)' : isWorkspace ? '(workspace)' : isPlugin ? '(plugin)' : isLibrary ? '(library)' : ''}...`);
 
   // Check package.json for existing keywords
@@ -166,7 +201,7 @@ export async function runPackageJsonUpgrade(
     );
     await pressyAnyKey();
   }
-  if (pkgJson.homepage === undefined) {
+  if (pkgJson.private !== true && pkgJson.homepage === undefined) {
     log(
       'No homepage field found in package.json. It is recommended to add a homepage field for better compatibility with npm and to explicitly define the homepage of your package. For example:\n\n"homepage": "https://your-package-homepage.com"\n\nThis helps ensure that consumers of your package can correctly find more information about your package.',
     );
@@ -178,19 +213,19 @@ export async function runPackageJsonUpgrade(
     );
     await pressyAnyKey();
   }
-  if (pkgJson.main === undefined) {
+  if (pkgJson.private !== true && pkgJson.main === undefined) {
     log(
       'No main field found in package.json. It is recommended to add a main field for better compatibility with modern bundlers and to explicitly define the entry point of your package. For example:\n\n"main": "dist/module.js"\n\nThis helps ensure that consumers of your package can correctly resolve the appropriate module format based on their environment.',
     );
     await pressyAnyKey();
   }
-  if (pkgJson.types === undefined) {
+  if (pkgJson.private !== true && pkgJson.types === undefined) {
     log(
       'No types field found in package.json. It is recommended to add a types field for better compatibility with TypeScript and to explicitly define the type definitions of your package. For example:\n\n"types": "dist/module.d.ts"\n\nThis helps ensure that consumers of your package can correctly resolve the appropriate type definitions based on their environment.',
     );
     await pressyAnyKey();
   }
-  if (pkgJson.exports === undefined) {
+  if (pkgJson.private !== true && pkgJson.exports === undefined) {
     log(
       'No exports field found in package.json. It is recommended to add an exports field for better compatibility with modern bundlers and to explicitly define the entry points of your package. For example:\n\n"exports": {\n  ".": {\n    "import": "./dist/module.js",\n    "require": "./dist/module.cjs"\n  }\n}\n\nThis helps ensure that consumers of your package can correctly resolve the appropriate module format based on their environment.',
     );
@@ -202,39 +237,39 @@ export async function runPackageJsonUpgrade(
     );
     await pressyAnyKey();
   }
-  if (pkgJson.bugs === undefined) {
+  if (pkgJson.private !== true && pkgJson.bugs === undefined) {
     log(
-      'No bugs field found in package.json. It is recommended to add a bugs field for better compatibility with modern bundlers and to explicitly define the bugs of your package. For example:\n\n"bugs": {\n  "url": "https://github.com/your-username/your-repo/issues"\n}\n\nThis helps ensure that consumers of your package can correctly find the bugs based on their environment.',
+      'No bugs field found in package.json. It is recommended to add a bugs field. For example:\n\n"bugs": {\n  "url": "https://github.com/your-username/your-repo/issues"\n}\n\nThis helps ensure that consumers of your package can correctly find the bugs based on their environment.',
     );
     await pressyAnyKey();
   }
-  if (pkgJson.funding === undefined) {
+  if (pkgJson.private !== true && pkgJson.funding === undefined) {
     log(
-      'No funding field found in package.json. It is recommended to add a funding field for better compatibility with modern bundlers and to explicitly define the funding of your package. For example:\n\n"funding": {\n  "url": "https://github.com/your-username/your-repo/funding"\n}\n\nThis helps ensure that consumers of your package can correctly find the funding based on their environment.',
+      'No funding field found in package.json. It is recommended to add a funding field. For example:\n\n"funding": {\n  "url": "https://github.com/your-username/your-repo/funding"\n}\n\nThis helps ensure that consumers of your package can correctly find the funding based on their environment.',
     );
     await pressyAnyKey();
   }
-  if (pkgJson.keywords === undefined) {
+  if (pkgJson.private !== true && pkgJson.keywords === undefined) {
     log(
-      'No keywords field found in package.json. It is recommended to add a keywords field for better compatibility with modern bundlers and to explicitly define the keywords of your package. For example:\n\n"keywords": ["keyword1", "keyword2"]\n\nThis helps ensure that consumers of your package can correctly find the keywords based on their environment.',
+      'No keywords field found in package.json. It is recommended to add a keywords field. For example:\n\n"keywords": ["keyword1", "keyword2"]\n\nThis helps ensure that consumers of your package can correctly find the keywords based on their environment.',
     );
     await pressyAnyKey();
   }
-  if (pkgJson.engines === undefined) {
+  if (automator?.app !== true && pkgJson.engines === undefined) {
     log(
-      'No engines field found in package.json. It is recommended to add an engines field for better compatibility with modern bundlers and to explicitly define the engines of your package. For example:\n\n"engines": {\n  "node": ">=14"\n}\n\nThis helps ensure that consumers of your package can correctly find the engines based on their environment.',
+      'No engines field found in package.json. It is recommended to add an engines field. For example:\n\n"engines": {\n  "node": ">=14"\n}\n\nThis helps ensure that consumers of your package can correctly find the engines based on their environment.',
     );
     await pressyAnyKey();
   }
   if (pkgJson.workspaces && !isMonorepo) {
     log(
-      'Warning: workspaces field found in package.json but --monorepo-root flag not set. If this is intentional, you can ignore this warning. If this is not intentional, you may want to remove the workspaces field from your package.json or run the automator script with the --monorepo-package flag if this is a monorepo package.',
+      'Warning: workspaces field found in package.json but --monorepo-root flag not set. If this is intentional, you can ignore this warning. If this is not intentional, you may want to remove the workspaces field from your package.json.',
     );
     await pressyAnyKey();
   }
   if (existsSync(path.join(dstDir, 'packages')) && !isMonorepo) {
     log(
-      'Warning: packages directory found but --monorepo-root flag not set. If this is intentional, you can ignore this warning. If this is not intentional, you may want to remove the packages directory or run the automator script with the --monorepo-package flag if this is a monorepo package.',
+      'Warning: packages directory found but --monorepo-root flag not set. If this is intentional, you can ignore this warning. If this is not intentional, you may want to remove the packages directory.',
     );
     await pressyAnyKey();
   }
@@ -243,7 +278,8 @@ export async function runPackageJsonUpgrade(
   if (!isWorkspace) {
     copyRecursive('.claude', '.claude');
     copyRecursive('CLAUDE.md', 'CLAUDE.md');
-    if (!isPlugin) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'matterbridge'));
+    appendFileToFileIfExists('localAgents.md', 'CLAUDE.md');
+    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'matterbridge'));
   }
 
   // Copy .codex
@@ -251,12 +287,13 @@ export async function runPackageJsonUpgrade(
     copyRecursive('.agents', '.agents');
     copyRecursive('.codex', '.codex');
     copyRecursive('AGENTS.md', 'AGENTS.md');
-    if (!isPlugin) unlinkSafe(path.join(dstDir, '.agents', 'matterbridge.md'));
-    if (!isPlugin) removeDirSafe(path.join(dstDir, '.codex', 'rules', 'matterbridge'));
+    appendFileToFileIfExists('localAgents.md', 'AGENTS.md');
+    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'matterbridge.md'));
+    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.codex', 'rules', 'matterbridge'));
   }
 
   // Copy .devcontainer
-  if (!isWorkspace) {
+  if (!isWorkspace && automator?.skipDevContainer !== true) {
     if (isPlugin) copyRecursive('.devcontainer-plugin', '.devcontainer');
     else copyRecursive('.devcontainer', '.devcontainer');
   }
@@ -265,6 +302,7 @@ export async function runPackageJsonUpgrade(
   if (!isWorkspace) {
     if (isPlugin) copyRecursive('.github-plugin', '.github');
     else copyRecursive('.github', '.github');
+    appendFileToFileIfExists('localAgents.md', '.github/copilot-instructions.md');
   }
 
   // Copy .vscode
@@ -276,19 +314,22 @@ export async function runPackageJsonUpgrade(
   }
 
   // Copy scripts
-  mkdirSync(path.join(dstDir, 'scripts'), { recursive: true });
-  if (isWorkspace) {
-    copyRecursive('scripts/downloads.mjs', 'scripts');
-  } else {
-    copyRecursive('scripts', 'scripts');
+  if (automator?.app !== true) {
+    mkdirSync(path.join(dstDir, 'scripts'), { recursive: true });
+    if (isWorkspace) {
+      copyRecursive('scripts/downloads.mjs', 'scripts');
+    } else {
+      copyRecursive('scripts', 'scripts');
+    }
+    // Remove legacy scripts that are no longer needed
+    if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
+    if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'prune-tags.sh'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'git-status.sh'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'mb-run.mjs'));
   }
-  // Remove legacy scripts that are no longer needed
-  unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
-  unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
-  unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
-  unlinkSafe(path.join(dstDir, 'scripts', 'prune-tags.sh'));
-  unlinkSafe(path.join(dstDir, 'scripts', 'git-status.sh'));
-  unlinkSafe(path.join(dstDir, 'scripts', 'mb-run.mjs'));
 
   // Copy ignore files and configs
   if (!isWorkspace) {
@@ -308,81 +349,80 @@ export async function runPackageJsonUpgrade(
     if (opts.enableJest) {
       copyRecursive('jest.config.js', 'jest.config.js');
       mkDirSafe(path.join(dstDir, 'test'));
+    } else {
+      log(magenta('No Jest flag set, removing Jest...'));
+      if (!isMonorepo) unlinkSafe('tsconfig.jest.json');
+      if (!isMonorepo) unlinkSafe('jest.config.js');
     }
     if (opts.enableVitest) {
       copyRecursive('vite.config.ts', 'vite.config.ts');
       mkDirSafe(path.join(dstDir, 'vitest'));
+    } else {
+      log(magenta('No Vitest flag set, removing Vitest...'));
+      if (!isMonorepo) unlinkSafe('tsconfig.vitest.json');
+      if (!isMonorepo) unlinkSafe('vite.config.ts');
     }
     if (opts.enableBuntest) {
       copyRecursive('bunfig.toml', 'bunfig.toml');
       mkDirSafe(path.join(dstDir, 'buntest'));
-    }
-    if (!opts.enableJest) {
-      log(magenta('No Jest flag set, removing Jest...'));
-      unlinkSafe('tsconfig.jest.json');
-      unlinkSafe('jest.config.js');
-    }
-    if (!opts.enableVitest) {
-      log(magenta('No Vitest flag set, removing Vitest...'));
-      unlinkSafe('tsconfig.vitest.json');
-      unlinkSafe('vite.config.ts');
-    }
-    if (!opts.enableBuntest) {
+    } else {
       log(magenta('No Bun test flag set, removing Bun test...'));
-      unlinkSafe('bunfig.toml');
+      if (!isMonorepo) unlinkSafe('bunfig.toml');
     }
   }
 
   // Copy tsconfig files
-  unlinkSafe('tsconfig.production.json');
-  unlinkSafe('tsconfig.vitest.json');
-  if (!isWorkspace) copyRecursive('tsconfig.base.json', 'tsconfig.base.json');
-  copyRecursive('tsconfig.json', 'tsconfig.json');
-  copyRecursive('tsconfig.build.json', 'tsconfig.build.json');
-  copyRecursive('tsconfig.build.production.json', 'tsconfig.build.production.json');
-  if (opts.enableJest && !isWorkspace) copyRecursive('tsconfig.jest.json', 'tsconfig.jest.json');
-  if (isMonorepo) {
-    fileReplace(
-      'tsconfig.json',
-      '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts"]',
-      '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts", "packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "packages/*/vitest/**/*.ts"]',
-    );
-  } else {
+  if (automator?.app !== true && automator?.skipTsconfig !== true) {
+    unlinkSafe('tsconfig.production.json');
+    unlinkSafe('tsconfig.vitest.json');
+    if (!isWorkspace) copyRecursive('tsconfig.base.json', 'tsconfig.base.json');
+    copyRecursive('tsconfig.json', 'tsconfig.json');
     copyRecursive('tsconfig.build.json', 'tsconfig.build.json');
-    copyRecursive(isLibrary ? 'tsconfig.build.production.library.json' : 'tsconfig.build.production.json', 'tsconfig.build.production.json');
-    if (opts.useBun) {
-      fileReplace('tsconfig.json', '["node"', '["node", "bun"');
-      fileReplace('tsconfig.build.json', '["node"]', '["node", "bun"]');
-      fileReplace('tsconfig.build.production.json', '["node"]', '["node", "bun"]');
-    }
-    if (isWorkspace) {
-      fileReplace('tsconfig.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
-      fileReplace('tsconfig.build.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
-      fileReplace('tsconfig.build.production.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
-      fileReplace('tsconfig.build.production.json', '"incremental": false,', '"incremental": true,');
-      fileReplace('tsconfig.build.production.json', '"composite": false,', '"composite": true,');
-      fileReplace('tsconfig.build.production.json', '"declaration": false,', '"declaration": true,');
-      unlinkSafe('tsconfig.base.json');
-    }
-    if (!opts.enableJest) {
-      log(magenta('No Jest flag set, removing Jest from tsconfig.json...'));
-      fileReplace('tsconfig.json', `, "jest"`, ``);
-      fileReplace('tsconfig.json', `, "test/**/*.ts"`, ``);
-      fileReplace('tsconfig.json', `, "packages/*/test/**/*.ts"`, ``);
-    }
-    if (!opts.enableVitest) {
-      log(magenta('No Vitest flag set, removing Vitest from tsconfig.json...'));
-      fileReplace('tsconfig.json', ', "vitest/globals"', '');
-      fileReplace('tsconfig.json', ', "vitest/**/*.ts"', '');
-      fileReplace('tsconfig.json', ', "packages/*/vitest/**/*.ts"', '');
+    copyRecursive('tsconfig.build.production.json', 'tsconfig.build.production.json');
+    if (opts.enableJest && !isWorkspace) copyRecursive('tsconfig.jest.json', 'tsconfig.jest.json');
+    if (isMonorepo) {
+      fileReplace(
+        'tsconfig.json',
+        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts"]',
+        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts", "packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "packages/*/vitest/**/*.ts"]',
+      );
+    } else {
+      copyRecursive('tsconfig.build.json', 'tsconfig.build.json');
+      copyRecursive(isLibrary ? 'tsconfig.build.production.library.json' : 'tsconfig.build.production.json', 'tsconfig.build.production.json');
+      if (opts.useBun) {
+        fileReplace('tsconfig.json', '["node"', '["node", "bun"');
+        fileReplace('tsconfig.build.json', '["node"]', '["node", "bun"]');
+        fileReplace('tsconfig.build.production.json', '["node"]', '["node", "bun"]');
+      }
+      if (isWorkspace) {
+        fileReplace('tsconfig.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
+        fileReplace('tsconfig.build.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
+        fileReplace('tsconfig.build.production.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
+        fileReplace('tsconfig.build.production.json', '"incremental": false,', '"incremental": true,');
+        fileReplace('tsconfig.build.production.json', '"composite": false,', '"composite": true,');
+        fileReplace('tsconfig.build.production.json', '"declaration": false,', '"declaration": true,');
+        unlinkSafe('tsconfig.base.json');
+      }
+      if (!opts.enableJest) {
+        log(magenta('No Jest flag set, removing Jest from tsconfig.json...'));
+        fileReplace('tsconfig.json', `, "jest"`, ``);
+        fileReplace('tsconfig.json', `, "test/**/*.ts"`, ``);
+        fileReplace('tsconfig.json', `, "packages/*/test/**/*.ts"`, ``);
+      }
+      if (!opts.enableVitest) {
+        log(magenta('No Vitest flag set, removing Vitest from tsconfig.json...'));
+        fileReplace('tsconfig.json', ', "vitest/globals"', '');
+        fileReplace('tsconfig.json', ', "vitest/**/*.ts"', '');
+        fileReplace('tsconfig.json', ', "packages/*/vitest/**/*.ts"', '');
+      }
     }
   }
 
   // Copy the docs
-  if (!isLibrary) copyRecursive('CODE_OF_CONDUCT.md', 'CODE_OF_CONDUCT.md');
+  if (!isWorkspace && automator?.private !== true) copyRecursive('CODE_OF_CONDUCT.md', 'CODE_OF_CONDUCT.md');
   if (!isWorkspace) copyRecursive('CODEOWNERS', 'CODEOWNERS');
-  if (!isWorkspace) copyRecursive('CONTRIBUTING.md', 'CONTRIBUTING.md');
-  if (!(await fileExists('LICENSE'))) copyRecursive('LICENSE', 'LICENSE');
+  if (!isWorkspace && automator?.private !== true) copyRecursive('CONTRIBUTING.md', 'CONTRIBUTING.md');
+  if (!(await fileExists('LICENSE')) && automator?.private !== true) copyRecursive('LICENSE', 'LICENSE');
   if (!isWorkspace) copyRecursive('STYLEGUIDE.md', 'STYLEGUIDE.md');
 
   // Add files to package
@@ -439,7 +479,9 @@ export async function runPackageJsonUpgrade(
   }
 
   // Update package.json fields via npm pkg set
-  const npmPkgSets = [['engines.node', '>=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0']];
+  const npmPkgSets = [];
+  if (opts.useNode) npmPkgSets.push(['engines.node', '>=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0']);
+  else if (opts.useBun) npmPkgSets.push(['engines.bun', '>=1.0.0']);
   if (!pkgJson.license) npmPkgSets.push(['license', 'Apache-2.0']);
   if (!pkgJson.type) npmPkgSets.push(['type', 'module']);
   if (!pkgJson.main) npmPkgSets.push(['main', 'dist/module.js']);
@@ -455,7 +497,7 @@ export async function runPackageJsonUpgrade(
     npmPkgSets.push(['funding.url', 'https://www.buymeacoffee.com/luligugithub']);
   }
   for (const [key, value] of npmPkgSets) {
-    runSafe(`npm pkg set "${key}=${value}"`);
+    if (automator?.skipPackageJson !== true) runSafe(`npm pkg set "${key}=${value}"`);
   }
 
   // Remove old files that should not be in the package
@@ -507,119 +549,134 @@ export async function runPackageJsonUpgrade(
   fileReplace('CHANGELOG.md', '(https://github.com/eslint/eslint)', '(https://eslint.org/)');
   fileReplace('CHANGELOG.md', '(https://nodejs.org/api/esm.html)', '(https://nodejs.org/)');
 
+  let updateScript = true;
   // Skip script setup for monorepos, as they may have different requirements and scripts for each package.
   if (isMonorepo) {
     log(magenta('Monorepo detected, skipping script setup for the root package.json.'));
-    return;
+    updateScript = false;
+  }
+  // Remove scripts for workspace packages.
+  if (isWorkspace) {
+    log(magenta('Package is a workspace, removing scripts...'));
+    delete pkgJson.scripts;
+    updateScript = false;
+  }
+  // Skip script setup when set.
+  if (automator?.skipPackageJson === true) {
+    log(magenta('SkipPackageJson detected, skipping script setup for the root package.json.'));
+    updateScript = false;
+  }
+  // Skip script setup for apps, as they may have different requirements and scripts for each package.
+  if (automator?.app === true) {
+    log(magenta('App detected, skipping script setup for the root package.json.'));
+    updateScript = false;
   }
 
   // Set scripts field.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const scripts = pkgJson.scripts as Record<string, string> | undefined;
-  // oxlint-disable-next-line typescript/no-base-to-string typescript/restrict-template-expressions
-  const startScript = scripts?.start ?? `node ${pkgJson.main ?? 'dist/module.js'}`;
-  log(magenta(`Start script: ${cyan(startScript)}`));
+  if (updateScript) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const scripts = pkgJson.scripts as Record<string, string> | undefined;
+    // oxlint-disable-next-line typescript/no-base-to-string typescript/restrict-template-expressions
+    const startScript = scripts?.start ?? `node ${pkgJson.main ?? 'dist/module.js'}`;
+    log(magenta(`Start script: ${cyan(startScript)}`));
 
-  let jestCoverageScript;
-  let vitestCoverageScript;
-  if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
-    jestCoverageScript =
-      'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": {\\\"statements\\\": 100, \\\"branches\\\": 100, \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
-  } else if (coverage?.lines === 100 && coverage.functions === 100) {
-    jestCoverageScript =
-      'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
-  } else if (coverage?.lines === 100) {
-    jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100 } }"';
-  } else {
-    jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage';
-  }
-  if (opts.enableJest) {
-    log(magenta(`Jest test coverage script: ${cyan(jestCoverageScript)}`));
-  }
+    let jestCoverageScript;
+    let vitestCoverageScript;
+    if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
+      jestCoverageScript =
+        'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": {\\\"statements\\\": 100, \\\"branches\\\": 100, \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
+    } else if (coverage?.lines === 100 && coverage.functions === 100) {
+      jestCoverageScript =
+        'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
+    } else if (coverage?.lines === 100) {
+      jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100 } }"';
+    } else {
+      jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage';
+    }
+    if (opts.enableJest) {
+      log(magenta(`Jest test coverage script: ${cyan(jestCoverageScript)}`));
+    }
 
-  if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
-    vitestCoverageScript =
-      'vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
-  } else if (coverage?.lines === 100 && coverage.functions === 100) {
-    vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
-  } else if (coverage?.lines === 100) {
-    vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100';
-  } else {
-    vitestCoverageScript = 'vitest run --coverage';
-  }
-  if (opts.enableVitest) {
-    log(magenta(`Vitest test coverage script: ${cyan(vitestCoverageScript)}`));
-  }
+    if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
+      vitestCoverageScript =
+        'vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
+    } else if (coverage?.lines === 100 && coverage.functions === 100) {
+      vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
+    } else if (coverage?.lines === 100) {
+      vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100';
+    } else {
+      vitestCoverageScript = 'vitest run --coverage';
+    }
+    if (opts.enableVitest) {
+      log(magenta(`Vitest test coverage script: ${cyan(vitestCoverageScript)}`));
+    }
 
-  pkgJson.scripts = {
-    'start': isPlugin ? 'matterbridge' : startScript,
-    'add': isPlugin ? 'matterbridge --add .' : undefined,
-    'remove': isPlugin ? 'matterbridge --remove .' : undefined,
-    'enable': isPlugin ? 'matterbridge --enable .' : undefined,
-    'disable': isPlugin ? 'matterbridge --disable .' : undefined,
-    'link': isPlugin ? 'npm link --no-fund --no-audit matterbridge' : undefined,
-    'unlink': isPlugin ? 'npm unlink matterbridge' : undefined,
-    'build': 'tsgo --project tsconfig.build.json',
-    'buildProduction': 'tsc --project tsconfig.build.production.json',
-    'clean': 'node scripts/clean.mjs',
-    'cleanBuild': 'npm run clean && npm run build',
-    'cleanBuildProduction': 'npm run clean && npm run buildProduction',
-    'deepClean': 'node scripts/deep-clean.mjs',
-    'watch': 'tsgo --project tsconfig.build.json --watch',
-    'typecheck': 'tsgo --project tsconfig.json --noEmit',
-    'test': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest' : 'vitest run',
-    'test:watch': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --watch' : 'vitest watch',
-    'test:verbose': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --verbose' : 'vitest run --reporter verbose',
-    'test:coverage': opts.enableJest && opts.enableVitest ? jestCoverageScript : vitestCoverageScript,
-    'test:vitest': opts.enableJest && opts.enableVitest ? 'vitest run' : undefined,
-    'test:vitest:watch': opts.enableJest && opts.enableVitest ? 'vitest watch' : undefined,
-    'test:vitest:verbose': opts.enableJest && opts.enableVitest ? 'vitest run --reporter verbose' : undefined,
-    'test:vitest:coverage': opts.enableJest && opts.enableVitest ? vitestCoverageScript : undefined,
-    'lint': 'oxlint --disable-nested-config',
-    'lint:fix': 'oxlint --disable-nested-config --fix',
-    'format': 'oxfmt',
-    'format:check': 'oxfmt --check',
-    'preversion': automator?.version === true ? 'npm run runMeBeforePublish' : undefined,
-    'postversion': automator?.version === true ? 'npm run build' : undefined,
-    'version:patch': automator?.version === true ? 'npm version patch --no-git-tag-version' : undefined,
-    'version:minor': automator?.version === true ? 'npm version minor --no-git-tag-version' : undefined,
-    'version:major': automator?.version === true ? 'npm version major --no-git-tag-version' : undefined,
-    'git:status': automator?.git === true ? 'git status && git branch -vv && git stash list && git fsck --full --no-reflogs' : undefined,
-    'git:remote': automator?.git === true ? 'git remote -v && git remote show origin' : undefined,
-    'git:prune': automator?.git === true ? 'git fetch --prune --prune-tags' : undefined,
-    'git:hardreset:main': automator?.git === true ? 'git fetch origin && git checkout main && git reset --hard origin/main' : undefined,
-    'git:hardreset:dev': automator?.git === true ? 'git fetch origin && git checkout dev && git reset --hard origin/dev' : undefined,
-    'git:hardreset:edge': automator?.git === true ? 'git fetch origin && git checkout edge && git reset --hard origin/edge' : undefined,
-    'reset': 'npm run deepClean && npm run softReset',
-    'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
-    'checkDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu -x typescript && npm run softReset',
-    'updateDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u -x typescript && npm run softReset',
-    'runMeBeforePublish':
-      'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
-      (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +
-      (opts.enableJest && opts.enableVitest ? ' && npm run test:vitest:coverage' : ''),
-    'prepublishOnly':
-      'npm run cleanBuildProduction && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
-    'npmPack':
-      automator?.publish === true
-        ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm pack && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
-        : undefined,
-    'npmPublishTagDev':
-      automator?.publish === true
-        ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm publish --tag dev && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
-        : undefined,
-    'npmPublishTagEdge':
-      automator?.publish === true
-        ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs edge && npm run prepublishOnly && npm publish --tag edge && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
-        : undefined,
-    'npmPublishTagLatest':
-      automator?.publish === true
-        ? 'npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
-        : undefined,
-  };
-  if (isWorkspace) {
-    log(magenta('Package is a monorepo package, removing scripts...'));
-    delete pkgJson.scripts;
+    pkgJson.scripts = {
+      'start': isPlugin ? 'matterbridge' : startScript,
+      'add': isPlugin ? 'matterbridge --add .' : undefined,
+      'remove': isPlugin ? 'matterbridge --remove .' : undefined,
+      'enable': isPlugin ? 'matterbridge --enable .' : undefined,
+      'disable': isPlugin ? 'matterbridge --disable .' : undefined,
+      'link': isPlugin ? 'npm link --no-fund --no-audit matterbridge' : undefined,
+      'unlink': isPlugin ? 'npm unlink matterbridge' : undefined,
+      'build': 'tsc --project tsconfig.build.json',
+      'buildProduction': 'tsc --project tsconfig.build.production.json',
+      'clean': 'node scripts/clean.mjs',
+      'cleanBuild': 'npm run clean && npm run build',
+      'cleanBuildProduction': 'npm run clean && npm run buildProduction',
+      'deepClean': 'node scripts/deep-clean.mjs',
+      'watch': 'tsc --project tsconfig.build.json --watch',
+      'typecheck': 'tsc --project tsconfig.json --noEmit',
+      'test': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest' : 'vitest run',
+      'test:watch': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --watch' : 'vitest watch',
+      'test:verbose': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --verbose' : 'vitest run --reporter verbose',
+      'test:coverage': opts.enableJest && opts.enableVitest ? jestCoverageScript : vitestCoverageScript,
+      'test:vitest': opts.enableJest && opts.enableVitest ? 'vitest run' : undefined,
+      'test:vitest:watch': opts.enableJest && opts.enableVitest ? 'vitest watch' : undefined,
+      'test:vitest:verbose': opts.enableJest && opts.enableVitest ? 'vitest run --reporter verbose' : undefined,
+      'test:vitest:coverage': opts.enableJest && opts.enableVitest ? vitestCoverageScript : undefined,
+      'lint': 'oxlint --disable-nested-config',
+      'lint:fix': 'oxlint --disable-nested-config --fix',
+      'format': 'oxfmt',
+      'format:check': 'oxfmt --check',
+      'preversion': automator?.version === true ? 'npm run runMeBeforePublish' : undefined,
+      'postversion': automator?.version === true ? 'npm run build' : undefined,
+      'version:patch': automator?.version === true ? 'npm version patch --no-git-tag-version' : undefined,
+      'version:minor': automator?.version === true ? 'npm version minor --no-git-tag-version' : undefined,
+      'version:major': automator?.version === true ? 'npm version major --no-git-tag-version' : undefined,
+      'git:status': automator?.git === true ? 'git status && git branch -vv && git stash list && git fsck --full --no-reflogs' : undefined,
+      'git:remote': automator?.git === true ? 'git remote -v && git remote show origin' : undefined,
+      'git:prune': automator?.git === true ? 'git fetch --prune --prune-tags' : undefined,
+      'git:hardreset:main': automator?.git === true ? 'git fetch origin && git checkout main && git reset --hard origin/main' : undefined,
+      'git:hardreset:dev': automator?.git === true ? 'git fetch origin && git checkout dev && git reset --hard origin/dev' : undefined,
+      'git:hardreset:edge': automator?.git === true ? 'git fetch origin && git checkout edge && git reset --hard origin/edge' : undefined,
+      'reset': 'npm run deepClean && npm run softReset',
+      'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
+      'checkDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset',
+      'updateDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset',
+      'runMeBeforePublish':
+        'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
+        (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +
+        (opts.enableJest && opts.enableVitest ? ' && npm run test:vitest:coverage' : ''),
+      'prepublishOnly':
+        'npm run cleanBuildProduction && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
+      'npmPack':
+        automator?.publish === true
+          ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm pack && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
+          : undefined,
+      'npmPublishTagDev':
+        automator?.publish === true
+          ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm publish --tag dev && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
+          : undefined,
+      'npmPublishTagEdge':
+        automator?.publish === true
+          ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs edge && npm run prepublishOnly && npm publish --tag edge && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
+          : undefined,
+      'npmPublishTagLatest':
+        automator?.publish === true
+          ? 'npx shx cp package.json package.json.backup && npm run prepublishOnly && npm publish --tag latest && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'
+          : undefined,
+    };
   }
 
   // Set devDependencies field.
@@ -629,6 +686,7 @@ export async function runPackageJsonUpgrade(
   delete devDeps?.['cross-env'];
   delete devDeps?.['typescript'];
   delete devDeps?.['@types/node'];
+  delete devDeps?.['@types/bun'];
   delete devDeps?.['@typescript/native-preview'];
   delete devDeps?.['oxlint'];
   delete devDeps?.['oxlint-tsgolint'];
@@ -671,29 +729,33 @@ export async function runPackageJsonUpgrade(
     'utf8',
   );
 
-  log(magenta(`Emptying node_modules "${dstDir}"...`));
-  await emptyDir('node_modules', { rootDir: dstDir, dryRun: false });
+  // log(magenta(`Emptying node_modules "${dstDir}"...`));
+  // await emptyDir('node_modules', { rootDir: dstDir, dryRun: false });
 
-  // Skip script setup for monorepos, as they may have different requirements and scripts for each package.
+  // Skip devDependency installation for workspaces.
+  /*
   if (isWorkspace) {
-    log(magenta('Monorepo workspace detected, skipping install dependencies...'));
+    log(magenta('Monorepo workspace detected, skipping install devDependencies...'));
     return;
   }
+  */
 
   log(green('Installing devDependencies...'));
   const commands = [
     `npm pkg delete overrides`,
-    `npm install --no-fund --no-audit --save-dev typescript@^6.0.3`,
-    `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} @typescript/native-preview oxlint oxlint-tsgolint oxfmt`,
+    isWorkspace
+      ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? '@types/node' : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
+      : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
     opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild' : null,
     opts.enableObfuscate ? `npm install --no-fund --no-audit --save-dev --save-exact javascript-obfuscator` : null,
-    isPlugin ? `npm link --no-fund --no-audit matterbridge` : null,
-    `npm run format`,
-    `npm run lint`,
-    `npm run build`,
-    `npm run typecheck`,
+    `npm prune --no-fund --no-audit`,
+    isPlugin && !isWorkspace ? `npm link --no-fund --no-audit matterbridge` : null,
+    isWorkspace ? null : `npm run format`,
+    isWorkspace ? null : `npm run lint`,
+    isWorkspace ? null : `npm run build`,
+    isWorkspace ? null : `npm run typecheck`,
   ];
   for (const command of commands) {
     if (command) runSafe(command);
