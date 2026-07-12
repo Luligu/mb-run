@@ -651,9 +651,9 @@ export async function runPackageJsonUpgrade(
       'git:hardreset:dev': automator?.git === true ? 'git fetch origin && git checkout dev && git reset --hard origin/dev' : undefined,
       'git:hardreset:edge': automator?.git === true ? 'git fetch origin && git checkout edge && git reset --hard origin/edge' : undefined,
       'reset': 'npm run deepClean && npm run softReset',
-      'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
-      'checkDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset',
-      'updateDependencies': 'npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset',
+      'softReset': `npm install --no-fund --no-audit && npm prune${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
+      'checkDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset`,
+      'updateDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset`,
       'runMeBeforePublish':
         'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
         (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +
