@@ -4,13 +4,21 @@
  * @author Luca Liguori
  */
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import os from 'node:os';
+import path from 'node:path';
 import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { systemInfo } from '../src/info.js';
+import { getBunVersion, systemInfo } from '../src/info.js';
+
+vi.mock('node:child_process', () => ({
+  execFileSync: vi.fn(() => {
+    throw new Error('ENOENT');
+  }),
+}));
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -28,12 +36,13 @@ describe('systemInfo', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
-  it('logs exactly 11 lines', () => {
+  it('logs exactly 16 lines', () => {
     systemInfo();
-    expect(lines).toHaveLength(11);
+    expect(lines).toHaveLength(16);
   });
 
   it('includes the platform and architecture', () => {
@@ -89,6 +98,56 @@ describe('systemInfo', () => {
   it('includes an npm version or "unavailable" in the npm line', () => {
     systemInfo();
     expect(lines[10]).toMatch(/\d+\.\d+\.\d+|unavailable/u);
+  });
+
+  it('includes unavailable Bun information when Bun is not installed', () => {
+    systemInfo();
+    expect(lines[11]).toContain('unavailable');
+    expect(lines[12]).toContain('unavailable');
+    expect(lines[13]).toContain('unavailable');
+    expect(lines[14]).toContain('unavailable');
+    expect(lines[15]).toContain('unavailable');
+  });
+
+  it('returns the trimmed Bun version reported by the Bun executable', () => {
+    vi.mocked(execFileSync).mockReturnValue('1.2.3\n');
+    expect(getBunVersion()).toBe('1.2.3');
+    expect(execFileSync).toHaveBeenCalledWith('bun', ['--version'], expect.any(Object));
+  });
+
+  it('returns unavailable when the Bun executable produces empty output', () => {
+    vi.mocked(execFileSync).mockReturnValue('');
+    expect(getBunVersion()).toBe('unavailable');
+  });
+
+  it('includes Bun cache, binary, and global module locations', () => {
+    vi.stubEnv('BUN_INSTALL', '/configured/bun');
+    vi.stubEnv('BUN_INSTALL_BIN', '/configured/bun/bin');
+    vi.stubEnv('BUN_INSTALL_CACHE_DIR', '/configured/bun/cache');
+    vi.stubEnv('BUN_INSTALL_GLOBAL_DIR', '/configured/bun/global');
+    vi.mocked(execFileSync).mockImplementation((_file, args) => {
+      if (args?.includes('cache')) return '/home/user/.bun/install/cache\n';
+      if (args?.includes('-g')) return '/home/user/.bun/bin\n';
+      return '1.2.3\n';
+    });
+    systemInfo();
+    expect(lines[11]).toContain('1.2.3');
+    expect(lines[12]).toContain('/home/user/.bun');
+    expect(lines[12]).toContain('(BUN_INSTALL=/configured/bun)');
+    expect(lines[13]).toContain('/home/user/.bun/bin');
+    expect(lines[13]).toContain('(BUN_INSTALL_BIN=/configured/bun/bin)');
+    expect(lines[14]).toContain('/home/user/.bun/install/cache');
+    expect(lines[14]).toContain('(BUN_INSTALL_CACHE_DIR=/configured/bun/cache)');
+    expect(lines[15]).toContain(path.join('/home/user/.bun', 'install', 'global', 'node_modules'));
+    expect(lines[15]).toContain('(BUN_INSTALL_GLOBAL_DIR=/configured/bun/global)');
+  });
+
+  it('shows undefined for unset Bun directory environment variables', () => {
+    systemInfo();
+    expect(lines[12]).toContain('(BUN_INSTALL=undefined)');
+    expect(lines[13]).toContain('(BUN_INSTALL_BIN=undefined)');
+    expect(lines[14]).toContain('(BUN_INSTALL_CACHE_DIR=undefined)');
+    expect(lines[15]).toContain('(BUN_INSTALL_GLOBAL_DIR=undefined)');
   });
 
   it('memory line shows KB when totalmem is small', () => {

@@ -3,7 +3,7 @@
  * @description This file contains system information utilities for the mb-run command.
  * @author Luca Liguori
  * @created 2026-05-02
- * @version 1.0.0
+ * @version 1.1.0
  * @license Apache-2.0
  *
  * Copyright 2026, 2027, 2028 Luca Liguori.
@@ -23,12 +23,13 @@
 
 // oxlint-disable unicorn/no-negated-condition
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
-import { log } from './ansi.js';
+import { brightBlack, log } from './ansi.js';
 
 /**
  * Formats a byte count as a human-readable string (GB, MB, or KB).
@@ -140,8 +141,54 @@ function getNpmVersion(): string {
 }
 
 /**
+ * Runs a Bun command and returns its trimmed output.
+ *
+ * @param {string[]} args Bun command arguments.
+ * @returns {string} Command output, or "unavailable" when Bun cannot be executed.
+ */
+function getBunInfo(args: string[]): string {
+  try {
+    const output = execFileSync('bun', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return output || 'unavailable';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * Resolves the installed Bun version.
+ *
+ * @returns {string} Bun version string, or "unavailable" when Bun is not installed.
+ */
+export function getBunVersion(): string {
+  return getBunInfo(['--version']);
+}
+
+/**
+ * Resolves the directory containing globally installed Bun modules.
+ *
+ * @param {string} bunBinDir Bun global binary directory (`<BUN_INSTALL>/bin`).
+ * @returns {string} Bun global module directory, or "unavailable".
+ */
+function getBunGlobalModules(bunBinDir: string): string {
+  if (bunBinDir === 'unavailable') return 'unavailable';
+  return path.join(path.dirname(bunBinDir), 'install', 'global', 'node_modules');
+}
+
+/**
+ * Adds the related Bun environment variable to a discovered directory.
+ *
+ * @param {string} directory Discovered Bun directory.
+ * @param {string} environmentVariable Bun environment variable name.
+ * @returns {string} Directory followed by a gray environment variable and value annotation.
+ */
+function formatBunDirectory(directory: string, environmentVariable: string): string {
+  return `${directory} ${brightBlack(`(${environmentVariable}=${process.env[environmentVariable] ?? 'undefined'})`)}`;
+}
+
+/**
  * Prints a snapshot of the current system environment to stdout using only
- * Node.js built-in `os`, `process`, and `process.env` — no child process or exec.
+ * Node.js built-in system APIs and the Bun CLI when available.
  *
  * Displayed information:
  * - Platform, architecture, kernel version
@@ -149,11 +196,14 @@ function getNpmVersion(): string {
  * - System uptime, current date/time
  * - Total and used memory
  * - Primary IPv4 and all non-internal IPv6 addresses
- * - Node.js and npm versions
+ * - Node.js, npm, and Bun versions
+ * - Bun install, cache, binary, and global module locations
  */
 export function systemInfo(): void {
   const total = os.totalmem();
   const used = total - os.freemem();
+  const bunBinDir = getBunInfo(['pm', 'bin', '-g']);
+  const bunInstallDir = bunBinDir === 'unavailable' ? 'unavailable' : path.dirname(bunBinDir);
 
   let username = 'unavailable';
   try {
@@ -173,4 +223,9 @@ export function systemInfo(): void {
   log(`\u{1F310}  IPv6:         ${getIpv6Addresses()}`);
   log(`\u{1F7E2}  Node.js:      ${process.version.replace(/^v/u, '')}`);
   log(`\u{1F7E3}  Npm:          ${getNpmVersion()}`);
+  log(`\u{1F7E0}  Bun:          ${getBunVersion()}`);
+  log(`\u{1F4C1}  Bun install:  ${formatBunDirectory(bunInstallDir, 'BUN_INSTALL')}`);
+  log(`\u{1F4C2}  Bun bin:      ${formatBunDirectory(bunBinDir, 'BUN_INSTALL_BIN')}`);
+  log(`\u{1F4E6}  Bun cache:    ${formatBunDirectory(getBunInfo(['pm', 'cache']), 'BUN_INSTALL_CACHE_DIR')}`);
+  log(`\u{1F4DA}  Bun modules:  ${formatBunDirectory(getBunGlobalModules(bunBinDir), 'BUN_INSTALL_GLOBAL_DIR')}`);
 }
