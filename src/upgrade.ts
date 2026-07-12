@@ -729,20 +729,8 @@ export async function runPackageJsonUpgrade(
     'utf8',
   );
 
-  // log(magenta(`Emptying node_modules "${dstDir}"...`));
-  // await emptyDir('node_modules', { rootDir: dstDir, dryRun: false });
-
-  // Skip devDependency installation for workspaces.
-  /*
-  if (isWorkspace) {
-    log(magenta('Monorepo workspace detected, skipping install devDependencies...'));
-    return;
-  }
-  */
-
   log(green('Installing devDependencies...'));
   const commands = [
-    `npm pkg delete overrides`,
     isWorkspace
       ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? '@types/node' : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
       : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
