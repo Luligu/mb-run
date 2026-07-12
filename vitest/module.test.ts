@@ -16,6 +16,7 @@ vi.mock('../src/sort.js', () => ({ sortAll: vi.fn() }));
 vi.mock('../src/test.js', () => ({ runTests: vi.fn() }));
 vi.mock('../src/esbuild.js', () => ({ runEsbuild: vi.fn() }));
 vi.mock('../src/pack.js', () => ({ runPack: vi.fn() }));
+vi.mock('../src/self.js', () => ({ checkLatestVersion: vi.fn() }));
 
 // oxlint-disable-next-line import/no-namespace -- namespace import is required so vi.spyOn can stub the module export
 import * as ansiModule from '../src/ansi.js';

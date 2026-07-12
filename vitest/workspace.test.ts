@@ -25,6 +25,8 @@ vi.mock('cross-spawn', () => ({
   default: vi.fn(),
 }));
 
+vi.mock('../src/self.js', () => ({ checkLatestVersion: vi.fn() }));
+
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
   return {

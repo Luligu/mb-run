@@ -26,6 +26,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Added
 
 - [bun]: Add Bun version, install, binary, cache, and global module information to `--info`, including the related environment variable values.
+- [self]: Check npm in a background worker for newer mb-run releases and log a warning when an update is available.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

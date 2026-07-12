@@ -36,6 +36,7 @@ import { runLinter } from './lint.js';
 import { initLogger } from './logger.js';
 import { runPack } from './pack.js';
 import { runPublish } from './publish.js';
+import { checkLatestVersion } from './self.js';
 import { sortAll } from './sort.js';
 import { ExitError, runCommand } from './spawn.js';
 import { runTests } from './test.js';
@@ -104,6 +105,7 @@ export async function main(): Promise<void> {
     verbose: verboseCommands,
     rootDir: repoRoot,
   });
+  checkLatestVersion();
 
   const restorePos = (rows: number = 1): string => (rows > 0 && shouldUseAnsi() && !dryRunMode && !verboseCommands ? moveUp(rows) : '');
 
