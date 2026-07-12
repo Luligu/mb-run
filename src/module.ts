@@ -32,6 +32,7 @@ import { runFormatter } from './format.js';
 import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from './help.js';
 import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
+import { runInstall } from './install.js';
 import { runLinter } from './lint.js';
 import { initLogger } from './logger.js';
 import { runPack } from './pack.js';
@@ -278,16 +279,14 @@ export async function main(): Promise<void> {
 
   if (want.install) {
     log(`${savePos()}⏳ Installing...`);
-    await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { dryRun: dryRunMode });
-    if (await isPlugin(repoRoot)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: repoRoot, dryRun: dryRunMode });
+    await runInstall({ rootDir: repoRoot, dryRun: dryRunMode });
     log(`${restorePos()}${green('✅')} Install complete in ${getElapsed()}.${clearEnd()}`);
   }
 
   if (want.update) {
     log(`${savePos()}⏳ Updating dependencies...`);
     await runUpdate(buildOpts);
-    await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { dryRun: dryRunMode });
-    if (await isPlugin(repoRoot)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: repoRoot, dryRun: dryRunMode });
+    await runInstall({ rootDir: repoRoot, dryRun: dryRunMode });
     log(`${restorePos()}${green('✅')} Update complete in ${getElapsed()}.${clearEnd()}`);
   }
 
