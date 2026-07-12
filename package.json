@@ -1,6 +1,6 @@
 {
   "name": "mb-run",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "Matterbridge command line executor",
   "author": "https://github.com/Luligu",
   "license": "Apache-2.0",
