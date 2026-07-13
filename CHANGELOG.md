@@ -29,6 +29,10 @@ If you like this project and find it useful, please consider giving it a star on
 - [self]: Check npm in a background worker for newer mb-run releases and log a warning when an update is available.
 - [install]: Extract dependency installation and Matterbridge plugin linking into `runInstall()`.
 
+### Changed
+
+- [devcontainer]: Bump Dev Container config to v.1.0.5.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [0.0.5] - 2026-07-12
