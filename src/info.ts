@@ -165,13 +165,43 @@ export function getBunVersion(): string {
 }
 
 /**
+ * Resolves the Bun install directory from the environment or Bun's documented default.
+ *
+ * @returns {string} Bun install directory, or "unavailable".
+ */
+function getBunInstallDir(): string {
+  return process.env['BUN_INSTALL'] ?? path.join(os.homedir(), '.bun');
+}
+
+/**
+ * Resolves the Bun binary directory from the environment or the install directory.
+ *
+ * @param {string} bunInstallDir Bun install directory.
+ * @returns {string} Bun binary directory, or "unavailable".
+ */
+function getBunBinDir(bunInstallDir: string): string {
+  if (process.env['BUN_INSTALL_BIN']) return process.env['BUN_INSTALL_BIN'];
+  return path.join(bunInstallDir, 'bin');
+}
+
+/**
+ * Resolves the Bun cache directory from the environment or the install directory.
+ *
+ * @param {string} bunInstallDir Bun install directory.
+ * @returns {string} Bun cache directory, or "unavailable".
+ */
+function getBunCacheDir(bunInstallDir: string): string {
+  if (process.env['BUN_INSTALL_CACHE_DIR']) return process.env['BUN_INSTALL_CACHE_DIR'];
+  return path.join(bunInstallDir, 'install', 'cache');
+}
+
+/**
  * Resolves the directory containing globally installed Bun modules.
  *
  * @param {string} bunBinDir Bun global binary directory (`<BUN_INSTALL>/bin`).
  * @returns {string} Bun global module directory, or "unavailable".
  */
 function getBunGlobalModules(bunBinDir: string): string {
-  if (bunBinDir === 'unavailable') return 'unavailable';
   return path.join(path.dirname(bunBinDir), 'install', 'global', 'node_modules');
 }
 
@@ -202,8 +232,10 @@ function formatBunDirectory(directory: string, environmentVariable: string): str
 export function systemInfo(): void {
   const total = os.totalmem();
   const used = total - os.freemem();
-  const bunBinDir = getBunInfo(['pm', 'bin', '-g']);
-  const bunInstallDir = bunBinDir === 'unavailable' ? 'unavailable' : path.dirname(bunBinDir);
+  const bunInstallDir = getBunInstallDir();
+  const bunBinDir = getBunBinDir(bunInstallDir);
+  const bunCacheDir = getBunCacheDir(bunInstallDir);
+  const bunModulesDir = getBunGlobalModules(bunBinDir);
 
   let username = 'unavailable';
   try {
@@ -226,6 +258,6 @@ export function systemInfo(): void {
   log(`\u{1F7E0}  Bun:          ${getBunVersion()}`);
   log(`\u{1F4C1}  Bun install:  ${formatBunDirectory(bunInstallDir, 'BUN_INSTALL')}`);
   log(`\u{1F4C2}  Bun bin:      ${formatBunDirectory(bunBinDir, 'BUN_INSTALL_BIN')}`);
-  log(`\u{1F4E6}  Bun cache:    ${formatBunDirectory(getBunInfo(['pm', 'cache']), 'BUN_INSTALL_CACHE_DIR')}`);
-  log(`\u{1F4DA}  Bun modules:  ${formatBunDirectory(getBunGlobalModules(bunBinDir), 'BUN_INSTALL_GLOBAL_DIR')}`);
+  log(`\u{1F4E6}  Bun cache:    ${formatBunDirectory(bunCacheDir, 'BUN_INSTALL_CACHE_DIR')}`);
+  log(`\u{1F4DA}  Bun modules:  ${bunModulesDir}`);
 }

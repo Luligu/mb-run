@@ -100,13 +100,19 @@ describe('systemInfo', () => {
     expect(lines[10]).toMatch(/\d+\.\d+\.\d+|unavailable/u);
   });
 
-  it('includes unavailable Bun information when Bun is not installed', () => {
+  it('uses the documented Bun default paths when Bun env vars are unset', () => {
+    const originalBunInstall = process.env['BUN_INSTALL'];
+    delete process.env['BUN_INSTALL'];
     systemInfo();
-    expect(lines[11]).toContain('unavailable');
-    expect(lines[12]).toContain('unavailable');
-    expect(lines[13]).toContain('unavailable');
-    expect(lines[14]).toContain('unavailable');
-    expect(lines[15]).toContain('unavailable');
+    expect(lines[12]).toContain(path.join(os.homedir(), '.bun'));
+    expect(lines[13]).toContain(path.join(os.homedir(), '.bun', 'bin'));
+    expect(lines[14]).toContain(path.join(os.homedir(), '.bun', 'install', 'cache'));
+    expect(lines[15]).toContain(path.join(os.homedir(), '.bun', 'install', 'global', 'node_modules'));
+    if (originalBunInstall === undefined) {
+      delete process.env['BUN_INSTALL'];
+    } else {
+      process.env['BUN_INSTALL'] = originalBunInstall;
+    }
   });
 
   it('returns the trimmed Bun version reported by the Bun executable', () => {
@@ -132,22 +138,39 @@ describe('systemInfo', () => {
     });
     systemInfo();
     expect(lines[11]).toContain('1.2.3');
-    expect(lines[12]).toContain('/home/user/.bun');
+    expect(lines[12]).toContain('/configured/bun');
     expect(lines[12]).toContain('(BUN_INSTALL=/configured/bun)');
-    expect(lines[13]).toContain('/home/user/.bun/bin');
+    expect(lines[13]).toContain('/configured/bun/bin');
     expect(lines[13]).toContain('(BUN_INSTALL_BIN=/configured/bun/bin)');
-    expect(lines[14]).toContain('/home/user/.bun/install/cache');
+    expect(lines[14]).toContain('/configured/bun/cache');
     expect(lines[14]).toContain('(BUN_INSTALL_CACHE_DIR=/configured/bun/cache)');
-    expect(lines[15]).toContain(path.join('/home/user/.bun', 'install', 'global', 'node_modules'));
-    expect(lines[15]).toContain('(BUN_INSTALL_GLOBAL_DIR=/configured/bun/global)');
+    expect(lines[15]).toContain(path.join('/configured/bun', 'install', 'global', 'node_modules'));
+  });
+
+  it('derives Bun paths from BUN_INSTALL when only the install directory is defined', () => {
+    vi.stubEnv('BUN_INSTALL', '/configured/bun');
+    systemInfo();
+    expect(lines[12]).toContain('/configured/bun');
+    expect(lines[12]).toContain('(BUN_INSTALL=/configured/bun)');
+    expect(lines[13]).toContain(path.join('/configured/bun', 'bin'));
+    expect(lines[13]).toContain('(BUN_INSTALL_BIN=undefined)');
+    expect(lines[14]).toContain(path.join('/configured/bun', 'install', 'cache'));
+    expect(lines[14]).toContain('(BUN_INSTALL_CACHE_DIR=undefined)');
+    expect(lines[15]).toContain(path.join('/configured/bun', 'install', 'global', 'node_modules'));
   });
 
   it('shows undefined for unset Bun directory environment variables', () => {
+    const originalBunInstall = process.env['BUN_INSTALL'];
+    delete process.env['BUN_INSTALL'];
     systemInfo();
     expect(lines[12]).toContain('(BUN_INSTALL=undefined)');
     expect(lines[13]).toContain('(BUN_INSTALL_BIN=undefined)');
     expect(lines[14]).toContain('(BUN_INSTALL_CACHE_DIR=undefined)');
-    expect(lines[15]).toContain('(BUN_INSTALL_GLOBAL_DIR=undefined)');
+    if (originalBunInstall === undefined) {
+      delete process.env['BUN_INSTALL'];
+    } else {
+      process.env['BUN_INSTALL'] = originalBunInstall;
+    }
   });
 
   it('memory line shows KB when totalmem is small', () => {
