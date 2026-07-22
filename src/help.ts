@@ -52,9 +52,9 @@ ${brightYellow('Options:')}
   ${f('--reset', '[--production]')}empty .cache/ and node_modules/, run npm install and build; --production uses tsconfig.build.production.json
   ${f('--deep-clean')}empty .cache/ and node_modules/ like --reset but skips install and build
   ${f('--clean')}remove build output directories
-  ${f('--build', '[--production]')}compile with tsgo or tsc; prefers tsconfig.build.json; --production prefers tsconfig.build.production.json
-  ${f('--typecheck')}type-check with tsgo or tsc using tsconfig.json and --noEmit
-  ${f('--watch')}run tsgo or tsc in watch mode
+  ${f('--build', '[--production]')}compile with tsc; prefers tsconfig.build.json; --production prefers tsconfig.build.production.json
+  ${f('--typecheck')}type-check with tsc using tsconfig.json and --noEmit
+  ${f('--watch')}run tsc in watch mode
   ${f('--test', '[verbose|watch|coverage...]')}run configured Jest and/or Vitest tests; Jest sets NODE_OPTIONS
   ${f('--lint')}lint with oxlint, falling back to eslint when oxlint is not installed
   ${f('--format')}format with oxfmt, falling back to prettier when oxfmt is not installed

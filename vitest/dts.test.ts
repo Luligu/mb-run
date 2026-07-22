@@ -4,9 +4,8 @@
  * @author Luca Liguori
  */
 
-// oxlint-disable unicorn/no-useless-undefined -- mocked Rollup bundle methods resolve without a value
-
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -14,26 +13,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runDtsBundle } from '../src/dts.js';
 
-vi.mock('rollup', () => ({ rollup: vi.fn() }));
-vi.mock('rollup-plugin-dts', () => ({ dts: vi.fn(() => ({ name: 'dts' })) }));
+vi.mock('dts-bundle-generator', () => ({ generateDtsBundle: vi.fn() }));
 
-import { rollup } from 'rollup';
-import { dts } from 'rollup-plugin-dts';
+import { generateDtsBundle } from 'dts-bundle-generator';
 
-const mockedRollup = vi.mocked(rollup);
-const mockedDts = vi.mocked(dts);
+const mockedGenerateDtsBundle = vi.mocked(generateDtsBundle);
 
 let tmpDir: string;
 
 describe('dts', () => {
   beforeEach(async () => {
     tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-dts-'));
-    mockedRollup.mockClear();
-    mockedDts.mockClear();
-    mockedRollup.mockResolvedValue({
-      write: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn().mockResolvedValue(undefined),
-    } as never);
+    mockedGenerateDtsBundle.mockClear();
+    mockedGenerateDtsBundle.mockReturnValue(['export {};\n']);
   });
 
   afterEach(async () => {
@@ -64,6 +56,20 @@ describe('dts', () => {
   }
 
   it('bundles every distinct public declaration file and inlines workspace imports', async () => {
+    let capturedPaths: Record<string, string[]> = {};
+    let capturedExtends = '';
+    mockedGenerateDtsBundle.mockImplementation((_, options) => {
+      if (options?.preferredConfigPath !== undefined) {
+        const raw = readFileSync(options.preferredConfigPath, 'utf8');
+        const config = JSON.parse(raw) as { extends?: string; compilerOptions?: { paths?: Record<string, string[]> } };
+        capturedExtends = config.extends ?? '';
+        capturedPaths = config.compilerOptions?.paths ?? {};
+      }
+      return ['export {};\n'];
+    });
+
+    await writeFile(path.join(tmpDir, 'tsconfig.build.production.json'), '{}\n');
+
     await writePackageJson(tmpDir, {
       name: 'root',
       types: './dist/export.d.ts',
@@ -96,41 +102,81 @@ describe('dts', () => {
 
     await runDtsBundle({ rootDir: tmpDir, dryRun: false });
 
-    expect(mockedRollup).toHaveBeenCalledTimes(2);
-    expect(mockedDts).toHaveBeenCalledWith(
+    expect(mockedGenerateDtsBundle).toHaveBeenCalledTimes(2);
+    const firstCallEntries = mockedGenerateDtsBundle.mock.calls[0][0];
+    const firstCallOptions = mockedGenerateDtsBundle.mock.calls[0][1];
+    expect(firstCallEntries).toEqual([{ filePath: path.join(tmpDir, 'dist', 'export.d.ts') }]);
+    expect(firstCallOptions).toEqual(expect.objectContaining({ preferredConfigPath: path.join(tmpDir, '.mb-run.dts-bundle.tsconfig.json') }));
+    expect(capturedPaths).toEqual(
       expect.objectContaining({
-        respectExternal: true,
-        compilerOptions: expect.objectContaining({
-          baseUrl: tmpDir,
-          paths: expect.objectContaining({
-            '@root/utils': ['packages/utils/dist/export.d.ts'],
-            '@root/utils/format': ['packages/utils/dist/format.d.ts'],
-          }),
-        }),
+        '@root/utils': ['packages/utils/dist/export.d.ts'],
+        '@root/utils/format': ['packages/utils/dist/format.d.ts'],
       }),
     );
-    const rollupOptions = mockedRollup.mock.calls[0][0];
-    const external = rollupOptions.external;
-    expect(typeof external).toBe('function');
-    if (typeof external !== 'function') throw new Error('Expected a Rollup external predicate');
-    expect(external('@root/utils', '', false)).toBe(false);
-    expect(external('@root/utils/format', '', false)).toBe(false);
-    expect(external('typescript', '', false)).toBe(true);
-    expect(external('./local', '', false)).toBe(false);
+    expect(capturedExtends).toBe('./tsconfig.build.production.json');
   });
 
   it('skips bundling when dry-run is enabled or no declarations are published', async () => {
     await runDtsBundle({ rootDir: tmpDir, dryRun: true });
-    expect(mockedRollup).not.toHaveBeenCalled();
+    expect(mockedGenerateDtsBundle).not.toHaveBeenCalled();
 
     await writePackageJson(tmpDir, { name: 'root' });
     await runDtsBundle({ rootDir: tmpDir, dryRun: false });
-    expect(mockedRollup).not.toHaveBeenCalled();
+    expect(mockedGenerateDtsBundle).not.toHaveBeenCalled();
   });
 
   it('rejects a missing published declaration file', async () => {
     await writePackageJson(tmpDir, { name: 'root', types: './dist/missing.d.ts' });
 
     await expect(runDtsBundle({ rootDir: tmpDir, dryRun: false })).rejects.toThrow('Missing declaration file');
+  });
+
+  it('rejects when declaration bundling produces no output', async () => {
+    mockedGenerateDtsBundle.mockReturnValue([]);
+    await writePackageJson(tmpDir, { name: 'root', types: './dist/export.d.ts' });
+    await writeDeclaration(path.join(tmpDir, 'dist', 'export.d.ts'));
+
+    await expect(runDtsBundle({ rootDir: tmpDir, dryRun: false })).rejects.toThrow('Failed to generate declaration bundle');
+  });
+
+  it('falls back to tsconfig.json when no preferred build tsconfig file exists', async () => {
+    let capturedExtends = '';
+    mockedGenerateDtsBundle.mockImplementation((_, options) => {
+      if (options?.preferredConfigPath !== undefined) {
+        const raw = readFileSync(options.preferredConfigPath, 'utf8');
+        const config = JSON.parse(raw) as { extends?: string };
+        capturedExtends = config.extends ?? '';
+      }
+      return ['export {};\n'];
+    });
+
+    await writePackageJson(tmpDir, {
+      name: 'root',
+      types: './dist/export.d.ts',
+      workspaces: ['packages/*'],
+    });
+    await writePackageJson(path.join(tmpDir, 'packages', 'utils'), {
+      name: '@root/utils',
+      types: './dist/export.d.ts',
+    });
+    await writeDeclaration(path.join(tmpDir, 'dist', 'export.d.ts'));
+    await writeDeclaration(path.join(tmpDir, 'packages', 'utils', 'dist', 'export.d.ts'));
+
+    await runDtsBundle({ rootDir: tmpDir, dryRun: false });
+
+    expect(capturedExtends).toBe('./tsconfig.json');
+  });
+
+  it('bundles declarations without temp tsconfig when no workspace mappings are present', async () => {
+    mockedGenerateDtsBundle.mockReturnValue(['export {}']);
+    const declarationPath = path.join(tmpDir, 'dist', 'export.d.ts');
+    await writePackageJson(tmpDir, { name: 'root', types: './dist/export.d.ts' });
+    await writeDeclaration(path.join(tmpDir, 'dist', 'export.d.ts'));
+
+    await runDtsBundle({ rootDir: tmpDir, dryRun: false });
+
+    const firstCallOptions = mockedGenerateDtsBundle.mock.calls[0]?.[1];
+    expect(firstCallOptions).toBeUndefined();
+    await expect(readFile(declarationPath, 'utf8')).resolves.toBe('export {}\n');
   });
 });

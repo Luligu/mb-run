@@ -165,9 +165,8 @@ export async function runBin(binName: string, args: string[], opts: BuildOptions
 /**
  * Compiles the project, selecting per-workspace tsconfig files when available.
  *
- * Prefers the native `tsgo` compiler and falls back to `tsc` when tsgo is not
- * installed.  Monorepos build with `-b` (project references); a single package
- * compiles with `-p`.
+ * Uses `tsc` for compilation. Monorepos build with `-b` (project references);
+ * a single package compiles with `-p`.
  *
  * @param {BuildOptions} options Build and context options.
  * @param {'build' | 'production'} options.mode Build mode.
@@ -179,21 +178,18 @@ export async function runBin(binName: string, args: string[], opts: BuildOptions
  */
 export async function runWorkspaceBuild(options: BuildOptions): Promise<void> {
   const configs = await pickWorkspaceTsconfig(options.mode, options);
-  // Prefer the native tsgo compiler, falling back to tsc when tsgo is not installed.
-  const compiler = (await binExists('tsgo', options)) ? 'tsgo' : 'tsc';
   // Monorepos use project references and must be built with `-b`; a single package compiles with `-p`.
   const projectFlag = (await isMonorepo(options.rootDir)) ? '-b' : '-p';
   const args = [projectFlag, configs, '--pretty', 'false'];
   if (options.watch) args.push('--watch');
-  await runBin(compiler, args, options);
+  await runBin('tsc', args, options);
 }
 
 /**
  * Type-checks the project without emitting build output.
  *
- * Prefers the native `tsgo` compiler and falls back to `tsc` when tsgo is not
- * installed. Type-checking always uses the root `tsconfig.json` with `-p` so
- * that `--noEmit` remains valid for both packages and monorepos.
+ * Type-checking always uses the root `tsconfig.json` with `-p` so that
+ * `--noEmit` remains valid for both packages and monorepos.
  *
  * @param {BuildOptions} options Build and context options.
  * @param {string} options.rootDir Root directory of the project.
@@ -202,7 +198,6 @@ export async function runWorkspaceBuild(options: BuildOptions): Promise<void> {
  * @returns {Promise<void>} Resolves when type-checking completes.
  */
 export async function runWorkspaceTypecheck(options: BuildOptions): Promise<void> {
-  const compiler = (await binExists('tsgo', options)) ? 'tsgo' : 'tsc';
   const configPath = path.join(options.rootDir, 'tsconfig.json');
-  await runBin(compiler, ['-p', configPath, '--noEmit', '--pretty', 'false'], options);
+  await runBin('tsc', ['-p', configPath, '--noEmit', '--pretty', 'false'], options);
 }

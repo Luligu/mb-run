@@ -14,7 +14,7 @@ import crossSpawn from 'cross-spawn';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BuildOptions } from '../src/build.js';
-import { runBin, runWorkspaceBuild, runWorkspaceTypecheck } from '../src/build.js';
+import { binExists, runBin, runWorkspaceBuild, runWorkspaceTypecheck } from '../src/build.js';
 import { initLogger } from '../src/logger.js';
 import { ExitError } from '../src/spawn.js';
 
@@ -222,6 +222,24 @@ describe('build', () => {
     });
   });
 
+  describe('binExists', () => {
+    it('returns true when a binary shim exists', async () => {
+      const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-bin-'));
+      try {
+        await mkdir(path.join(tmpDir, 'node_modules', '.bin'), { recursive: true });
+        await writeFile(path.join(tmpDir, 'node_modules', '.bin', 'shx'), '');
+
+        await expect(binExists('shx', { rootDir: tmpDir, isWindows: false })).resolves.toBe(true);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('returns false when a binary shim is missing', async () => {
+      await expect(binExists('shx', { rootDir: '/nonexistent-abc-xyz', isWindows: false })).resolves.toBe(false);
+    });
+  });
+
   describe('runWorkspaceBuild', () => {
     let tmpDir: string;
 
@@ -312,17 +330,18 @@ describe('build', () => {
       expect(lines.some((l) => l.includes('-b '))).toBe(false);
     });
 
-    it('uses tsgo when tsgo is installed', async () => {
+    it('uses tsc when a tsgo shim is installed', async () => {
       await mkdir(path.join(tmpDir, 'node_modules', '.bin'), { recursive: true });
       await writeFile(path.join(tmpDir, 'node_modules', '.bin', 'tsgo'), '');
       await writeFile(path.join(tmpDir, 'tsconfig.build.json'), '{}');
 
       await runWorkspaceBuild(makeOpts({ rootDir: tmpDir, mode: 'build', watch: false }));
 
-      expect(lines.some((l) => l.includes('tsgo'))).toBe(true);
+      expect(lines.some((l) => l.includes('tsgo'))).toBe(false);
+      expect(lines.some((l) => l.includes(path.join(tmpDir, 'tsconfig.build.json')))).toBe(true);
     });
 
-    it('falls back to tsc when tsgo is not installed', async () => {
+    it('uses tsc when tsgo is not installed', async () => {
       await writeFile(path.join(tmpDir, 'tsconfig.build.json'), '{}');
 
       await runWorkspaceBuild(makeOpts({ rootDir: tmpDir, mode: 'build', watch: false }));

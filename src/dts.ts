@@ -21,14 +21,14 @@
  * limitations under the License.
  */
 
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { rollup } from 'rollup';
-import { dts } from 'rollup-plugin-dts';
+import type { generateDtsBundle as GenerateDtsBundle } from 'dts-bundle-generator';
 
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
-import { parsePackageJson } from './helpers.js';
+import { parsePackageJson, removeFile } from './helpers.js';
 
 /** Context shared by declaration-bundling operations. */
 export interface DtsOptions {
@@ -38,10 +38,41 @@ export interface DtsOptions {
   dryRun: boolean;
 }
 
-/** A generated declaration file that is both the Rollup input and output. */
+/** A generated declaration file that is both the bundler input and output. */
 interface DeclarationEntryPoint {
   /** Absolute declaration file path. */
   filePath: string;
+}
+
+/**
+ * Creates a temporary tsconfig that maps workspace package specifiers to built declaration files.
+ *
+ * @param {DtsOptions} opts Declaration-bundling options.
+ * @param {Record<string, string[]>} workspaceDeclarationPaths Workspace import paths to generated declaration files.
+ * @returns {Promise<string | null>} Absolute path to the generated tsconfig, or null when no paths are needed.
+ */
+async function createDtsBundleTsConfig(opts: DtsOptions, workspaceDeclarationPaths: Record<string, string[]>): Promise<string | null> {
+  if (Object.keys(workspaceDeclarationPaths).length === 0) return null;
+
+  const tsconfigCandidates = ['tsconfig.build.production.json', 'tsconfig.build.json', 'tsconfig.json'];
+  let baseTsConfig = 'tsconfig.json';
+  for (const candidate of tsconfigCandidates) {
+    if (await fileExists(path.resolve(opts.rootDir, candidate))) {
+      baseTsConfig = candidate;
+      break;
+    }
+  }
+  const tempTsConfigPath = path.join(opts.rootDir, '.mb-run.dts-bundle.tsconfig.json');
+  const tempTsConfig = {
+    extends: `./${baseTsConfig}`,
+    compilerOptions: {
+      baseUrl: '.',
+      paths: workspaceDeclarationPaths,
+    },
+  };
+
+  await writeFile(tempTsConfigPath, JSON.stringify(tempTsConfig, null, 2) + '\n', 'utf8');
+  return tempTsConfigPath;
 }
 
 /**
@@ -52,10 +83,16 @@ interface DeclarationEntryPoint {
  *
  * @param {DtsOptions} opts Declaration-bundling options.
  * @returns {Promise<void>} Resolves when every public declaration file is bundled.
- * @throws {Error} If a library declaration target is missing after the production build.
+ * @throws {Error} If a declaration target is missing or declaration bundling fails.
  */
 export async function runDtsBundle(opts: DtsOptions): Promise<void> {
   if (opts.dryRun) return;
+
+  // Lazily import declaration bundling to avoid loading heavy compiler internals
+  // in command paths that never execute d.ts bundling.
+  const { generateDtsBundle } = (await import('dts-bundle-generator')) as {
+    generateDtsBundle: typeof GenerateDtsBundle;
+  };
 
   const packageJson = await parsePackageJson(opts.rootDir);
   const declarationPaths = new Set<string>();
@@ -103,13 +140,18 @@ export async function runDtsBundle(opts: DtsOptions): Promise<void> {
     }
   }
 
-  for (const entryPoint of entryPoints) {
-    const bundle = await rollup({
-      input: entryPoint.filePath,
-      external: (specifier) => !specifier.startsWith('.') && !path.isAbsolute(specifier) && !Object.hasOwn(workspaceDeclarationPaths, specifier),
-      plugins: [dts({ respectExternal: true, compilerOptions: { baseUrl: opts.rootDir, paths: workspaceDeclarationPaths } })],
-    });
-    await bundle.write({ file: entryPoint.filePath, format: 'es' });
-    await bundle.close();
+  const tempTsConfigPath = await createDtsBundleTsConfig(opts, workspaceDeclarationPaths);
+  try {
+    for (const entryPoint of entryPoints) {
+      const [output] = generateDtsBundle([{ filePath: entryPoint.filePath }], tempTsConfigPath === null ? undefined : { preferredConfigPath: tempTsConfigPath });
+      if (output === undefined) {
+        throw new Error(`Failed to generate declaration bundle for ${entryPoint.filePath}`);
+      }
+      await writeFile(entryPoint.filePath, output.endsWith('\n') ? output : `${output}\n`, 'utf8');
+    }
+  } finally {
+    if (tempTsConfigPath !== null) {
+      await removeFile(tempTsConfigPath, { dryRun: false });
+    }
   }
 }
