@@ -33,6 +33,7 @@ import { inspect } from 'node:util';
 import { cyan, green, log, magenta, red, reset } from './ansi.js';
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
+import { getErrorMessage } from './error.js';
 import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js';
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
@@ -914,7 +915,7 @@ export function runSafe(command: string): boolean {
     execSync(command, { stdio: 'inherit', cwd: dstDir });
     return true;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = getErrorMessage(error);
     const status = typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number' ? error.status : undefined;
 
     commandFailures.push({ command, status, message });

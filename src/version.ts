@@ -26,6 +26,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { fileExists } from './clean.js';
+import { getErrorMessage } from './error.js';
 import { parsePackageJson } from './helpers.js';
 import { logCommand, logWriteFile } from './logger.js';
 import { ExitError, runCommand } from './spawn.js';
@@ -95,7 +96,7 @@ export function getShortSha7(cwd: string): string {
   try {
     return shortSha7FromGit(cwd);
   } catch (err) {
-    throw new ExitError(1, `Unable to determine git short SHA. (${err instanceof Error ? err.message : String(err)})`);
+    throw new ExitError(1, `Unable to determine git short SHA. (${getErrorMessage(err)})`);
   }
 }
 

@@ -25,6 +25,7 @@ import { existsSync } from 'node:fs';
 import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 
+import { getErrorMessage } from './error.js';
 import { logDelete } from './logger.js';
 
 /** Context shared by file-removal operations. */
@@ -60,7 +61,7 @@ export async function parsePackageJson(rootDir: string): Promise<Record<string, 
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return JSON.parse(raw) as Record<string, unknown>;
   } catch (error) {
-    throw new Error(`Failed to read or parse ${packageJsonPath}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(`Failed to read or parse ${packageJsonPath}: ${getErrorMessage(error)}`, { cause: error });
   }
 }
 
