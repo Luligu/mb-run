@@ -21,10 +21,10 @@
  * limitations under the License.
  */
 
-import { copyFile, mkdir, readFile, readdir } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 
-import { build, type BuildOptions } from 'esbuild';
+import { build, type BuildOptions, type Plugin } from 'esbuild';
 
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
@@ -135,9 +135,10 @@ async function resolveDeclaredCopyEntries(packageJson: Record<string, unknown>, 
  *
  * @param {DeclaredCopyEntry[]} entries Validated copy entries.
  * @param {string} rootDir Project root directory.
- * @returns {Promise<void>} Resolves when every matching file is copied.
+ * @returns {Promise<string[]>} Absolute destination paths of every copied file.
  */
-async function copyDeclaredEntries(entries: DeclaredCopyEntry[], rootDir: string): Promise<void> {
+async function copyDeclaredEntries(entries: DeclaredCopyEntry[], rootDir: string): Promise<string[]> {
+  const copiedPaths: string[] = [];
   for (const entry of entries) {
     const copyDirectory = async (directory: string, relativeDirectory: string): Promise<void> => {
       for (const file of await readdir(directory, { withFileTypes: true })) {
@@ -150,11 +151,49 @@ async function copyDeclaredEntries(entries: DeclaredCopyEntry[], rootDir: string
           await mkdir(path.dirname(destinationPath), { recursive: true });
           logEsbuildAction('copy', [sourcePath, destinationPath], rootDir);
           await copyFile(sourcePath, destinationPath);
+          copiedPaths.push(destinationPath);
         }
       }
     };
     await copyDirectory(entry.from, '');
   }
+  return copiedPaths;
+}
+
+/**
+ * Deletes every file under `dist/` that this esbuild run did not produce or keep.
+ *
+ * Compiling each source file individually (via `tsc`) leaves plain per-file compiled
+ * JavaScript in `dist/`; once esbuild bundles the project, those files are superseded by
+ * the entry, chunk, and copied outputs actually needed at runtime, but nothing else removes
+ * them. Declaration files are always kept: they are produced separately (by `tsc` and, for
+ * library packages, `dts-bundle-generator`) and are unrelated to esbuild's own outputs, which
+ * may run before that declaration-bundling step.
+ *
+ * @param {string} distDir Absolute path to the dist directory.
+ * @param {Set<string>} keepPaths Absolute file paths that must survive: esbuild outputs and copyEntries destinations.
+ * @returns {Promise<void>} Resolves when every unproduced file, and any directory left empty by their removal, is deleted.
+ */
+async function pruneUnproducedDistFiles(distDir: string, keepPaths: Set<string>): Promise<void> {
+  if (!(await fileExists(distDir))) return;
+
+  const pruneDirectory = async (directory: string): Promise<boolean> => {
+    let isEmpty = true;
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (await pruneDirectory(entryPath)) await rm(entryPath, { recursive: true, force: true });
+        else isEmpty = false;
+      } else if (keepPaths.has(entryPath) || entryPath.endsWith('.d.ts') || entryPath.endsWith('.d.ts.map')) {
+        isEmpty = false;
+      } else {
+        logEsbuildAction('prune', [entryPath]);
+        await rm(entryPath, { force: true });
+      }
+    }
+    return isEmpty;
+  };
+  await pruneDirectory(distDir);
 }
 
 /**
@@ -237,6 +276,40 @@ function resolveDeclaredPackageSpecifiers(packageJson: Record<string, unknown>, 
 }
 
 /**
+ * Creates an esbuild plugin that redirects a relative import of a compiled `dist/` file back
+ * to the TypeScript source that produces it, wherever that source exists.
+ *
+ * A launcher such as a bin script commonly imports already-compiled output by relative path
+ * (e.g. `../dist/module.js`) so the launcher stays self-contained. Left
+ * alone, esbuild would bundle each of those imports by reading whatever is on disk at that
+ * path as plain text — files that are also this build's own output, duplicating their code
+ * instead of sharing it, and colliding when both are produced in the same build. Redirecting
+ * every such import to its matching TypeScript source makes esbuild compile it as the same
+ * module every other entry point already bundles, so `splitting` can share it in one chunk
+ * instead of duplicating it.
+ *
+ * @returns {Plugin} The esbuild plugin.
+ */
+function createOwnOutputRedirectPlugin(): Plugin {
+  return {
+    name: 'redirect-own-dist-outputs',
+    setup(pluginBuild) {
+      pluginBuild.onResolve({ filter: /^\.\.?\// }, async (args) => {
+        // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
+        if (!args.path.endsWith('.js')) return undefined;
+        const resolved = path.resolve(args.resolveDir, args.path);
+        const segments = resolved.split(path.sep);
+        const distIndex = segments.lastIndexOf('dist');
+        // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
+        if (distIndex === -1) return undefined;
+        const sourcePath = [...segments.slice(0, distIndex), 'src', ...segments.slice(distIndex + 1)].join(path.sep).replace(/\.js$/, '.ts');
+        return (await fileExists(sourcePath)) ? { path: sourcePath } : undefined;
+      });
+    },
+  };
+}
+
+/**
  * Bundles the project with esbuild.
  *
  * Steps:
@@ -254,9 +327,15 @@ function resolveDeclaredPackageSpecifiers(packageJson: Record<string, unknown>, 
  *    and are never shipped as runtime module-resolution rules.
  * 6. Derive bundle entry points from the main field, public export targets, and bins.
  *    Bins outside `dist/` are bundled as JavaScript launchers; declared entry points
- *    add runtime-loaded modules such as workers.
+ *    add runtime-loaded modules such as workers. A launcher's relative import of this
+ *    build's own dist output (e.g. `../dist/module.js`) is redirected to that output's
+ *    TypeScript source via an esbuild plugin, so it compiles as the same module and
+ *    `splitting` can share it in one chunk instead of duplicating it.
  * 7. Run one `esbuild.build()` call with `splitting: true`, writing bundled output to
  *    `dist/`, then copy files matching declared `copyEntries` patterns into `dist/`.
+ * 8. Delete every file under `dist/` that step 7 did not produce or copy: leftover
+ *    per-file JavaScript from an earlier plain `tsc` build. Declaration files are
+ *    always kept, since they come from a separate, unrelated step.
  *
  * @param {EsbuildOptions} opts Esbuild options.
  * @returns {Promise<void>} Resolves when the bundle is written.
@@ -390,8 +469,8 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     resolvedBinEntries.push({ in: srcPath, out: toOutName(binRelPath) });
   }
 
-  const entryPoints: Array<{ in: string; out: string }> = [{ in: path.join(opts.rootDir, toTsSrc(mainRel)), out: toOutName(mainRel) }, ...resolvedBinEntries];
-  const outputPaths = new Set(entryPoints.map((entryPoint) => entryPoint.out));
+  const entryPoints: Array<{ in: string; out: string }> = [{ in: path.join(opts.rootDir, toTsSrc(mainRel)), out: toOutName(mainRel) }];
+  const outputPaths = new Set([...entryPoints, ...resolvedBinEntries].map((entryPoint) => entryPoint.out));
   if (rootExports) {
     for (const [exportPath, exportValue] of Object.entries(rootExports)) {
       if (exportPath === '.' || !exportPath.startsWith('./')) continue;
@@ -417,12 +496,17 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     entryPoints.push(declaredEntryPoint);
   }
 
+  const allEntryPoints = [...entryPoints, ...resolvedBinEntries];
+
   // Step 7: Run esbuild — all entries in one call with code splitting.
-  logEsbuild(entryPoints, opts.rootDir);
-  const esbuildOptions: BuildOptions = {
+  logEsbuild(allEntryPoints, opts.rootDir);
+  const esbuildOptions = {
     /** This is an array of files that each serve as an input to the bundling algorithm. They are called "entry points" because each one is meant to be the initial script that is
      * evaluated which then loads all other aspects of the code that it represents. */
-    entryPoints,
+    entryPoints: allEntryPoints,
+    /** Redirects a launcher's relative import of a compiled dist file to its TypeScript
+     * source, so shared code compiles once and can be split into a shared chunk. */
+    plugins: [createOwnOutputRedirectPlugin()],
     /** To bundle a file means to inline any imported dependencies into the file itself. This process is recursive so dependencies of dependencies (and so on) will also be inlined.
      *  By default esbuild will not bundle the input files. Bundling must be explicitly enabled. */
     bundle: true,
@@ -446,8 +530,14 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     splitting: true,
     /** This option sets the output directory for the build operation. */
     outdir: path.join(opts.rootDir, 'dist'),
+    /** Resolves relative entry and output paths against the project root regardless of the
+     * current working directory, so the metafile's output paths below resolve predictably. */
+    absWorkingDir: opts.rootDir,
     /** The build API call can either write to the file system directly or return the files that would have been written as in-memory buffers. */
     write: true,
+    /** Records every output file this build produced, so leftover per-file compiled JavaScript
+     * that predates this bundle can be told apart from this run's own outputs and pruned. */
+    metafile: true,
     /** When enabled, the generated code will be minified instead of pretty-printed. Minified code is generally equivalent to non-minified code but is smaller, which means it
      * downloads faster but is harder to debug. Usually you minify code in production but not in development. */
     minify: opts.minify ?? false,
@@ -457,11 +547,15 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     legalComments: opts.minify ? 'none' : 'inline',
     /** This sets the log level for esbuild. */
     logLevel: 'info',
-  };
+  } satisfies BuildOptions;
   logEsbuildOptions(JSON.stringify(esbuildOptions, null, 2), opts.rootDir);
   if (opts.dryRun) {
     return;
   }
-  await build(esbuildOptions);
-  await copyDeclaredEntries(declaredCopyEntries, opts.rootDir);
+  const result = await build(esbuildOptions);
+  const copiedPaths = await copyDeclaredEntries(declaredCopyEntries, opts.rootDir);
+
+  // Step 8: Remove leftover per-file compiled JavaScript that this run superseded.
+  const keepPaths = new Set([...Object.keys(result.metafile.outputs).map((outputPath) => path.resolve(opts.rootDir, outputPath)), ...copiedPaths]);
+  await pruneUnproducedDistFiles(path.join(opts.rootDir, 'dist'), keepPaths);
 }

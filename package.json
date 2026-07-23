@@ -76,6 +76,12 @@
     "version": false,
     "publish": false,
     "frontend": false,
+    "entryPoints": [
+      {
+        "in": "src/self.worker.ts",
+        "out": "self.worker"
+      }
+    ],
     "coverage": {
       "lines": 100,
       "functions": 100,

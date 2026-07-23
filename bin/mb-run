@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { getErrorCode, getErrorMessage } from "../dist/error.js";
-import { main } from "../dist/module.js";
+import { getErrorCode, getErrorMessage, main } from "../dist/module.js";
 
 try {
   await main();

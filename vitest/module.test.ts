@@ -27,6 +27,10 @@ import { runPack } from '../src/pack.js';
 import { sortAll } from '../src/sort.js';
 import { ExitError } from '../src/spawn.js';
 import { runTests } from '../src/test.js';
+// oxlint-disable-next-line import/no-namespace -- namespace import is required so vi.spyOn can stub the module export
+import * as updateModule from '../src/update.js';
+// oxlint-disable-next-line import/no-namespace -- namespace import is required so vi.spyOn can stub the module export
+import * as upgradeModule from '../src/upgrade.js';
 
 // Suppress all console output produced by dryRun logging and help text.
 
@@ -424,6 +428,21 @@ describe('module', () => {
       } finally {
         await rm(pluginDir, { recursive: true, force: true });
       }
+    });
+
+    it('runs --upgrade before --update when both are requested', async () => {
+      const order: string[] = [];
+      vi.spyOn(upgradeModule, 'runUpgrade').mockImplementation(async () => {
+        order.push('upgrade');
+      });
+      vi.spyOn(updateModule, 'runUpdate').mockImplementation(async () => {
+        order.push('update');
+      });
+
+      setArgs('--dry-run', '--update', '--upgrade');
+      await expect(main()).resolves.toBeUndefined();
+
+      expect(order).toEqual(['upgrade', 'update']);
     });
   });
 

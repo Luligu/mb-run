@@ -28,7 +28,7 @@ describe('esbuild', () => {
     initLogger({ dryRun: false, verbose: false, rootDir: '' });
     tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-esbuild-'));
     mockedBuild.mockClear();
-    mockedBuild.mockResolvedValue({} as Awaited<ReturnType<typeof mockBuild>>);
+    mockedBuild.mockResolvedValue({ metafile: { inputs: {}, outputs: {} } } as Awaited<ReturnType<typeof mockBuild>>);
   });
 
   afterEach(async () => {
@@ -288,6 +288,30 @@ describe('esbuild', () => {
         entryPoints: Array<{ in: string; out: string }>;
       };
       expect(opts.entryPoints).toHaveLength(1); // only main
+    });
+
+    it('bundles the main entry and its bin launcher together in a single call', async () => {
+      // A launcher outside dist commonly imports this package's own compiled output
+      // (e.g. `../dist/module.js`) to inline it into a self-contained file. A resolve
+      // plugin redirects that import to its TypeScript source (see esbuild.tool.test.ts
+      // for a real-build assertion that this avoids duplicating the shared code), so both
+      // entries can be bundled together in one call with `splitting: true`.
+      await writePkg(tmpDir, {
+        name: 'my-pkg',
+        version: '1.0.0',
+        main: './dist/module.js',
+        bin: { 'my-run': 'bin/my-run.js' },
+      });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+      await mkdir(path.join(tmpDir, 'bin'), { recursive: true });
+      await writeFile(path.join(tmpDir, 'bin', 'my-run.js'), 'import "../dist/module.js";\n');
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
+
+      expect(mockedBuild).toHaveBeenCalledOnce();
+      const opts = mockedBuild.mock.calls[0][0] as { entryPoints: Array<{ in: string; out: string }> };
+      expect(opts.entryPoints).toContainEqual({ in: path.join(tmpDir, 'src', 'module.ts'), out: 'module' });
+      expect(opts.entryPoints).toContainEqual({ in: path.join(tmpDir, 'bin', 'my-run.js'), out: 'bin/my-run' });
     });
   });
 

@@ -57,15 +57,15 @@ mb-run [flags] [--pack [tag]] [--publish [tag]] [--version [tag]]
 
 Multiple flags can be combined. They are always executed in this fixed order regardless of how they appear on the command line:
 
-> `info → install → update → upgrade → deep-clean → reset → version → clean → build → typecheck → test → format → lint → sort → pack → publish → esbuild → watch`
+> `info → install → upgrade → update → deep-clean → reset → version → clean → build → typecheck → test → format → lint → sort → pack → publish → esbuild → watch`
 
 ## Flags
 
 | Flag                                   | Description                                                                                                                                                                                                                                                                                                                                                                                           |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--install`                            | Runs `npm install --no-fund --no-audit`. In a Matterbridge plugin project, also runs `npm link matterbridge`.                                                                                                                                                                                                                                                                                         |
-| `--update`                             | Upgrades all dependencies with `npm-check-updates` (`ncu -u`) across the root and all workspaces, then runs `npm install`.                                                                                                                                                                                                                                                                            |
 | `--upgrade [keywords...]`              | Upgrades the project's config and scaffolding files, then runs `npm install`. Optional keywords enable extras: `node`, `bun`, `jest`, `vitest`, `buntest`, `bundle`, `obfuscate`.                                                                                                                                                                                                                     |
+| `--update`                             | Upgrades all dependencies with `npm-check-updates` (`ncu -u`) across the root and all workspaces, then runs `npm install`. Runs after `--upgrade` so dependency updates apply to the already-upgraded `package.json`.                                                                                                                                                                                 |
 | `--reset`                              | Empties `.cache/` and `node_modules/` (preserving directory structure for devcontainer named volumes), then runs `npm install` and rebuilds. Implies `--install` and `--build`.                                                                                                                                                                                                                       |
 | `--reset --production`                 | Same as `--reset` but rebuilds using the production tsconfig.                                                                                                                                                                                                                                                                                                                                         |
 | `--deep-clean`                         | Same filesystem cleanup as `--reset` but skips the install and build steps.                                                                                                                                                                                                                                                                                                                           |
@@ -134,6 +134,19 @@ For each operation, `mb-run` resolves the tool binary from `node_modules/.bin` i
 
 - **Known entrypoints** (`tsc`, `jest`, `vitest`, `eslint`, `oxlint`, `prettier`) are invoked as `node <entrypoint>` for reliability on all platforms.
 - **Other binaries** are invoked via their shim in `node_modules/.bin` (using the `.cmd` variant on Windows).
+
+## Known Issues
+
+### Declaration bundling is broken on TypeScript 7
+
+`--pack`/`--publish` bundle declaration files for library packages (`automator.library: true` or a production tsconfig with `declaration: true`) using [`dts-bundle-generator`](https://github.com/timocov/dts-bundle-generator). TypeScript 7's native compiler removed the classic Program API (`ts.sys`, `ts.createProgram`, …) from the package's default entry point — it now only exports `version`/`versionMajorMinor` — so any tool that depends on that API, including `dts-bundle-generator`, fails at runtime when `typescript@7` is the resolved `typescript` package. The same applies to `rollup-plugin-dts`, the tool `mb-run` used before switching to `dts-bundle-generator`, so reverting does not fix it either.
+
+Neither project has shipped a fix as of this writing:
+
+- [`dts-bundle-generator` #363](https://github.com/timocov/dts-bundle-generator/issues/363) is open with no progress.
+- [`rollup-plugin-dts` #395](https://github.com/Swatinem/rollup-plugin-dts/issues/395) has a maintainer-authored proposal and a working branch, but it is unmerged and unreleased.
+
+Microsoft's own interim workaround — installing [`@typescript/typescript6`](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-beta/#running-side-by-side-with-typescript-6.0) (a compatibility package carrying the TypeScript 6.0 API) alongside the native `typescript@7` compiler under separate npm aliases — resolves this for tools that need it, at the cost of reintroducing a two-compiler setup. `vitest/esbuild.library.test.ts` documents this failure with a real (unmocked) `dts-bundle-generator` run; it is commented out so the suite passes, since it fails in this environment for the reasons above rather than due to a bug in this repository's code.
 
 ## If you find this project useful
 

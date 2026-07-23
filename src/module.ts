@@ -45,6 +45,11 @@ import { runUpdate } from './update.js';
 import { runUpgrade } from './upgrade.js';
 import { parseVersionTag, updateRootVersion, updateWorkspaceDependencyVersions } from './version.js';
 
+// Re-exported so bin/mb-run can import them from this always-produced main entry, rather
+// than from dist/error.js, which esbuild's dist-pruning step removes once error.ts's code
+// is inlined elsewhere and no longer needed as a standalone compiled file.
+export { getErrorCode, getErrorMessage } from './error.js';
+
 // IMPORTANT: This script operates on the package.json in the current working directory.
 // It may be executed from other repos/packages, so do not assume the script's own path.
 const isWindows = process.platform === 'win32';
@@ -283,13 +288,9 @@ export async function main(): Promise<void> {
     log(`${restorePos()}${green('✅')} Install complete in ${getElapsed()}.${clearEnd()}`);
   }
 
-  if (want.update) {
-    log(`${savePos()}⏳ Updating dependencies...`);
-    await runUpdate(buildOpts);
-    await runInstall({ rootDir: repoRoot, dryRun: dryRunMode });
-    log(`${restorePos()}${green('✅')} Update complete in ${getElapsed()}.${clearEnd()}`);
-  }
-
+  // --upgrade runs before --update: it rewrites package.json and config files to the current
+  // template, so a subsequent --update bumps dependencies against that up-to-date package.json
+  // instead of one --upgrade would still go on to overwrite.
   if (want.upgrade) {
     log(`${savePos()}⏳ Upgrading package...`);
     await runUpgrade({
@@ -307,6 +308,13 @@ export async function main(): Promise<void> {
     await runCommand('npm', ['install', '--no-fund', '--no-audit', '--silent'], { dryRun: dryRunMode });
     if (await isPlugin(repoRoot)) await runCommand('npm', ['link', 'matterbridge', '--no-fund', '--no-audit', '--silent'], { cwd: repoRoot, dryRun: dryRunMode });
     log(`${restorePos(0)}${green('✅')} Upgrade complete in ${getElapsed()}.${clearEnd()}`);
+  }
+
+  if (want.update) {
+    log(`${savePos()}⏳ Updating dependencies...`);
+    await runUpdate(buildOpts);
+    await runInstall({ rootDir: repoRoot, dryRun: dryRunMode });
+    log(`${restorePos()}${green('✅')} Update complete in ${getElapsed()}.${clearEnd()}`);
   }
 
   if (want.deepClean) {
