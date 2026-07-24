@@ -583,31 +583,26 @@ export async function runPackageJsonUpgrade(
 
     let jestCoverageScript;
     let vitestCoverageScript;
-    if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
-      jestCoverageScript =
-        'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": {\\\"statements\\\": 100, \\\"branches\\\": 100, \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
-    } else if (coverage?.lines === 100 && coverage.functions === 100) {
-      jestCoverageScript =
-        'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100, \\\"functions\\\": 100 } }"';
-    } else if (coverage?.lines === 100) {
-      jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage --coverageThreshold="{ \\\"global\\\": { \\\"lines\\\": 100 } }"';
-    } else {
-      jestCoverageScript = 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage';
+    const jestCoverageArgs = ['cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --coverage'];
+    const jestCoverageThresholdEntries: string[] = [];
+    if (typeof coverage?.statements === 'number') jestCoverageThresholdEntries.push(`\\"statements\\": ${coverage.statements}`);
+    if (typeof coverage?.branches === 'number') jestCoverageThresholdEntries.push(`\\"branches\\": ${coverage.branches}`);
+    if (typeof coverage?.lines === 'number') jestCoverageThresholdEntries.push(`\\"lines\\": ${coverage.lines}`);
+    if (typeof coverage?.functions === 'number') jestCoverageThresholdEntries.push(`\\"functions\\": ${coverage.functions}`);
+    if (jestCoverageThresholdEntries.length > 0) {
+      jestCoverageArgs.push(`--coverageThreshold="{ \\"global\\": { ${jestCoverageThresholdEntries.join(', ')} } }"`);
     }
+    jestCoverageScript = jestCoverageArgs.join(' ');
     if (opts.enableJest) {
       log(magenta(`Jest test coverage script: ${cyan(jestCoverageScript)}`));
     }
 
-    if (coverage?.lines === 100 && coverage.functions === 100 && coverage.statements === 100 && coverage.branches === 100) {
-      vitestCoverageScript =
-        'vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
-    } else if (coverage?.lines === 100 && coverage.functions === 100) {
-      vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100 --coverage.thresholds.functions=100';
-    } else if (coverage?.lines === 100) {
-      vitestCoverageScript = 'vitest run --coverage --coverage.thresholds.lines=100';
-    } else {
-      vitestCoverageScript = 'vitest run --coverage';
-    }
+    const vitestCoverageArgs = ['vitest run --coverage'];
+    if (typeof coverage?.statements === 'number') vitestCoverageArgs.push(`--coverage.thresholds.statements=${coverage.statements}`);
+    if (typeof coverage?.branches === 'number') vitestCoverageArgs.push(`--coverage.thresholds.branches=${coverage.branches}`);
+    if (typeof coverage?.lines === 'number') vitestCoverageArgs.push(`--coverage.thresholds.lines=${coverage.lines}`);
+    if (typeof coverage?.functions === 'number') vitestCoverageArgs.push(`--coverage.thresholds.functions=${coverage.functions}`);
+    vitestCoverageScript = vitestCoverageArgs.join(' ');
     if (opts.enableVitest) {
       log(magenta(`Vitest test coverage script: ${cyan(vitestCoverageScript)}`));
     }
