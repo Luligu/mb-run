@@ -4,6 +4,7 @@
     "types": ["node"],
     "outDir": "dist",
     "rootDir": "src",
+    "incremental": true,
     "composite": true,
     "declaration": true,
     "declarationMap": false,
