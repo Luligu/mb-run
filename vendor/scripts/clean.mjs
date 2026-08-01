@@ -1,4 +1,4 @@
- /**
+/**
  * clean.mjs
  * Version: 1.1.0
  *
@@ -51,7 +51,7 @@ const clean = (dir) => {
 
 const getWorkspaceDirs = () => {
   const { workspaces = [] } = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-  const patterns = Array.isArray(workspaces) ? workspaces : workspaces.packages ?? [];
+  const patterns = Array.isArray(workspaces) ? workspaces : (workspaces.packages ?? []);
   const dirs = [];
 
   for (const pattern of patterns) {
