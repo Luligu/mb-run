@@ -5,6 +5,7 @@
  */
 
 import path from 'node:path';
+import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -279,7 +280,7 @@ describe('logger', () => {
       it('logs the action and arguments when verbose is true', () => {
         const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
         logger.logEsbuildAction('external', ['@jest/globals']);
-        expect(lines[0]).toContain('esbuild external @jest/globals');
+        expect(stripVTControlCharacters(lines[0])).toContain('esbuild external @jest/globals');
       });
     });
 
@@ -287,7 +288,7 @@ describe('logger', () => {
       it('logs formatted options when verbose is true', () => {
         const logger = new Logger({ dryRun: false, verbose: true, rootDir: '/root' });
         logger.logEsbuildOptions('{\n  "bundle": true\n}');
-        expect(lines[0]).toContain('esbuild options:');
+        expect(stripVTControlCharacters(lines[0])).toContain('esbuild options:');
         expect(lines[0]).toContain('"bundle": true');
       });
     });
@@ -512,13 +513,13 @@ describe('logger', () => {
     it('logEsbuildAction logs when verbose is true', () => {
       initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
       logEsbuildAction('bundle', ['@matter/main']);
-      expect(lines[0]).toContain('esbuild bundle @matter/main');
+      expect(stripVTControlCharacters(lines[0])).toContain('esbuild bundle @matter/main');
     });
 
     it('logEsbuildOptions logs when verbose is true', () => {
       initLogger({ dryRun: false, verbose: true, rootDir: '/root' });
       logEsbuildOptions('{"bundle":true}');
-      expect(lines[0]).toContain('esbuild options:');
+      expect(stripVTControlCharacters(lines[0])).toContain('esbuild options:');
     });
 
     it('logEsbuild uses cwd when provided', () => {

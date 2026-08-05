@@ -123,16 +123,15 @@
   },
   "dependencies": {
     "cross-spawn": "7.0.6",
-    "dts-bundle-generator": "9.5.1",
     "esbuild": "0.28.1",
-    "npm-check-updates": "22.2.9"
+    "npm-check-updates": "23.0.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "6.0.6",
-    "@types/node": "26.1.1",
+    "@types/node": "26.1.2",
     "@vitest/coverage-v8": "4.1.10",
-    "oxfmt": "0.60.0",
-    "oxlint": "1.75.0",
+    "oxfmt": "0.62.0",
+    "oxlint": "1.77.0",
     "oxlint-tsgolint": "7.0.2001",
     "typescript": "7.0.2",
     "vitest": "4.1.10"

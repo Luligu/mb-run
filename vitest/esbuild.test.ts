@@ -16,9 +16,16 @@ import { initLogger } from '../src/logger.js';
 // Mock esbuild so no real bundling happens.
 vi.mock('esbuild', () => ({ build: vi.fn().mockResolvedValue({}) }));
 
+vi.mock('../src/dts.js', () => ({
+  runDtsBuild: vi.fn().mockImplementation(async () => {}),
+}));
+
 import { build as mockBuild } from 'esbuild';
 
+const { runDtsBuild } = await import('../src/dts.js');
+
 const mockedBuild = vi.mocked(mockBuild);
+const mockRunDtsBuild = vi.mocked(runDtsBuild);
 
 let tmpDir: string;
 
@@ -29,6 +36,8 @@ describe('esbuild', () => {
     tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-esbuild-'));
     mockedBuild.mockClear();
     mockedBuild.mockResolvedValue({ metafile: { inputs: {}, outputs: {} } } as Awaited<ReturnType<typeof mockBuild>>);
+    mockRunDtsBuild.mockClear();
+    mockRunDtsBuild.mockImplementation(async () => {});
   });
 
   afterEach(async () => {
@@ -72,7 +81,22 @@ describe('esbuild', () => {
 
       expect(mockedBuild).not.toHaveBeenCalled();
       // oxlint-disable-next-line no-console -- verifies dry-run no longer prints options by itself
-      expect(console.log).not.toHaveBeenCalledWith(expect.stringContaining('esbuild options:'));
+      expect(vi.mocked(console.log).mock.calls.some(([message]) => String(message).includes('options:'))).toBe(false);
+    });
+
+    it('runs declaration build for library packages when dryRun=true', async () => {
+      await writePkg(tmpDir, {
+        name: 'my-pkg',
+        version: '1.0.0',
+        main: './dist/module.js',
+        automator: { library: true },
+      });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: true });
+
+      expect(mockedBuild).not.toHaveBeenCalled();
+      expect(mockRunDtsBuild).toHaveBeenCalledWith({ rootDir: tmpDir, isWindows: false, dryRun: true });
     });
 
     it('prints esbuild options when verbose=true and still runs build', async () => {
@@ -88,7 +112,37 @@ describe('esbuild', () => {
 
       expect(mockedBuild).toHaveBeenCalledOnce();
       // oxlint-disable-next-line no-console -- verifies verbose diagnostic output
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('esbuild options:'));
+      expect(vi.mocked(console.log).mock.calls.some(([message]) => String(message).includes('options:'))).toBe(true);
+    });
+  });
+
+  describe('runEsbuild — declaration build', () => {
+    it('runs declaration build after bundling library packages', async () => {
+      await writePkg(tmpDir, {
+        name: 'my-pkg',
+        version: '1.0.0',
+        main: './dist/module.js',
+        automator: { library: true },
+      });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: true, dryRun: false });
+
+      expect(mockedBuild).toHaveBeenCalledOnce();
+      expect(mockRunDtsBuild).toHaveBeenCalledWith({ rootDir: tmpDir, isWindows: true, dryRun: false });
+    });
+
+    it('skips declaration build after bundling non-library packages', async () => {
+      await writePkg(tmpDir, {
+        name: 'my-pkg',
+        version: '1.0.0',
+        main: './dist/module.js',
+      });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
+
+      expect(mockRunDtsBuild).not.toHaveBeenCalled();
     });
   });
 

@@ -32,7 +32,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [devcontainer]: Bump Dev Container config to v.1.0.5.
-- [dts]: Replace Rollup and `rollup-plugin-dts` with `dts-bundle-generator` for declaration bundling.
+- [dts]: Replace third-party declaration bundling with TypeScript declaration-only emit while TypeScript 7-compatible bundlers are unavailable.
 - [build]: Drop the `tsgo` native preview compiler; `--build`, `--typecheck`, and `--watch` now always use `tsc`.
 - [lint]: Bump the Oxc toolchain (`oxlint`, `oxfmt`, `oxlint-tsgolint`) and disable the new `node/no-top-level-await` rule, since the Matterbridge ecosystem is pure ESM with no `require(esm)` consumers.
 

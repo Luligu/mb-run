@@ -27,7 +27,6 @@ import path from 'node:path';
 import { runWorkspaceBuild } from './build.js';
 import { backup, resolveWorkspacePackageJsonPaths, restore } from './cache.js';
 import { cleanOnly, fileExists } from './clean.js';
-import { runDtsBundle } from './dts.js';
 import { runEsbuild } from './esbuild.js';
 import { runFormatter } from './format.js';
 import { isLibrary, removeFile } from './helpers.js';
@@ -59,20 +58,19 @@ export interface PackOptions {
  * 2. If `opts.tag` is set, bump the version via `updateRootVersion` + `updateWorkspaceDependencyVersions` + `npm install --package-lock-only`
  * 3. Clean build artifacts
  * 4. Build the workspace for production
- * 5. Bundle with esbuild
- * 6. Bundle declarations for library packages
- * 7. Strip `devDependencies` and `scripts` from `package.json`; redirect bundled binary launchers to `dist/bin`; remove type metadata for non-library packages
- * 8. Merge all `dependencies` from workspace packages into the root `dependencies`
+ * 5. Bundle with esbuild and rebuild declarations for library packages
+ * 6. Strip `devDependencies` and `scripts` from `package.json`; redirect bundled binary launchers to `dist/bin`; remove type metadata for non-library packages
+ * 7. Merge all `dependencies` from workspace packages into the root `dependencies`
  *     so the generated shrinkwrap records every runtime dependency needed by bundled code;
  *     strip local workspace package names from `dependencies` and remove `workspaces`
- * 9. Delete `package-lock.json` and `npm-shrinkwrap.json`
- * 10. Generate a production-only `package-lock.json` without modifying `node_modules`
- * 11. Convert the lockfile to `npm-shrinkwrap.json`
- * 12. `npm pack`
- * 13. Restore all files from memory (always, even on error)
- * 14. Restore the original lockfiles
- * 15. Format the workspace
- * 16. Build the workspace
+ * 8. Delete `package-lock.json` and `npm-shrinkwrap.json`
+ * 9. Generate a production-only `package-lock.json` without modifying `node_modules`
+ * 10. Convert the lockfile to `npm-shrinkwrap.json`
+ * 11. `npm pack`
+ * 12. Restore all files from memory (always, even on error)
+ * 13. Restore the original lockfiles
+ * 14. Format the workspace
+ * 15. Build the workspace
  *
  * @param {PackOptions} opts Pack options.
  * @returns {Promise<void>} Resolves when the full pack workflow completes.
@@ -115,7 +113,7 @@ export async function runPack(opts: PackOptions): Promise<void> {
       watch: false,
     });
 
-    // Step 5: Bundle with esbuild.
+    // Step 5: Bundle with esbuild and rebuild declarations for library packages.
     await runEsbuild({
       rootDir: opts.rootDir,
       isWindows: opts.isWindows,
@@ -124,14 +122,9 @@ export async function runPack(opts: PackOptions): Promise<void> {
       minify: opts.minify,
     });
 
-    // Step 6: Inline workspace declarations for packages that publish types.
-    if (await isLibrary(opts.rootDir)) {
-      await runDtsBundle({ rootDir: opts.rootDir, dryRun: opts.dryRun });
-    }
-
     const workspacePkgPaths = await resolveWorkspacePackageJsonPaths(opts.rootDir);
 
-    // Step 7: Strip development metadata, redirect binary launchers, and strip non-library type metadata from package.json.
+    // Step 6: Strip development metadata, redirect binary launchers, and strip non-library type metadata from package.json.
     logWriteFile(packageJsonPath);
     if (!opts.dryRun) {
       const raw = await readFile(packageJsonPath, 'utf8');
@@ -167,7 +160,7 @@ export async function runPack(opts: PackOptions): Promise<void> {
       await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
     }
 
-    // Step 8: Merge all dependencies from workspace packages into the root dependencies.
+    // Step 7: Merge all dependencies from workspace packages into the root dependencies.
     // esbuild inlines workspace code but their runtime deps must still be installed.
     if (!opts.dryRun && workspacePkgPaths.length > 0) {
       const raw = await readFile(packageJsonPath, 'utf8');
@@ -204,31 +197,31 @@ export async function runPack(opts: PackOptions): Promise<void> {
       await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
     }
 
-    // Step 9: Delete package-lock.json and npm-shrinkwrap.json.
+    // Step 8: Delete package-lock.json and npm-shrinkwrap.json.
     for (const lockfilePath of lockfilePaths) await removeFile(lockfilePath, opts);
 
-    // Step 10: Generate a production lockfile without changing node_modules.
+    // Step 9: Generate a production lockfile without changing node_modules.
     await runCommand('npm', ['install', '--package-lock-only', '--omit=dev', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
 
-    // Step 11: Convert package-lock.json to npm-shrinkwrap.json.
+    // Step 10: Convert package-lock.json to npm-shrinkwrap.json.
     await runCommand('npm', ['shrinkwrap', '--omit=dev', '--silent'], {
       cwd: opts.rootDir,
       dryRun: opts.dryRun,
     });
 
-    // Step 12: npm pack.
+    // Step 11: npm pack.
     await runCommand('npm', ['pack'], {
       cwd: opts.rootDir,
       dryRun: opts.dryRun,
     });
   } finally {
-    // Step 13: Restore package.json (and tsconfig files) from memory (always, even on error).
+    // Step 12: Restore package.json (and tsconfig files) from memory (always, even on error).
     logWriteFile(packageJsonPath);
     if (!opts.dryRun) {
       await restore(opts.rootDir);
     }
 
-    // Step 14: Restore the original lockfiles without modifying node_modules.
+    // Step 13: Restore the original lockfiles without modifying node_modules.
     for (const lockfilePath of lockfilePaths) {
       const lockfileContent = lockfileContents.get(lockfilePath);
       if (lockfileContent) {
@@ -239,10 +232,10 @@ export async function runPack(opts: PackOptions): Promise<void> {
       }
     }
 
-    // Step 15: Format the workspace.
+    // Step 14: Format the workspace.
     await runFormatter({ ...opts, check: false });
 
-    // Step 16: Build the workspace.
+    // Step 15: Build the workspace.
     await runWorkspaceBuild({
       rootDir: opts.rootDir,
       isWindows: opts.isWindows,

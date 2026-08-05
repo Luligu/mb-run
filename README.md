@@ -137,16 +137,26 @@ For each operation, `mb-run` resolves the tool binary from `node_modules/.bin` i
 
 ## Known Issues
 
-### Declaration bundling is broken on TypeScript 7
+### Declaration bundlers on TypeScript 7
 
-`--pack`/`--publish` bundle declaration files for library packages (`automator.library: true` or a production tsconfig with `declaration: true`) using [`dts-bundle-generator`](https://github.com/timocov/dts-bundle-generator). TypeScript 7's native compiler removed the classic Program API (`ts.sys`, `ts.createProgram`, …) from the package's default entry point — it now only exports `version`/`versionMajorMinor` — so any tool that depends on that API, including `dts-bundle-generator`, fails at runtime when `typescript@7` is the resolved `typescript` package. The same applies to `rollup-plugin-dts`, the tool `mb-run` used before switching to `dts-bundle-generator`, so reverting does not fix it either.
+`--pack`/`--publish` rebuild declaration files for library packages (`automator.library: true` or a production tsconfig with `declaration: true`) with TypeScript's declaration-only emit. Single-package projects use:
 
-Neither project has shipped a fix as of this writing:
+```sh
+tsc --project tsconfig.build.json --incremental false --composite false --declaration --declarationMap false --emitDeclarationOnly
+```
+
+Monorepos use project references:
+
+```sh
+tsc --build tsconfig.build.json --incremental true --composite true --declaration --declarationMap false --emitDeclarationOnly
+```
+
+This replaces third-party declaration bundling while TypeScript 7-compatible bundlers are unavailable. TypeScript 7's native compiler removed the classic Program API (`ts.sys`, `ts.createProgram`, …) from the package's default entry point — it now only exports `version`/`versionMajorMinor` — so tools that depend on that API fail at runtime when `typescript@7` is the resolved `typescript` package.
+
+Neither previous bundler has shipped a fix as of this writing:
 
 - [`dts-bundle-generator` #363](https://github.com/timocov/dts-bundle-generator/issues/363) is open with no progress.
 - [`rollup-plugin-dts` #395](https://github.com/Swatinem/rollup-plugin-dts/issues/395) has a maintainer-authored proposal and a working branch, but it is unmerged and unreleased.
-
-Microsoft's own interim workaround — installing [`@typescript/typescript6`](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-beta/#running-side-by-side-with-typescript-6.0) (a compatibility package carrying the TypeScript 6.0 API) alongside the native `typescript@7` compiler under separate npm aliases — resolves this for tools that need it, at the cost of reintroducing a two-compiler setup. `vitest/esbuild.library.test.ts` documents this failure with a real (unmocked) `dts-bundle-generator` run; it is commented out so the suite passes, since it fails in this environment for the reasons above rather than due to a bug in this repository's code.
 
 ## If you find this project useful
 

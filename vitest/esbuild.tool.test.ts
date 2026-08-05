@@ -146,8 +146,8 @@ describe('esbuild (real tool)', () => {
 
     const distEntries = await readdir(path.join(tmpDir, 'dist'), { recursive: true });
     expect(distEntries).not.toContain('helper.js');
-    expect(distEntries).toContain('helper.d.ts');
-    expect(distEntries).toContain('helper.d.ts.map');
+    expect(distEntries).not.toContain('helper.d.ts');
+    expect(distEntries).not.toContain('helper.d.ts.map');
     expect(distEntries).toContain('module.js');
     expect(distEntries).not.toContain('stale');
     expect(distEntries).not.toContain(path.join('stale', 'leftover.js'));

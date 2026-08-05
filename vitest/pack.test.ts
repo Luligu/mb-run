@@ -42,10 +42,6 @@ vi.mock('../src/esbuild.js', () => ({
   runEsbuild: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../src/dts.js', () => ({
-  runDtsBundle: vi.fn().mockResolvedValue(undefined),
-}));
-
 vi.mock('../src/format.js', () => ({
   runFormatter: vi.fn().mockResolvedValue(undefined),
 }));
@@ -74,7 +70,6 @@ const { runWorkspaceBuild } = await import('../src/build.js');
 const { backup, resolveWorkspacePackageJsonPaths, restore } = await import('../src/cache.js');
 const { fileExists } = await import('../src/clean.js');
 const { runEsbuild } = await import('../src/esbuild.js');
-const { runDtsBundle } = await import('../src/dts.js');
 const { runFormatter } = await import('../src/format.js');
 const { isLibrary } = await import('../src/helpers.js');
 const { runCommand } = await import('../src/spawn.js');
@@ -84,7 +79,6 @@ const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 const mockRunWorkspaceBuild = vi.mocked(runWorkspaceBuild);
 const mockRunEsbuild = vi.mocked(runEsbuild);
-const mockRunDtsBundle = vi.mocked(runDtsBundle);
 const mockRunFormatter = vi.mocked(runFormatter);
 const mockBackup = vi.mocked(backup);
 const mockResolveWorkspacePackageJsonPaths = vi.mocked(resolveWorkspacePackageJsonPaths);
@@ -116,7 +110,6 @@ describe('pack', () => {
     mockWriteFile.mockClear();
     mockRunCommand.mockClear();
     mockRunEsbuild.mockClear();
-    mockRunDtsBundle.mockClear();
     mockBackup.mockClear();
     mockRestore.mockClear();
     mockRunCommand.mockResolvedValue(undefined);
@@ -164,14 +157,6 @@ describe('pack', () => {
       it('minifies the bundle when requested', async () => {
         await runPack(makeOpts({ dryRun: true, minify: true }));
         expect(mockRunEsbuild).toHaveBeenCalledWith({ ...makeOpts({ dryRun: true, minify: true }), verbose: undefined });
-      });
-
-      it('bundles declarations for library packages', async () => {
-        mockIsLibrary.mockResolvedValue(true);
-
-        await runPack(makeOpts({ dryRun: true }));
-
-        expect(mockRunDtsBundle).toHaveBeenCalledWith({ rootDir, dryRun: true });
       });
 
       it('calls updateRootVersion and queues install --package-lock-only when tag is set', async () => {

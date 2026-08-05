@@ -28,7 +28,8 @@ import { build, type BuildOptions, type Plugin } from 'esbuild';
 
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
-import { isPlugin, parsePackageJson } from './helpers.js';
+import { runDtsBuild } from './dts.js';
+import { isLibrary, isPlugin, parsePackageJson } from './helpers.js';
 import { logEsbuild, logEsbuildAction, logEsbuildOptions } from './logger.js';
 
 /** Context shared by all esbuild operations. */
@@ -166,9 +167,8 @@ async function copyDeclaredEntries(entries: DeclaredCopyEntry[], rootDir: string
  * Compiling each source file individually (via `tsc`) leaves plain per-file compiled
  * JavaScript in `dist/`; once esbuild bundles the project, those files are superseded by
  * the entry, chunk, and copied outputs actually needed at runtime, but nothing else removes
- * them. Declaration files are always kept: they are produced separately (by `tsc` and, for
- * library packages, `dts-bundle-generator`) and are unrelated to esbuild's own outputs, which
- * may run before that declaration-bundling step.
+ * them. Declaration files are produced separately by `tsc`; library packages rebuild them
+ * after esbuild with declaration-only emit.
  *
  * @param {string} distDir Absolute path to the dist directory.
  * @param {Set<string>} keepPaths Absolute file paths that must survive: esbuild outputs and copyEntries destinations.
@@ -184,7 +184,7 @@ async function pruneUnproducedDistFiles(distDir: string, keepPaths: Set<string>)
       if (entry.isDirectory()) {
         if (await pruneDirectory(entryPath)) await rm(entryPath, { recursive: true, force: true });
         else isEmpty = false;
-      } else if (keepPaths.has(entryPath) || entryPath.endsWith('.d.ts') || entryPath.endsWith('.d.ts.map')) {
+      } else if (keepPaths.has(entryPath)) {
         isEmpty = false;
       } else {
         logEsbuildAction('prune', [entryPath]);
@@ -334,8 +334,9 @@ function createOwnOutputRedirectPlugin(): Plugin {
  * 7. Run one `esbuild.build()` call with `splitting: true`, writing bundled output to
  *    `dist/`, then copy files matching declared `copyEntries` patterns into `dist/`.
  * 8. Delete every file under `dist/` that step 7 did not produce or copy: leftover
- *    per-file JavaScript from an earlier plain `tsc` build. Declaration files are
- *    always kept, since they come from a separate, unrelated step.
+ *    per-file JavaScript and declarations from an earlier plain `tsc` build. Library
+ *    packages recreate declarations after esbuild with declaration-only emit.
+ * 9. Build declarations for packages that publish types.
  *
  * @param {EsbuildOptions} opts Esbuild options.
  * @returns {Promise<void>} Resolves when the bundle is written.
@@ -350,8 +351,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   const localNames = new Set<string>();
   for (const wPkgPath of workspacePaths) {
     const wRaw = await readFile(wPkgPath, 'utf8');
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const wPkg = JSON.parse(wRaw) as { name?: string };
+    const wPkg: { name?: string } = JSON.parse(wRaw);
     if (wPkg.name) localNames.add(wPkg.name);
   }
 
@@ -360,12 +360,11 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   const externalSet = new Set<string>();
   for (const pkgPath of allPkgPaths) {
     const pRaw = await readFile(pkgPath, 'utf8');
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const pPkg = JSON.parse(pRaw) as {
+    const pPkg: {
       dependencies?: Record<string, string>;
       optionalDependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
-    };
+    } = JSON.parse(pRaw);
     for (const dep of [...Object.keys(pPkg.dependencies ?? {}), ...Object.keys(pPkg.optionalDependencies ?? {}), ...Object.keys(pPkg.peerDependencies ?? {})]) {
       externalSet.add(dep);
     }
@@ -376,7 +375,8 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   // Bun-only adapters may be present in transitive dependencies. Node never
   // resolves them at runtime, but esbuild must leave their platform imports intact.
   externalSet.add('bun:*');
-  if (await isPlugin(opts.rootDir)) externalSet.add('matterbridge'); // Always external, not bundled.
+  // matterbridge is always external, not bundled.
+  if (await isPlugin(opts.rootDir)) externalSet.add('matterbridge');
 
   // Step 4: Read root package.json to resolve main entry and bin entries.
   const rootPkg = (await parsePackageJson(opts.rootDir)) as {
@@ -550,6 +550,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   } satisfies BuildOptions;
   logEsbuildOptions(JSON.stringify(esbuildOptions, null, 2), opts.rootDir);
   if (opts.dryRun) {
+    if (await isLibrary(opts.rootDir)) await runDtsBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun });
     return;
   }
   const result = await build(esbuildOptions);
@@ -558,4 +559,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   // Step 8: Remove leftover per-file compiled JavaScript that this run superseded.
   const keepPaths = new Set([...Object.keys(result.metafile.outputs).map((outputPath) => path.resolve(opts.rootDir, outputPath)), ...copiedPaths]);
   await pruneUnproducedDistFiles(path.join(opts.rootDir, 'dist'), keepPaths);
+
+  // Step 9: Build declarations for packages that publish types.
+  if (await isLibrary(opts.rootDir)) await runDtsBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun });
 }

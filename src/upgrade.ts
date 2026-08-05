@@ -328,6 +328,7 @@ export async function runPackageJsonUpgrade(
     // Remove legacy scripts that are no longer needed
     if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
+    if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'prune-tags.sh'));
