@@ -281,16 +281,19 @@ export async function runPackageJsonUpgrade(
     copyRecursive('CLAUDE.md', 'CLAUDE.md');
     appendFileToFileIfExists('localAgents.md', 'CLAUDE.md');
     if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'matterbridge'));
+    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'chip-tests'));
+    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'plugin-frontend'));
   }
 
-  // Copy .codex
+  // Copy .agents .codex
   if (!isWorkspace) {
     copyRecursive('.agents', '.agents');
     copyRecursive('.codex', '.codex');
-    copyRecursive('AGENTS.md', 'AGENTS.md');
+    copyRecursive(isPlugin ? 'AGENTS.plugin.md' : 'AGENTS.md', 'AGENTS.md');
     appendFileToFileIfExists('localAgents.md', 'AGENTS.md');
     if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'matterbridge.md'));
-    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.codex', 'rules', 'matterbridge'));
+    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'chip-tests.md'));
+    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'plugin-frontend.md'));
   }
 
   // Copy .devcontainer
