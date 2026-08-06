@@ -6,7 +6,7 @@ prefix_rule(pattern = ["git", "merge"], decision = "forbidden", justification = 
 prefix_rule(pattern = ["git", "push"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
 prefix_rule(pattern = ["git", "rebase"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
 prefix_rule(pattern = ["git", "commit"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
-prefix_rule(pattern = ["git", "reset", "--hard"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
+prefix_rule(pattern = ["git", "reset"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
 prefix_rule(pattern = ["git", "filter-branch"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
 prefix_rule(pattern = ["git", "branch", "-D"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
 prefix_rule(pattern = ["git", "branch", "-d"], decision = "forbidden", justification = "This command must be run manually outside Codex.")
