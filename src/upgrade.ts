@@ -151,6 +151,8 @@ export async function runPackageJsonUpgrade(
         buntest?: boolean;
         /* remove git scripts */
         git?: boolean;
+        /* add chip test scripts */
+        chip?: boolean;
         /* remove version scripts */
         version?: boolean;
         /* remove publish scripts */
@@ -658,6 +660,11 @@ export async function runPackageJsonUpgrade(
         automator?.git === true
           ? 'git fetch origin && git checkout -b dev-backup-001 && git checkout dev && git rebase origin/main && git push --force-with-lease origin dev'
           : undefined,
+
+      'chip:start': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --start' : undefined,
+      'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
+      'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
+
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
       'checkDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset`,

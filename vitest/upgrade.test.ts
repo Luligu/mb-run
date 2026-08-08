@@ -482,4 +482,19 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/jest'), expect.anything());
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('vitest'), expect.anything());
   });
+
+  it('sets publish and chip scripts when automator flags are enabled', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('publish-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('publish-package/package.json'),
+      { ...structuredClone(packageJson), automator: { chip: true, publish: true } },
+    );
+
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('package.json'), expect.stringContaining('npmPublishTagLatest'), 'utf8');
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('package.json'), expect.stringContaining('chip:test'), 'utf8');
+  });
 });
