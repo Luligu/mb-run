@@ -309,6 +309,7 @@ export async function runPackageJsonUpgrade(
     if (isPlugin) copyRecursive('.github-plugin', '.github');
     else copyRecursive('.github', '.github');
     appendFileToFileIfExists('localAgents.md', '.github/copilot-instructions.md');
+    if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'chip-tests.yml'));
   }
 
   // Copy .vscode
@@ -331,6 +332,7 @@ export async function runPackageJsonUpgrade(
     if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
     if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
+    if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'prune-tags.sh'));
