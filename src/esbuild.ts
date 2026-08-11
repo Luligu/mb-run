@@ -3,7 +3,7 @@
  * @description This file contains esbuild bundle utilities for the mb-run command.
  * @author Luca Liguori
  * @created 2026-05-03
- * @version 1.0.0
+ * @version 1.1.0
  * @license Apache-2.0
  *
  * Copyright 2026, 2027, 2028 Luca Liguori.
@@ -65,7 +65,7 @@ interface DeclaredCopyEntry {
 }
 
 /**
- * Resolves compiled file trees declared in `automator.copyEntries`.
+ * Resolves compiled file trees declared in `automator.esbuild.copyEntries`.
  *
  * Copy entries preserve generated ESM façades that must remain separate from the
  * esbuild bundle. This is needed when a façade uses `export *` from an external
@@ -82,18 +82,21 @@ async function resolveDeclaredCopyEntries(packageJson: Record<string, unknown>, 
   const automator = packageJson['automator'];
   if (typeof automator !== 'object' || automator === null || Array.isArray(automator)) return [];
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const copyEntries = (automator as Record<string, unknown>)['copyEntries'];
+  const esbuild = (automator as Record<string, unknown>)['esbuild'];
+  if (typeof esbuild !== 'object' || esbuild === null || Array.isArray(esbuild)) return [];
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const copyEntries = (esbuild as Record<string, unknown>)['copyEntries'];
   if (!Array.isArray(copyEntries)) return [];
   const entries: DeclaredCopyEntry[] = [];
   for (const [index, copyEntry] of copyEntries.entries()) {
-    if (typeof copyEntry !== 'object' || copyEntry === null || Array.isArray(copyEntry)) throw new Error(`Invalid automator.copyEntries[${index}]: expected an object`);
+    if (typeof copyEntry !== 'object' || copyEntry === null || Array.isArray(copyEntry)) throw new Error(`Invalid automator.esbuild.copyEntries[${index}]: expected an object`);
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const entry = copyEntry as Record<string, unknown>;
     const from = entry['from'];
     const to = entry['to'];
     const include = entry['include'];
     if (typeof from !== 'string' || !from || typeof to !== 'string' || !to || !Array.isArray(include) || include.some((pattern) => typeof pattern !== 'string' || !pattern)) {
-      throw new Error(`Invalid automator.copyEntries[${index}]: from, to, and include must be non-empty strings`);
+      throw new Error(`Invalid automator.esbuild.copyEntries[${index}]: from, to, and include must be non-empty strings`);
     }
     const sourcePath = path.resolve(rootDir, from);
     const relativeSource = path.relative(rootDir, sourcePath);
@@ -105,7 +108,7 @@ async function resolveDeclaredCopyEntries(packageJson: Record<string, unknown>, 
       path.posix.isAbsolute(destinationPath) ||
       !(await fileExists(sourcePath))
     ) {
-      throw new Error(`Invalid automator.copyEntries[${index}]: paths must stay within the project and source directory must exist`);
+      throw new Error(`Invalid automator.esbuild.copyEntries[${index}]: paths must stay within the project and source directory must exist`);
     }
     logEsbuildAction('copyEntries', [from, '--to', to, '--include', ...include], rootDir);
     entries.push({
@@ -127,12 +130,33 @@ async function resolveDeclaredCopyEntries(packageJson: Record<string, unknown>, 
 }
 
 /**
- * Copies declared compiled files after esbuild has written its outputs.
+ * Copies files declared by `automator.esbuild.copyEntries` into `dist/`.
  *
- * Esbuild writes first so normal bundle output is available, then matching source
- * files replace selected dist outputs. This lets a package keep static ESM façades
- * such as `export * from '@matter/main'` without bundling a stateful external graph.
- * The recursive traversal preserves each matched file's source-relative path.
+ * Esbuild runs before this copy step. For each validated entry, every file under
+ * `from` is tested against `include` using its path relative to `from`; matching
+ * files are written to `dist/<to>/<relative path>`. Existing files at those
+ * destinations are overwritten, which lets packages replace selected bundled
+ * outputs with precompiled static ESM façades such as `export * from '@matter/main'`.
+ *
+ * @example
+ * ```json
+ * {
+ *   "automator": {
+ *     "esbuild": {
+ *       "copyEntries": [
+ *         {
+ *           "from": "packages/core/dist/matter",
+ *           "to": "matter",
+ *           "include": ["*.js"]
+ *         }
+ *       ]
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * With that declaration, `packages/core/dist/matter/export.js` is copied to
+ * `dist/matter/export.js`, while files that do not match `*.js` are skipped.
  *
  * @param {DeclaredCopyEntry[]} entries Validated copy entries.
  * @param {string} rootDir Project root directory.
@@ -197,13 +221,32 @@ async function pruneUnproducedDistFiles(distDir: string, keepPaths: Set<string>)
 }
 
 /**
- * Resolves additional runtime entry points declared in `automator.entryPoints`.
+ * Resolves additional runtime entry points declared in `automator.esbuild.entryPoints`.
  *
  * Main, public exports, and npm bins are discovered automatically, but workers and
  * other files loaded later by path are invisible to that discovery. These declarations
  * make them explicit esbuild inputs and place their self-contained outputs at stable
  * paths under dist. Source and output validation prevents a package manifest from
  * reading or writing outside the project artifact.
+ *
+ * @example
+ * ```json
+ * {
+ *   "automator": {
+ *     "esbuild": {
+ *       "entryPoints": [
+ *         {
+ *           "in": "src/workers/bridge-worker.ts",
+ *           "out": "workers/bridge-worker"
+ *         }
+ *       ]
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * With that declaration, `src/workers/bridge-worker.ts` is bundled as an
+ * additional esbuild entry and written to `dist/workers/bridge-worker.js`.
  *
  * @param {Record<string, unknown>} packageJson Parsed root package.json content.
  * @param {string} rootDir Project root directory.
@@ -214,29 +257,32 @@ async function resolveDeclaredEntryPoints(packageJson: Record<string, unknown>, 
   const automator = packageJson['automator'];
   if (typeof automator !== 'object' || automator === null || Array.isArray(automator)) return [];
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const entryPoints = (automator as Record<string, unknown>)['entryPoints'];
+  const esbuild = (automator as Record<string, unknown>)['esbuild'];
+  if (typeof esbuild !== 'object' || esbuild === null || Array.isArray(esbuild)) return [];
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const entryPoints = (esbuild as Record<string, unknown>)['entryPoints'];
   if (!Array.isArray(entryPoints)) return [];
 
   const declaredEntryPoints: DeclaredEntryPoint[] = [];
   for (const [index, entryPoint] of entryPoints.entries()) {
     if (typeof entryPoint !== 'object' || entryPoint === null || Array.isArray(entryPoint)) {
-      throw new Error(`Invalid automator.entryPoints[${index}]: expected an object with in and out strings`);
+      throw new Error(`Invalid automator.esbuild.entryPoints[${index}]: expected an object with in and out strings`);
     }
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const entry = entryPoint as Record<string, unknown>;
     const input = entry['in'];
     const output = entry['out'];
     if (typeof input !== 'string' || !input || typeof output !== 'string' || !output) {
-      throw new Error(`Invalid automator.entryPoints[${index}]: in and out must be non-empty strings`);
+      throw new Error(`Invalid automator.esbuild.entryPoints[${index}]: in and out must be non-empty strings`);
     }
     const inputPath = path.resolve(rootDir, input);
     const relativeInput = path.relative(rootDir, inputPath);
     const outputPath = output.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\.js$/, '');
     if (relativeInput.startsWith('..') || path.isAbsolute(relativeInput) || outputPath.split('/').includes('..') || path.posix.isAbsolute(outputPath)) {
-      throw new Error(`Invalid automator.entryPoints[${index}]: paths must stay within the project and dist directories`);
+      throw new Error(`Invalid automator.esbuild.entryPoints[${index}]: paths must stay within the project and dist directories`);
     }
     if (!(await fileExists(inputPath))) {
-      throw new Error(`Missing automator.entryPoints[${index}] source file: ${input}`);
+      throw new Error(`Missing automator.esbuild.entryPoints[${index}] source file: ${input}`);
     }
     logEsbuildAction('entryPoints', [input, '--out', output], rootDir);
     declaredEntryPoints.push({ in: inputPath, out: outputPath });
@@ -245,7 +291,8 @@ async function resolveDeclaredEntryPoints(packageJson: Record<string, unknown>, 
 }
 
 /**
- * Resolves package specifiers declared in an automator configuration field.
+ * Resolves package specifiers declared in `automator.esbuild.bundle` or
+ * `automator.esbuild.external`.
  *
  * Dependencies are external by default so npm installs them at runtime. `bundle`
  * opts a dependency into the esbuild artifact, while `external` explicitly preserves
@@ -253,7 +300,7 @@ async function resolveDeclaredEntryPoints(packageJson: Record<string, unknown>, 
  * external declaration the safe final override when both list the same specifier.
  *
  * @param {Record<string, unknown>} packageJson Parsed root package.json content.
- * @param {'external' | 'bundle'} field Automator field to resolve.
+ * @param {'external' | 'bundle'} field `automator.esbuild` field to resolve.
  * @returns {string[]} Validated package specifiers.
  * @throws {Error} If the declaration is not an array of non-empty strings.
  */
@@ -261,14 +308,17 @@ function resolveDeclaredPackageSpecifiers(packageJson: Record<string, unknown>, 
   const automator = packageJson['automator'];
   if (typeof automator !== 'object' || automator === null || Array.isArray(automator)) return [];
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const packageSpecifiers = (automator as Record<string, unknown>)[field];
+  const esbuild = (automator as Record<string, unknown>)['esbuild'];
+  if (typeof esbuild !== 'object' || esbuild === null || Array.isArray(esbuild)) return [];
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const packageSpecifiers = (esbuild as Record<string, unknown>)[field];
   if (packageSpecifiers === undefined) return [];
   if (!Array.isArray(packageSpecifiers)) {
-    throw new Error(`Invalid automator.${field}: expected an array of non-empty package specifiers`);
+    throw new Error(`Invalid automator.esbuild.${field}: expected an array of non-empty package specifiers`);
   }
   for (const [index, packageName] of packageSpecifiers.entries()) {
     if (typeof packageName !== 'string' || !packageName.trim()) {
-      throw new Error(`Invalid automator.${field}[${index}]: expected a non-empty package specifier`);
+      throw new Error(`Invalid automator.esbuild.${field}[${index}]: expected a non-empty package specifier`);
     }
     logEsbuildAction(field, [packageName]);
   }
@@ -312,16 +362,22 @@ function createOwnOutputRedirectPlugin(): Plugin {
 /**
  * Bundles the project with esbuild.
  *
+ * Automator configuration used:
+ * - `automator.esbuild.bundle`: package specifiers to include in the bundle.
+ * - `automator.esbuild.external`: package specifiers to preserve as runtime imports.
+ * - `automator.esbuild.entryPoints`: additional `{ in, out }` runtime entry points.
+ * - `automator.esbuild.copyEntries`: additional `{ from, to, include }` file trees to copy.
+ *
  * Steps:
  * 1. Collect all `package.json` files: root and every workspace package.
  * 2. Build the set of local workspace package names (to be inlined, not external).
  * 3. Gather root and workspace dependencies into the `external` set, then remove
- *    local workspace names so they are inlined. `automator.bundle` removes explicit
- *    package specifiers from this set; `automator.external` adds them back and wins
+ *    local workspace names so they are inlined. `automator.esbuild.bundle` removes explicit
+ *    package specifiers from this set; `automator.esbuild.external` adds them back and wins
  *    when both fields declare the same package.
  * 4. Read the root `package.json` to resolve the main entry point
  *    (`main` → `exports["."]["import"]` → throw), public export subpaths, bins,
- *    and optional `automator.entryPoints` and `automator.copyEntries` declarations.
+ *    and optional `automator.esbuild.entryPoints` and `automator.esbuild.copyEntries` declarations.
  * 5. Build an esbuild-only `alias` map that redirects each local workspace package
  *    name and public subpath to TypeScript source. Aliases exist only during bundling
  *    and are never shipped as runtime module-resolution rules.

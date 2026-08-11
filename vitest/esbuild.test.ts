@@ -495,15 +495,13 @@ describe('esbuild', () => {
   // ---------------------------------------------------------------------------
   // declared runtime entry points
   // ---------------------------------------------------------------------------
-  describe('runEsbuild — automator entry points', () => {
+  describe('runEsbuild — automator.esbuild entry points', () => {
     it('bundles declared runtime entry points into their configured output paths', async () => {
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: {
-          entryPoints: [{ in: 'packages/thread/src/worker.ts', out: 'workers/worker.js' }],
-        },
+        automator: { esbuild: { entryPoints: [{ in: 'packages/thread/src/worker.ts', out: 'workers/worker.js' }] } },
       });
       await writeTs(path.join(tmpDir, 'src', 'module.ts'));
       await writeTs(path.join(tmpDir, 'packages', 'thread', 'src', 'worker.ts'));
@@ -529,7 +527,7 @@ describe('esbuild', () => {
       expect(opts.entryPoints).toHaveLength(1);
     });
 
-    it('ignores automator configuration without an entryPoints array', async () => {
+    it('ignores automator configuration without an esbuild entryPoints array', async () => {
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
@@ -553,7 +551,7 @@ describe('esbuild', () => {
           name: 'my-pkg',
           version: '1.0.0',
           main: './dist/module.js',
-          automator: { entryPoints },
+          automator: { esbuild: { entryPoints } },
         });
         await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
       };
@@ -575,13 +573,13 @@ describe('esbuild', () => {
   // ---------------------------------------------------------------------------
   // declared external packages
   // ---------------------------------------------------------------------------
-  describe('runEsbuild — automator external packages', () => {
+  describe('runEsbuild — automator.esbuild external packages', () => {
     it('preserves declared package specifiers as runtime imports', async () => {
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { external: ['@jest/globals', 'node:test'] },
+        automator: { esbuild: { external: ['@jest/globals', 'node:test'] } },
       });
       await writeTs(path.join(tmpDir, 'src', 'module.ts'));
 
@@ -599,7 +597,7 @@ describe('esbuild', () => {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { external: '@jest/globals' },
+        automator: { esbuild: { external: '@jest/globals' } },
       });
       await expect(runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false })).rejects.toThrow('expected an array');
 
@@ -607,7 +605,7 @@ describe('esbuild', () => {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { external: [''] },
+        automator: { esbuild: { external: [''] } },
       });
       await expect(runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false })).rejects.toThrow('non-empty package specifier');
     });
@@ -616,14 +614,14 @@ describe('esbuild', () => {
   // ---------------------------------------------------------------------------
   // declared bundled packages
   // ---------------------------------------------------------------------------
-  describe('runEsbuild — automator bundled packages', () => {
+  describe('runEsbuild — automator.esbuild bundled packages', () => {
     it('inlines declared dependencies while external declarations take precedence', async () => {
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
         dependencies: { '@matter/main': '1.0.0', '@jest/globals': '1.0.0' },
-        automator: { bundle: ['@matter/main', '@jest/globals'], external: ['@jest/globals'] },
+        automator: { esbuild: { bundle: ['@matter/main', '@jest/globals'], external: ['@jest/globals'] } },
       });
       await writeTs(path.join(tmpDir, 'src', 'module.ts'));
 
@@ -641,7 +639,7 @@ describe('esbuild', () => {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { bundle: '@matter/main' },
+        automator: { esbuild: { bundle: '@matter/main' } },
       });
       await expect(runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false })).rejects.toThrow('expected an array');
 
@@ -649,7 +647,7 @@ describe('esbuild', () => {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { bundle: [''] },
+        automator: { esbuild: { bundle: [''] } },
       });
       await expect(runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false })).rejects.toThrow('non-empty package specifier');
     });
@@ -658,14 +656,14 @@ describe('esbuild', () => {
   // ---------------------------------------------------------------------------
   // declared copied entries
   // ---------------------------------------------------------------------------
-  describe('runEsbuild — automator copied entries', () => {
+  describe('runEsbuild — automator.esbuild copied entries', () => {
     it('copies matching compiled files into dist after bundling', async () => {
       const sourceDirectory = path.join(tmpDir, 'packages', 'core', 'dist', 'matter');
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
         main: './dist/module.js',
-        automator: { copyEntries: [{ from: 'packages/core/dist/matter', to: 'matter', include: ['**/*.js'] }] },
+        automator: { esbuild: { copyEntries: [{ from: 'packages/core/dist/matter', to: 'matter', include: ['**/*.js'] }] } },
       });
       await writeTs(path.join(tmpDir, 'src', 'module.ts'));
       await mkdir(path.join(sourceDirectory, 'nested'), { recursive: true });
@@ -683,7 +681,7 @@ describe('esbuild', () => {
     it('rejects malformed and unsafe copied entry declarations', async () => {
       await writeTs(path.join(tmpDir, 'src', 'module.ts'));
       const runWithCopyEntries = async (copyEntries: unknown): Promise<void> => {
-        await writePkg(tmpDir, { name: 'my-pkg', version: '1.0.0', main: './dist/module.js', automator: { copyEntries } });
+        await writePkg(tmpDir, { name: 'my-pkg', version: '1.0.0', main: './dist/module.js', automator: { esbuild: { copyEntries } } });
         await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
       };
 
