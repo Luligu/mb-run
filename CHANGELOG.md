@@ -37,6 +37,11 @@ If you like this project and find it useful, please consider giving it a star on
 - [dts]: Replace third-party declaration bundling with TypeScript declaration-only emit while TypeScript 7-compatible bundlers are unavailable.
 - [build]: Drop the `tsgo` native preview compiler; `--build`, `--typecheck`, and `--watch` now always use `tsc`.
 - [lint]: Bump the Oxc toolchain (`oxlint`, `oxfmt`, `oxlint-tsgolint`) and disable the new `node/no-top-level-await` rule, since the Matterbridge ecosystem is pure ESM with no `require(esm)` consumers.
+- [package]: Bump `oxfmt` to v.0.63.0.
+- [package]: Bump `oxlint` to v.1.78.0.
+- [package]: Bump `@types/node` to v.26.2.0.
+- [package]: Bump `esbuild` to v.0.28.2.
+- [package]: Bump `npm-check-updates` to v.23.0.2.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
@@ -112,39 +117,3 @@ If you like this project and find it useful, please consider giving it a star on
 - [package]: Initial release.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
-
-<!-- Commented out section
-## [1.0.0] - 2025-07-01
-
-### Added
-
-- [Feature 1]: Description of the feature.
-- [Feature 2]: Description of the feature.
-
-### Changed
-
-- [Feature 3]: Description of the change.
-- [Feature 4]: Description of the change.
-
-### Deprecated
-
-- [Feature 5]: Description of the deprecation.
-
-### Removed
-
-- [Feature 6]: Description of the removal.
-
-### Fixed
-
-- [Bug 1]: Description of the bug fix.
-- [Bug 2]: Description of the bug fix.
-
-### Security
-
-- [Security 1]: Description of the security improvement.
-
-<a href="https://www.buymeacoffee.com/luligugithub">
-  <img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80">
-</a>
-
--->
