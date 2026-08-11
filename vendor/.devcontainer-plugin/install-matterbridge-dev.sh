@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# .devcontainer/install-matterbridge-dev.sh v.1.1.0
+# .devcontainer/install-matterbridge-dev.sh v.1.2.0
 
 # This script globally installs Matterbridge from the dev branch.
 # To be used only inside the Dev Container with the mounted matterbridge volume.
