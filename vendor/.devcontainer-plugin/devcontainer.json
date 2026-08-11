@@ -32,7 +32,6 @@ Dev containers have networking limitations depending on the host OS and Docker s
 {
   // Name of the dev container
   "name": "Matterbridge Plugin Dev Container",
-  // Build a slim Debian (Trixie) image with Node.js 24 and the required development tools
   "build": {
     "dockerfile": "Dockerfile"
   },
