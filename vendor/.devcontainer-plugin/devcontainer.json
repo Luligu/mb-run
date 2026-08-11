@@ -60,7 +60,7 @@ Dev containers have networking limitations depending on the host OS and Docker s
   ],
   // Set up the Docker environment (runs on the host before the container starts)
   "initializeCommand": "bash .devcontainer/initialize.sh",
-  // On create, update npm, install and link the dev of matterbridge and install and build the plugin (runs inside the container)
+  // On create, prepare the directories, install and link the dev of matterbridge and install and build the plugin (runs inside the container)
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   // On start, install and build the plugin (runs inside the container)
   "postStartCommand": "bash .devcontainer/post-start.sh",
