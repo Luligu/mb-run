@@ -149,7 +149,12 @@ describe('upgrade tool package', () => {
     for (const fileName of [
       '.claude/settings.json',
       '.codex/config.toml',
-      '.devcontainer/devcontainer.json',
+      '.devcontainer/bun/devcontainer.json',
+      '.devcontainer/bun/post-create.sh',
+      '.devcontainer/bun/post-start.sh',
+      '.devcontainer/node/devcontainer.json',
+      '.devcontainer/node/post-create.sh',
+      '.devcontainer/node/post-start.sh',
       '.github/workflows/build.yml',
       '.vscode/settings.json',
       'scripts/clean.mjs',

@@ -110,7 +110,14 @@ describe('upgrade plugin package', () => {
 
     for (const fileName of [
       '.claude/rules/matterbridge/matterbridge.instructions.md',
-      '.devcontainer/install-matterbridge-dev.sh',
+      '.devcontainer/bun/devcontainer.json',
+      '.devcontainer/bun/install-matterbridge.sh',
+      '.devcontainer/bun/post-create.sh',
+      '.devcontainer/bun/post-start.sh',
+      '.devcontainer/node/devcontainer.json',
+      '.devcontainer/node/install-matterbridge.sh',
+      '.devcontainer/node/post-create.sh',
+      '.devcontainer/node/post-start.sh',
       '.github/instructions/matterbridge/matterbridge.instructions.md',
       'jest.config.js',
       'vite.config.ts',
