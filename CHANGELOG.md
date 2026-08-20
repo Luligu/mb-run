@@ -30,6 +30,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [bun]: Add Bun version, install, binary, cache, and global module information to `--info`, including the related environment variable values.
 - [self]: Check npm in a background worker for newer mb-run releases and log a warning when an update is available.
 - [install]: Extract dependency installation and Matterbridge plugin linking into `runInstall()`.
+- [devcontainer]: Add Dev Container (Bun and Node) v.2.0.0.
 
 ### Changed
 
