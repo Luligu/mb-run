@@ -76,6 +76,9 @@ describe('upgrade plugin package', () => {
     await writeFixture('LICENSE', 'fixture license\n');
     await writeFixture('README.md', 'yellow-button.png src="matterbridge.svg"\n');
     await writeFixture('CHANGELOG.md', 'yellow-button.png build-matterbridge-plugin.yml\n');
+    await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
+    await writeFixture('.devcontainer/postCreateCommand.sh', 'obsolete\n');
+    await writeFixture('.devcontainer/postStartCommand.sh', 'obsolete\n');
     for (const fileName of ['yellow-button.png', 'bmc-button.svg', 'matterbridge.svg', 'scripts/runAutomator.mjs']) {
       await writeFixture(fileName, 'obsolete\n');
     }
@@ -125,7 +128,15 @@ describe('upgrade plugin package', () => {
     ]) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
-    for (const fileName of ['yellow-button.png', 'bmc-button.svg', 'matterbridge.svg', 'scripts/runAutomator.mjs']) {
+    for (const fileName of [
+      '.devcontainer/devcontainer.json',
+      '.devcontainer/postCreateCommand.sh',
+      '.devcontainer/postStartCommand.sh',
+      'yellow-button.png',
+      'bmc-button.svg',
+      'matterbridge.svg',
+      'scripts/runAutomator.mjs',
+    ]) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(false);
     }
 

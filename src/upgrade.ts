@@ -300,10 +300,9 @@ export async function runPackageJsonUpgrade(
 
   // Copy .devcontainer
   if (!isWorkspace && automator?.skipDevContainer !== true) {
+    removeDirSafe(path.join(dstDir, '.devcontainer'));
     if (isPlugin) copyRecursive('.devcontainer-plugin', '.devcontainer');
     else copyRecursive('.devcontainer', '.devcontainer');
-    unlinkSafe(path.join(dstDir, '.devcontainer', 'postCreateCommand.sh'));
-    unlinkSafe(path.join(dstDir, '.devcontainer', 'postStartCommand.sh'));
   }
 
   // Copy .github

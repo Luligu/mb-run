@@ -88,6 +88,9 @@ describe('upgrade tool package', () => {
       'CHANGELOG.md',
       'yellow-button.png https://matterbridge.io/bmc-button.svg src="matterbridge.svg" build-matterbridge-plugin.yml (https://github.com/eslint/eslint)\n',
     );
+    await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
+    await writeFixture('.devcontainer/postCreateCommand.sh', 'obsolete\n');
+    await writeFixture('.devcontainer/postStartCommand.sh', 'obsolete\n');
     for (const fileName of [
       '.prettierignore',
       'eslint.config.js',
@@ -173,6 +176,9 @@ describe('upgrade tool package', () => {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
     for (const fileName of [
+      '.devcontainer/devcontainer.json',
+      '.devcontainer/postCreateCommand.sh',
+      '.devcontainer/postStartCommand.sh',
       '.prettierignore',
       'eslint.config.js',
       'prettier.config.js',
