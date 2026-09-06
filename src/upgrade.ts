@@ -651,7 +651,7 @@ export async function runPackageJsonUpgrade(
       'version:patch': automator?.version === true ? 'npm version patch --no-git-tag-version' : undefined,
       'version:minor': automator?.version === true ? 'npm version minor --no-git-tag-version' : undefined,
       'version:major': automator?.version === true ? 'npm version major --no-git-tag-version' : undefined,
-      'git:status': automator?.git === true ? 'git status && git branch -vv && git stash list && git fsck --full --no-reflogs' : undefined,
+      'git:status': automator?.git === true ? 'git status && git branch -vv && git stash list && git fsck --full --no-reflogs --no-dangling && git worktree list' : undefined,
       'git:remote': automator?.git === true ? 'git remote -v && git remote show origin' : undefined,
       'git:prune': automator?.git === true ? 'git fetch --prune --prune-tags' : undefined,
       'git:hardreset:main': automator?.git === true ? 'git fetch origin && git checkout main && git reset --hard origin/main' : undefined,
