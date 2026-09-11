@@ -74,6 +74,7 @@ describe('upgrade plugin package', () => {
       ),
     );
     await writeFixture('LICENSE', 'fixture license\n');
+    await writeFixture('localAgents.md', '## Repository specific instructions\n');
     await writeFixture('README.md', 'yellow-button.png src="matterbridge.svg"\n');
     await writeFixture('CHANGELOG.md', 'yellow-button.png build-matterbridge-plugin.yml\n');
     await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
@@ -97,10 +98,13 @@ describe('upgrade plugin package', () => {
       devDependencies: Record<string, string>;
       scripts: Record<string, string>;
     };
-    const [readme, changelog, agents] = await Promise.all([
+    const [readme, changelog, agents, claude, gemini, copilot] = await Promise.all([
       readFile(path.join(rootDir, 'README.md'), 'utf8'),
       readFile(path.join(rootDir, 'CHANGELOG.md'), 'utf8'),
       readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'),
+      readFile(path.join(rootDir, 'CLAUDE.md'), 'utf8'),
+      readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'),
+      readFile(path.join(rootDir, '.github/copilot-instructions.md'), 'utf8'),
     ]);
 
     expect(packageJson.devDependencies).toEqual({ keep: '1.0.0' });
@@ -117,6 +121,11 @@ describe('upgrade plugin package', () => {
     expect(agents).toContain('.agents/rules/testing.instructions.md');
     expect(agents).toContain('.agents/rules/matterbridge.instructions.md');
     expect(agents).toContain('.agents/rules/chip-tests.instructions.md');
+    // localAgents.md is appended to AGENTS.md only: the other entry points reach it through AGENTS.md, so a second copy would duplicate it
+    expect(agents).toContain('## Repository specific instructions');
+    expect(claude).not.toContain('## Repository specific instructions');
+    expect(gemini).not.toContain('## Repository specific instructions');
+    expect(copilot).not.toContain('## Repository specific instructions');
 
     for (const fileName of [
       '.agents/README.md',

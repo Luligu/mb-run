@@ -38,6 +38,8 @@ If you like this project and find it useful, please consider giving it a star on
 - [agents]: Add the hard rule that `tsc`, `vitest`, `oxlint` and `oxfmt` are never invoked directly, and enforce it in `.claude/settings.json` v.1.0.7, `.codex/rules/default.rules` v.1.0.4, `.antigravity/settings.json` and `.vscode/settings.json` v.1.0.11.
 - [vscode]: Enable `chat.useAgentsMdFile` and `chat.useNestedAgentsMdFiles` in `.vscode/settings.json` so VS Code loads `AGENTS.md` as always-on instructions, and align `chat.tools.terminal.autoApprove` with the other agents.
 - [upgrade]: Select the plugin or the plain variant of `.agents` and `.claude` instead of copying one set and deleting the extra files afterwards, and remove the files left over from the previous layout.
+- [agents]: Scope the Matterbridge endpoint rule to `src/module.ts` (`paths:` for Claude Code, `applyTo:` for Copilot) so it auto-loads on a plugin's entry point: it was the only rule with no trigger declared, which left it never applied now that the mirrors are pointers.
+- [upgrade]: Append `localAgents.md` to `AGENTS.md` only. `CLAUDE.md` and `GEMINI.md` now read it through `@AGENTS.md` and Copilot loads `AGENTS.md` natively, so the previous extra appends to `CLAUDE.md`, `GEMINI.md` and `.github/copilot-instructions.md` would duplicate the repository-local guidance.
 - [vscode]: Rename the vendored `.vscode/settings.native.json` and `.vscode/extensions.native.json` to `settings.json` and `extensions.json`, and drop the stale eslint/prettier copies they shadowed: only the native pair was ever copied.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>

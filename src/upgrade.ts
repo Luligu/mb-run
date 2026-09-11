@@ -294,6 +294,7 @@ export async function runPackageJsonUpgrade(
       }
     }
     copyRecursive(useMatterbridgeRules ? 'AGENTS.plugin.md' : 'AGENTS.md', 'AGENTS.md');
+    // Only AGENTS.md carries the repository-local guidance: CLAUDE.md and GEMINI.md read it through @AGENTS.md and Copilot loads it natively, so appending it again would duplicate it
     appendFileToFileIfExists('localAgents.md', 'AGENTS.md');
   }
 
@@ -307,7 +308,6 @@ export async function runPackageJsonUpgrade(
       }
     }
     copyRecursive('CLAUDE.md', 'CLAUDE.md');
-    appendFileToFileIfExists('localAgents.md', 'CLAUDE.md');
   }
 
   // Copy .codex (Codex) and .antigravity (Gemini / Antigravity) and GEMINI.md: both read .agents natively, so they need no pointers
@@ -315,7 +315,6 @@ export async function runPackageJsonUpgrade(
     copyRecursive('.codex', '.codex');
     copyRecursive('.antigravity', '.antigravity');
     copyRecursive('GEMINI.md', 'GEMINI.md');
-    appendFileToFileIfExists('localAgents.md', 'GEMINI.md');
   }
 
   // Copy .devcontainer
@@ -335,7 +334,6 @@ export async function runPackageJsonUpgrade(
         removeDirSafe(path.join(dstDir, '.github', 'instructions', ruleName));
       }
     }
-    appendFileToFileIfExists('localAgents.md', '.github/copilot-instructions.md');
     if (useMatterbridgeRules && automator?.chip !== true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'chip-tests.yml'));
   }
 
