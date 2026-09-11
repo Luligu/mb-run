@@ -97,7 +97,11 @@ describe('upgrade plugin package', () => {
       devDependencies: Record<string, string>;
       scripts: Record<string, string>;
     };
-    const [readme, changelog] = await Promise.all([readFile(path.join(rootDir, 'README.md'), 'utf8'), readFile(path.join(rootDir, 'CHANGELOG.md'), 'utf8')]);
+    const [readme, changelog, agents] = await Promise.all([
+      readFile(path.join(rootDir, 'README.md'), 'utf8'),
+      readFile(path.join(rootDir, 'CHANGELOG.md'), 'utf8'),
+      readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'),
+    ]);
 
     expect(packageJson.devDependencies).toEqual({ keep: '1.0.0' });
     expect(packageJson.scripts).toMatchObject({
@@ -110,9 +114,22 @@ describe('upgrade plugin package', () => {
     expect(readme).toContain('bmc-button.svg');
     expect(readme).toContain('https://matterbridge.io/assets/matterbridge.svg');
     expect(changelog).toContain('build.yml');
+    expect(agents).toContain('.agents/rules/testing.instructions.md');
+    expect(agents).toContain('.agents/rules/matterbridge.instructions.md');
+    expect(agents).toContain('.agents/rules/chip-tests.instructions.md');
 
     for (const fileName of [
+      '.agents/README.md',
+      '.agents/rules/testing.instructions.md',
+      '.agents/rules/matterbridge.instructions.md',
+      '.agents/rules/plugin-frontend.instructions.md',
+      '.agents/rules/chip-tests.instructions.md',
+      '.agents/skills/verify-agent-context/SKILL.md',
+      '.antigravity/settings.json',
+      '.claude/settings.json',
       '.claude/rules/matterbridge/matterbridge.instructions.md',
+      '.claude/rules/testing/testing.instructions.md',
+      '.claude/skills/verify-agent-context/SKILL.md',
       '.devcontainer/bun/devcontainer.json',
       '.devcontainer/bun/install-matterbridge.sh',
       '.devcontainer/bun/post-create.sh',
@@ -122,6 +139,11 @@ describe('upgrade plugin package', () => {
       '.devcontainer/node/post-create.sh',
       '.devcontainer/node/post-start.sh',
       '.github/instructions/matterbridge/matterbridge.instructions.md',
+      '.github/instructions/testing/testing.instructions.md',
+      '.github/skills/verify-agent-context/SKILL.md',
+      'AGENTS.md',
+      'CLAUDE.md',
+      'GEMINI.md',
       'jest.config.js',
       'vite.config.ts',
       'CODE_OF_CONDUCT.md',

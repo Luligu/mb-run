@@ -88,6 +88,9 @@ describe('upgrade tool package', () => {
       'CHANGELOG.md',
       'yellow-button.png https://matterbridge.io/bmc-button.svg src="matterbridge.svg" build-matterbridge-plugin.yml (https://github.com/eslint/eslint)\n',
     );
+    await writeFixture('.agents/testing.md', 'obsolete\n');
+    await writeFixture('.claude/rules/testing/unit-tests.instructions.md', 'obsolete\n');
+    await writeFixture('.github/instructions/testing/unit-tests.instructions.md', 'obsolete\n');
     await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
     await writeFixture('.devcontainer/postCreateCommand.sh', 'obsolete\n');
     await writeFixture('.devcontainer/postStartCommand.sh', 'obsolete\n');
@@ -122,11 +125,12 @@ describe('upgrade tool package', () => {
       devDependencies: Record<string, string>;
       scripts: Record<string, string>;
     };
-    const [gitignore, readme, changelog, tsconfig] = await Promise.all([
+    const [gitignore, readme, changelog, tsconfig, agents] = await Promise.all([
       readFile(path.join(rootDir, '.gitignore'), 'utf8'),
       readFile(path.join(rootDir, 'README.md'), 'utf8'),
       readFile(path.join(rootDir, 'CHANGELOG.md'), 'utf8'),
       readFile(path.join(rootDir, 'tsconfig.json'), 'utf8'),
+      readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'),
     ]);
 
     expect(packageJson.devDependencies).toEqual({ keep: '1.0.0' });
@@ -148,9 +152,17 @@ describe('upgrade tool package', () => {
     expect(changelog).toContain('(https://eslint.org/)');
     expect(tsconfig).toContain('"jest"');
     expect(tsconfig).toContain('"vitest/globals"');
+    expect(agents).toContain('.agents/rules/testing.instructions.md');
+    expect(agents).not.toContain('.agents/rules/matterbridge.instructions.md');
 
     for (const fileName of [
+      '.agents/README.md',
+      '.agents/rules/testing.instructions.md',
+      '.agents/skills/verify-agent-context/SKILL.md',
+      '.antigravity/settings.json',
       '.claude/settings.json',
+      '.claude/rules/testing/testing.instructions.md',
+      '.claude/skills/verify-agent-context/SKILL.md',
       '.codex/config.toml',
       '.devcontainer/bun/devcontainer.json',
       '.devcontainer/bun/post-create.sh',
@@ -159,6 +171,11 @@ describe('upgrade tool package', () => {
       '.devcontainer/node/post-create.sh',
       '.devcontainer/node/post-start.sh',
       '.github/workflows/build.yml',
+      '.github/instructions/testing/testing.instructions.md',
+      '.github/skills/verify-agent-context/SKILL.md',
+      'AGENTS.md',
+      'CLAUDE.md',
+      'GEMINI.md',
       '.vscode/settings.json',
       'scripts/clean.mjs',
       'jest.config.js',
@@ -176,6 +193,14 @@ describe('upgrade tool package', () => {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
     for (const fileName of [
+      '.agents/testing.md',
+      '.claude/rules/testing/unit-tests.instructions.md',
+      '.github/instructions/testing/unit-tests.instructions.md',
+      '.agents/rules/matterbridge.instructions.md',
+      '.agents/rules/plugin-frontend.instructions.md',
+      '.agents/rules/chip-tests.instructions.md',
+      '.claude/rules/matterbridge/matterbridge.instructions.md',
+      '.github/instructions/matterbridge/matterbridge.instructions.md',
       '.devcontainer/devcontainer.json',
       '.devcontainer/postCreateCommand.sh',
       '.devcontainer/postStartCommand.sh',

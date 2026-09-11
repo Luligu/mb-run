@@ -277,25 +277,45 @@ export async function runPackageJsonUpgrade(
     await pressyAnyKey();
   }
 
-  // Copy .claude
+  // The Matterbridge rules only make sense for plugins and for the Matterbridge monorepo itself: elsewhere they are removed instead of copied
+  const matterbridgeRules = ['matterbridge', 'plugin-frontend', 'chip-tests'];
+  const useMatterbridgeRules = isPlugin || isMonorepo;
+
+  // Copy .agents: the single source of truth for every agent, mirrored by the pointers in .claude and .github
   if (!isWorkspace) {
-    copyRecursive('.claude', '.claude');
-    copyRecursive('CLAUDE.md', 'CLAUDE.md');
-    appendFileToFileIfExists('localAgents.md', 'CLAUDE.md');
-    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'matterbridge'));
-    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'chip-tests'));
-    if (!isPlugin && !isMonorepo) removeDirSafe(path.join(dstDir, '.claude', 'rules', 'plugin-frontend'));
+    // Drop the flat layout used before the rules moved into .agents/rules
+    for (const fileName of ['testing.md', 'matterbridge.md', 'plugin-frontend.md', 'chip-tests.md']) {
+      unlinkSafe(path.join(dstDir, '.agents', fileName));
+    }
+    copyRecursive(useMatterbridgeRules ? '.agents-plugin' : '.agents', '.agents');
+    if (!useMatterbridgeRules) {
+      for (const ruleName of matterbridgeRules) {
+        unlinkSafe(path.join(dstDir, '.agents', 'rules', `${ruleName}.instructions.md`));
+      }
+    }
+    copyRecursive(useMatterbridgeRules ? 'AGENTS.plugin.md' : 'AGENTS.md', 'AGENTS.md');
+    appendFileToFileIfExists('localAgents.md', 'AGENTS.md');
   }
 
-  // Copy .agents .codex
+  // Copy .claude (Claude Code pointers) and CLAUDE.md
   if (!isWorkspace) {
-    copyRecursive('.agents', '.agents');
+    unlinkSafe(path.join(dstDir, '.claude', 'rules', 'testing', 'unit-tests.instructions.md'));
+    copyRecursive(useMatterbridgeRules ? '.claude-plugin' : '.claude', '.claude');
+    if (!useMatterbridgeRules) {
+      for (const ruleName of matterbridgeRules) {
+        removeDirSafe(path.join(dstDir, '.claude', 'rules', ruleName));
+      }
+    }
+    copyRecursive('CLAUDE.md', 'CLAUDE.md');
+    appendFileToFileIfExists('localAgents.md', 'CLAUDE.md');
+  }
+
+  // Copy .codex (Codex) and .antigravity (Gemini / Antigravity) and GEMINI.md: both read .agents natively, so they need no pointers
+  if (!isWorkspace) {
     copyRecursive('.codex', '.codex');
-    copyRecursive(isPlugin ? 'AGENTS.plugin.md' : 'AGENTS.md', 'AGENTS.md');
-    appendFileToFileIfExists('localAgents.md', 'AGENTS.md');
-    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'matterbridge.md'));
-    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'chip-tests.md'));
-    if (!isPlugin && !isMonorepo) unlinkSafe(path.join(dstDir, '.agents', 'plugin-frontend.md'));
+    copyRecursive('.antigravity', '.antigravity');
+    copyRecursive('GEMINI.md', 'GEMINI.md');
+    appendFileToFileIfExists('localAgents.md', 'GEMINI.md');
   }
 
   // Copy .devcontainer
@@ -305,19 +325,25 @@ export async function runPackageJsonUpgrade(
     else copyRecursive('.devcontainer', '.devcontainer');
   }
 
-  // Copy .github
+  // Copy .github (Copilot pointers, workflows and issue templates)
   if (!isWorkspace) {
-    if (isPlugin) copyRecursive('.github-plugin', '.github');
+    unlinkSafe(path.join(dstDir, '.github', 'instructions', 'testing', 'unit-tests.instructions.md'));
+    if (useMatterbridgeRules) copyRecursive('.github-plugin', '.github');
     else copyRecursive('.github', '.github');
+    if (!useMatterbridgeRules) {
+      for (const ruleName of matterbridgeRules) {
+        removeDirSafe(path.join(dstDir, '.github', 'instructions', ruleName));
+      }
+    }
     appendFileToFileIfExists('localAgents.md', '.github/copilot-instructions.md');
-    if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'chip-tests.yml'));
+    if (useMatterbridgeRules && automator?.chip !== true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'chip-tests.yml'));
   }
 
   // Copy .vscode
   if (!isWorkspace) {
     mkdirSync(path.join(dstDir, '.vscode'), { recursive: true });
-    copyRecursive('.vscode/settings.native.json', '.vscode/settings.json');
-    copyRecursive('.vscode/extensions.native.json', '.vscode/extensions.json');
+    copyRecursive('.vscode/settings.json', '.vscode/settings.json');
+    copyRecursive('.vscode/extensions.json', '.vscode/extensions.json');
     if (!existsSync('.vscode/tasks.json')) copyRecursive('.vscode/tasks.json', '.vscode/tasks.json');
   }
 

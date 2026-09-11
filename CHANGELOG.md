@@ -25,6 +25,21 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.0.1] - Dev branch
 
+### Added
+
+- [agents]: Add the shared agent stack to the vendor directory: `.agents` is now the single source of truth (`.agents/README.md`, `.agents/rules/<topic>.instructions.md`, `.agents/skills/<name>/SKILL.md`), with `.agents-plugin` and `.claude-plugin` holding the plugin variants next to the existing `.github-plugin`.
+- [agents]: Add the `verify-agent-context` skill, mirrored as a pointer in `.claude/skills` and `.github/skills`.
+- [agents]: Add Gemini / Antigravity support with `GEMINI.md` and `.antigravity/settings.json` v.1.0.0.
+
+### Changed
+
+- [agents]: Turn `.claude/rules`, `.claude/skills`, `.github/instructions` and `.github/skills` into pointers to `.agents`, so guidance is written once and never copied.
+- [agents]: Turn `CLAUDE.md` v.1.0.3, `GEMINI.md` and `.github/copilot-instructions.md` v.1.0.3 into thin entry points that read `AGENTS.md` v.1.0.3.
+- [agents]: Add the hard rule that `tsc`, `vitest`, `oxlint` and `oxfmt` are never invoked directly, and enforce it in `.claude/settings.json` v.1.0.7, `.codex/rules/default.rules` v.1.0.4, `.antigravity/settings.json` and `.vscode/settings.json` v.1.0.11.
+- [vscode]: Enable `chat.useAgentsMdFile` and `chat.useNestedAgentsMdFiles` in `.vscode/settings.json` so VS Code loads `AGENTS.md` as always-on instructions, and align `chat.tools.terminal.autoApprove` with the other agents.
+- [upgrade]: Select the plugin or the plain variant of `.agents` and `.claude` instead of copying one set and deleting the extra files afterwards, and remove the files left over from the previous layout.
+- [vscode]: Rename the vendored `.vscode/settings.native.json` and `.vscode/extensions.native.json` to `settings.json` and `extensions.json`, and drop the stale eslint/prettier copies they shadowed: only the native pair was ever copied.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.0.0] - 2026-08-29
