@@ -137,7 +137,7 @@ describe('upgrade', () => {
     vi.mocked(parsePackageJson).mockResolvedValue(structuredClone(packageJson));
     vi.mocked(readFileSync).mockReturnValue(JSON.stringify(packageJson));
     vi.spyOn(process.stdin, 'once').mockImplementation((...args) => {
-      const listener = args[1] as () => void;
+      const listener = args[1];
       queueMicrotask(listener);
       return process.stdin;
     });
@@ -155,7 +155,7 @@ describe('upgrade', () => {
     vi.mocked(isPlugin).mockResolvedValue(false);
     vi.mocked(isLibrary).mockResolvedValue(false);
     vi.spyOn(process.stdin, 'once').mockImplementation((...args) => {
-      const listener = args[1] as () => void;
+      const listener = args[1];
       queueMicrotask(listener);
       return process.stdin;
     });
@@ -182,7 +182,7 @@ describe('upgrade', () => {
     vi.mocked(isPlugin).mockResolvedValue(plugin);
     vi.mocked(isLibrary).mockResolvedValue(library);
     vi.spyOn(process.stdin, 'once').mockImplementation((...args) => {
-      const listener = args[1] as () => void;
+      const listener = args[1];
       queueMicrotask(listener);
       return process.stdin;
     });
@@ -326,7 +326,7 @@ describe('upgrade', () => {
     vi.mocked(fileExists).mockResolvedValue(true);
     vi.mocked(readFileSync).mockReturnValue('{}');
     vi.spyOn(process.stdin, 'once').mockImplementation((...args) => {
-      const listener = args[1] as () => void;
+      const listener = args[1];
       queueMicrotask(listener);
       return process.stdin;
     });
@@ -371,7 +371,7 @@ describe('upgrade', () => {
     const setRawMode = vi.fn();
     Object.assign(process.stdin, { isRaw: false, setRawMode });
     vi.spyOn(process.stdin, 'once').mockImplementation((...args) => {
-      const listener = args[1] as () => void;
+      const listener = args[1];
       queueMicrotask(listener);
       return process.stdin;
     });
@@ -481,6 +481,9 @@ describe('upgrade', () => {
     );
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/jest'), expect.anything());
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('vitest'), expect.anything());
+    // @types/node is pinned to the LTS major: its `latest` dist-tag follows the publish order of the parallel Node.js lines, not the highest version
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/node@24'), expect.anything());
+    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('@types/node '), expect.anything());
   });
 
   it('sets publish and chip scripts when automator flags are enabled', async () => {

@@ -38,6 +38,18 @@ import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js'
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
 const srcDir = path.join(configDirname, '..', 'vendor');
+/**
+ * Major version of `@types/node` to install, kept on the active Node.js LTS line.
+ *
+ * `@types/node` must never be installed unpinned: DefinitelyTyped maintains several Node.js lines in
+ * parallel and publishes them newest first, so the oldest maintained line is published last and takes
+ * over the `latest` dist-tag. Resolving `latest` therefore returns an arbitrary line depending on the
+ * day, and `--save-exact` freezes that arbitrary value into every repository.
+ *
+ * Bump this when the LTS line changes. The `tsX.Y` dist-tags are not an alternative: they select by
+ * TypeScript compiler compatibility rather than by Node.js runtime, and always resolve to the newest line.
+ */
+const typesNodeMajor = '24';
 const commandFailures: Array<{ command: string; status: number | undefined; message: string }> = [];
 let dstDir: string;
 
@@ -775,8 +787,8 @@ export async function runPackageJsonUpgrade(
   log(green('Installing devDependencies...'));
   const commands = [
     isWorkspace
-      ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? '@types/node' : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
-      : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? '@types/node' : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
+      ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? `@types/node@${typesNodeMajor}` : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
+      : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? `@types/node@${typesNodeMajor}` : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
     opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild' : null,

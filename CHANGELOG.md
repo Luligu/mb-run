@@ -31,6 +31,10 @@ If you like this project and find it useful, please consider giving it a star on
 - [agents]: Add the `verify-agent-context` skill, mirrored as a pointer in `.claude/skills` and `.github/skills`.
 - [agents]: Add Gemini / Antigravity support with `GEMINI.md` and `.antigravity/settings.json` v.1.0.0.
 
+### Fixed
+
+- [upgrade]: Pin `@types/node` to the active Node.js LTS major (`@types/node@24`) instead of installing it unpinned. DefinitelyTyped maintains several Node.js lines in parallel and publishes them newest first, so the oldest maintained line is published last and takes over the `latest` dist-tag: resolving `latest` returned a different line depending on the day, and `--save-exact` froze that arbitrary value into every repository.
+
 ### Changed
 
 - [agents]: Turn `.claude/rules`, `.claude/skills`, `.github/instructions` and `.github/skills` into pointers to `.agents`, so guidance is written once and never copied.
