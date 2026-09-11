@@ -670,6 +670,7 @@ export async function runPackageJsonUpgrade(
 
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
+      'softReset:bun': `bun install && bun prune${isPlugin ? ' && bun link --no-fund --no-audit matterbridge' : ''} && bun run build && bun run typecheck`,
       'checkDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset`,
       'updateDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset`,
       'runMeBeforePublish':
