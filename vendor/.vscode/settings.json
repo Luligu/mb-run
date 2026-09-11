@@ -1,29 +1,25 @@
-// VS Code settings v.1.0.3
+// VS Code settings native v.1.0.10
 {
-  "eslint.enable": true,
-  "prettier.enable": true,
-  "oxc.enable": false,
+  "eslint.enable": false,
+  "prettier.enable": false,
+  "oxc.enable": true,
   "js/ts.experimental.useTsgo": true,
   "js/ts.tsdk.promptToUseWorkspaceVersion": false,
-  "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.scrollback": 5000,
   "editor.tabSize": 2,
   "editor.rulers": [180],
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-  "[javascript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
-  "[typescript]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
-  "[json]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
-  "[jsonc]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
-  "[markdown]": { "editor.defaultFormatter": "dbaeumer.vscode-eslint" },
+  "editor.formatOnSave": false,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.format.oxc": "always",
+    "source.fixAll.oxc": "always"
   },
-  "eslint.format.enable": true,
-  "eslint.options": {
-    "cache": true,
-    "cacheLocation": ".cache/.eslintcache"
-  },
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "json", "jsonc", "markdown"],
   "diffEditor.ignoreTrimWhitespace": false,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
@@ -44,13 +40,25 @@
   "git.autofetch": true,
   "git.autoRepositoryDetection": false,
   // VS Code's Copilot Chat extension settings
-  "chat.useCustomizationsInParentRepositories": false,
-  "chat.useAgentsMdFile": true,
-  "chat.useClaudeMdFile": true,
-  "chat.instructionsFilesLocations": {
-    ".github/instructions": true,
-    ".claude/rules": true,
-    "~/.copilot/instructions": true,
-    "~/.claude/rules": true
+  "chat.useCustomizationsInParentRepositories": true, // Default false.
+  "chat.tools.terminal.autoApprove": {
+    "npx tsc": true,
+    "npx oxlint": true,
+    "npx oxfmt": true,
+    "npx vitest": true,
+    "npm run": true,
+    "npm run build": true,
+    "npm run typecheck": true,
+    "npm run lint": true,
+    "npm run format:check": true,
+    "npm run test": true,
+    "npm run test:coverage": true,
+    "npm run update-htmls": true,
+    "git status": true,
+    "/^git (?:--no-pager )?diff(?: --(?:check|stat))?$/": true,
+    "git log": true,
+    "git show": true,
+    "git branch -vv": true,
+    "git ls-files": true
   }
 }
