@@ -44,7 +44,7 @@
     "network": "docker network inspect matterbridge --format ok || docker network create --ipv6 matterbridge",
     "pull": "docker pull luligu/matterbridge:bun-dev-container"
   },
-  // On create, prepare directories, install dependencies, build the project and check outdated packages
+  // On create, prepare directories, install dependencies, build the project and check outdated packages (runs inside the container)
   "postCreateCommand": "bash .devcontainer/bun/post-create.sh",
   // On start, install and build the project (runs inside the container)
   "postStartCommand": "bash .devcontainer/bun/post-start.sh",
