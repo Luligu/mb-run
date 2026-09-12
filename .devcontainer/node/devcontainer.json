@@ -72,7 +72,8 @@
         "github.copilot-chat",
         "github.vscode-github-actions",
         "github.vscode-pull-request-github",
-        "openai.chatgpt"
+        "openai.chatgpt",
+        "google.google-antigravity"
       ],
       // Settings for the VS Code environment specific to the dev container (overrides user and workspace settings)
       "settings": {
