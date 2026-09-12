@@ -6,7 +6,7 @@ Node and Bun configurations for Matterbridge plugins, aligned with Matterbridgeâ
 
 - The lifecycle scripts ship inside the shared image in /usr/local/bin and are on PATH. The repository no longer carries post-create.sh, post-start.sh or install-matterbridge.sh: this directory holds only the two devcontainer.json files and this README.
 - `postCreateCommand` runs `post-create.sh --node --plugin` or `post-create.sh --bun --plugin`, `postStartCommand` runs `post-start.sh --node --plugin` or `post-start.sh --bun --plugin`. The runtime flag is mandatory and `--plugin` selects the plugin lifecycle; the scripts exit with a usage message without a runtime.
-- post-create.sh calls install-matterbridge.sh from the image, so the Matterbridge branch is no longer configurable from the repository: the image installs the dev branch.
+- post-create.sh calls install-matterbridge.sh from the image and installs the dev branch by default. Append `--main` to `postCreateCommand` to install the stable branch instead, or `--dev` to state the default explicitly.
 - Updating the scripts means pulling a newer image, not editing repository files. The unconditional pull in `initializeCommand` keeps the image fresh, but an existing container keeps the image it was created from: run **Dev Containers: Rebuild Container** to pick the new scripts up.
 
 ## Startup and storage
