@@ -267,20 +267,7 @@ describe('upgrade tool package', () => {
     expect(existsSync(path.join(rootDir, '.github/workflows/codeql.yml'))).toBe(true);
   });
 
-  it('keeps a repo-local scripts/esbuild.mjs instead of the vendored one', async () => {
-    const local = "// local esbuild-only variant, no rollup-plugin-dts\nexport const marker = 'repo-local';\n";
-    await writeFixture('scripts/esbuild.mjs', local);
-    const pkgPath = path.join(rootDir, 'package.json');
-    const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
-    pkg.automator = { ...pkg.automator, bundle: true };
-    await writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
-
-    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
-
-    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).toBe(local);
-  });
-
-  it('copies the vendored scripts/esbuild.mjs when the repo has none', async () => {
+  it('copies the vendored scripts/esbuild.mjs when bundling is enabled', async () => {
     const pkgPath = path.join(rootDir, 'package.json');
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
     pkg.automator = { ...pkg.automator, bundle: true };
@@ -289,6 +276,6 @@ describe('upgrade tool package', () => {
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
 
     expect(existsSync(path.join(rootDir, 'scripts/esbuild.mjs'))).toBe(true);
-    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).not.toContain('repo-local');
+    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).toContain('rollup-plugin-dts');
   });
 });

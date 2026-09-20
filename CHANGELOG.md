@@ -30,12 +30,14 @@ If you like this project and find it useful, please consider giving it a star on
 - [devcontainer]: Add [`Dev Container`](.devcontainer/README.md) v.2.2.0 with dual Node and Bun runtime support.
 - [agents]: Add a [`shared setup`](.agents/README.md) for all agents: OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity.
 - [upgrade]: Add `automator.skipPublishWorkflow` to remove `.github/workflows/publish.yml` after the copy, for repositories that are never published to npm.
+- [upgrade]: Install `@typescript/typescript6`, `rollup` and `rollup-plugin-dts` alongside `esbuild` when `automator.bundle` is set. `rollup-plugin-dts` bundles the declarations through the legacy compiler API that TypeScript 7 (tsgo) removed, and its optional peer `@typescript/typescript6` supplies that API next to the `typescript` 7 used for the build.
 
 ### Fixed
 
+- [esbuild]: Bump the vendored `scripts/esbuild.mjs` to v.1.0.2, which logs each obfuscated file. With the declaration bundling dependencies now installed, `npm run bundle` and `npm run obfuscate` work again under tsgo.
+- [upgrade]: Install `@types/node` unpinned again. DefinitelyTyped no longer lets the last published Node.js line take over the `latest` dist-tag, so the `@types/node@24` pin on the LTS major is obsolete and was already being superseded by the `ncu -u` pass of `--update`.
 - [upgrade]: Select the Matterbridge rules by package name instead of by `isMonorepo`. Any repository with a `workspaces` field was treated as the Matterbridge monorepo and received the plugin variants of `.agents`, `.claude`, `.github` and `AGENTS.md`, pulling the `matterbridge`, `plugin-frontend` and `chip-tests` rules, the plugin workflows and the plugin issue template into unrelated monorepos.
 - [upgrade]: Keep the scripts of a workspace package when it sets `automator.skipPackageJson`. Workspace packages that own their scripts, such as an Electron app with its `electron-builder` targets, lost them on every upgrade.
-- [upgrade]: Keep a repository-local `scripts/esbuild.mjs` instead of overwriting it with the vendored one. The vendored copy still bundles declarations through `rollup-plugin-dts`, which has no TypeScript 7 (tsgo) release yet, so repositories carry their own esbuild-only variant.
 
 ### Changed
 

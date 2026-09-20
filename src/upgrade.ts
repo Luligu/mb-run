@@ -38,18 +38,6 @@ import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js'
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
 const srcDir = path.join(configDirname, '..', 'vendor');
-/**
- * Major version of `@types/node` to install, kept on the active Node.js LTS line.
- *
- * `@types/node` must never be installed unpinned: DefinitelyTyped maintains several Node.js lines in
- * parallel and publishes them newest first, so the oldest maintained line is published last and takes
- * over the `latest` dist-tag. Resolving `latest` therefore returns an arbitrary line depending on the
- * day, and `--save-exact` freezes that arbitrary value into every repository.
- *
- * Bump this when the LTS line changes. The `tsX.Y` dist-tags are not an alternative: they select by
- * TypeScript compiler compatibility rather than by Node.js runtime, and always resolve to the newest line.
- */
-const typesNodeMajor = '24';
 const commandFailures: Array<{ command: string; status: number | undefined; message: string }> = [];
 let dstDir: string;
 
@@ -365,16 +353,11 @@ export async function runPackageJsonUpgrade(
   // Copy scripts
   if (automator?.app !== true) {
     mkdirSync(path.join(dstDir, 'scripts'), { recursive: true });
-    // A repo-local scripts/esbuild.mjs wins over the vendored one: the vendored copy still bundles declarations through
-    // rollup-plugin-dts, which has no TypeScript 7 (tsgo) release yet, so repos carry their own esbuild-only variant.
-    const esbuildScriptPath = path.join(dstDir, 'scripts', 'esbuild.mjs');
-    const localEsbuildScript = existsSync(esbuildScriptPath) ? readFileSync(esbuildScriptPath, 'utf8') : undefined;
     if (isWorkspace) {
       copyRecursive('scripts/downloads.mjs', 'scripts');
     } else {
       copyRecursive('scripts', 'scripts');
     }
-    if (localEsbuildScript !== undefined) writeFileSync(esbuildScriptPath, localEsbuildScript, 'utf8');
     // Remove legacy scripts that are no longer needed
     if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
@@ -781,6 +764,9 @@ export async function runPackageJsonUpgrade(
   delete devDeps?.['@vitest/eslint-plugin'];
   delete devDeps?.['esbuild'];
   delete devDeps?.['javascript-obfuscator'];
+  delete devDeps?.['@typescript/typescript6'];
+  delete devDeps?.['rollup'];
+  delete devDeps?.['rollup-plugin-dts'];
 
   log(magenta(`Changing package.json "${pkgPath}" scripts and devDependencies...`));
   const packageJson = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -801,11 +787,13 @@ export async function runPackageJsonUpgrade(
   log(green('Installing devDependencies...'));
   const commands = [
     isWorkspace
-      ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? `@types/node@${typesNodeMajor}` : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
-      : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? `@types/node@${typesNodeMajor}` : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
+      ? `npm install --no-fund --no-audit --save-dev --save-exact ${automator?.node ? `@types/node` : ''} ${automator?.bun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''}`
+      : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? `@types/node` : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
-    opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild' : null,
+    // rollup-plugin-dts bundles the declarations and needs the legacy compiler API, which TypeScript 7 (tsgo) removed:
+    // its optional peer @typescript/typescript6 supplies that API alongside the typescript 7 used for the build.
+    opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild @typescript/typescript6 rollup rollup-plugin-dts' : null,
     opts.enableObfuscate ? `npm install --no-fund --no-audit --save-dev --save-exact javascript-obfuscator` : null,
     `npm prune --no-fund --no-audit`,
     isPlugin && !isWorkspace ? `npm link --no-fund --no-audit matterbridge` : null,

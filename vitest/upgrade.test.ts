@@ -467,6 +467,42 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('npm pkg set "license='), expect.anything());
   });
 
+  it('installs the declaration bundling devDependencies when bundle is enabled', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    const bundlePkgJson = {
+      ...structuredClone(packageJson),
+      automator: { bundle: true },
+      devDependencies: { 'rollup': '0.0.0', 'rollup-plugin-dts': '0.0.0', '@typescript/typescript6': '0.0.0' },
+    };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('bundle-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('bundle-package/package.json'),
+      bundlePkgJson,
+    );
+
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('esbuild @typescript/typescript6 rollup rollup-plugin-dts'), expect.anything());
+    // The stale pins are dropped before the install re-adds them exactly
+    expect(bundlePkgJson.devDependencies).toEqual({});
+  });
+
+  it('does not install the declaration bundling devDependencies when bundle is disabled', async () => {
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('no-bundle-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('no-bundle-package/package.json'),
+      { ...structuredClone(packageJson), automator: { bundle: false } },
+    );
+
+    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('rollup-plugin-dts'), expect.anything());
+  });
+
   it('installs jestTypes and vitestTypes devDependencies for workspace packages', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);
@@ -481,9 +517,8 @@ describe('upgrade', () => {
     );
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/jest'), expect.anything());
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('vitest'), expect.anything());
-    // @types/node is pinned to the LTS major: its `latest` dist-tag follows the publish order of the parallel Node.js lines, not the highest version
-    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/node@24'), expect.anything());
-    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('@types/node '), expect.anything());
+    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('@types/node'), expect.anything());
+    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('@types/node@'), expect.anything());
   });
 
   it('keeps the scripts of a workspace package when automator.skipPackageJson is set', async () => {

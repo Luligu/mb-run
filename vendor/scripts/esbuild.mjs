@@ -1,6 +1,6 @@
 /**
  * esbuild.mjs
- * Version: 1.0.1
+ * Version: 1.0.2
  *
  * Bundles JavaScript files using esbuild.
  *
@@ -136,6 +136,7 @@ const bundleDir = async (distDir) => {
       /** @type {{ obfuscate: (code: string, options: any) => { getObfuscatedCode: () => string } }} */
       const JavaScriptObfuscator = require('javascript-obfuscator');
 
+      console.log(`[esbuild]   obfuscate: ${fileName}`);
       outputCode = JavaScriptObfuscator.obfuscate(outputCode, {
         compact: true,
         renameGlobals: false,
