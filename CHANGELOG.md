@@ -29,6 +29,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 - [devcontainer]: Add [`Dev Container`](.devcontainer/README.md) v.2.2.0 with dual Node and Bun runtime support.
 - [agents]: Add a [`shared setup`](.agents/README.md) for all agents: OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity.
+- [upgrade]: Add `automator.skipPublishWorkflow` to remove `.github/workflows/publish.yml` after the copy, for repositories that are never published to npm.
 
 ### Fixed
 

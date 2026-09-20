@@ -177,6 +177,8 @@ export async function runPackageJsonUpgrade(
         private?: boolean;
         /* skip package.json modifications */
         skipPackageJson?: boolean;
+        /* remove the npm publish workflow: the package is never published */
+        skipPublishWorkflow?: boolean;
         /* skip tsconfig modifications */
         skipTsconfig?: boolean;
         /* skip devcontainer modifications */
@@ -348,6 +350,8 @@ export async function runPackageJsonUpgrade(
       }
     }
     if (useMatterbridgeRules && automator?.chip !== true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'chip-tests.yml'));
+    // The whole .github directory is copied, so a repository that never publishes to npm removes the workflow afterwards
+    if (automator?.skipPublishWorkflow === true) unlinkSafe(path.join(dstDir, '.github', 'workflows', 'publish.yml'));
   }
 
   // Copy .vscode

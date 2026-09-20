@@ -253,6 +253,20 @@ describe('upgrade tool package', () => {
     expect(publish).not.toContain('(plugin)');
   });
 
+  it('removes the publish workflow when automator.skipPublishWorkflow is set', async () => {
+    const pkgPath = path.join(rootDir, 'package.json');
+    const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
+    pkg.automator = { ...pkg.automator, skipPublishWorkflow: true };
+    await writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+    expect(existsSync(path.join(rootDir, '.github/workflows/publish.yml'))).toBe(false);
+    // The rest of .github still lands
+    expect(existsSync(path.join(rootDir, '.github/workflows/build.yml'))).toBe(true);
+    expect(existsSync(path.join(rootDir, '.github/workflows/codeql.yml'))).toBe(true);
+  });
+
   it('keeps a repo-local scripts/esbuild.mjs instead of the vendored one', async () => {
     const local = "// local esbuild-only variant, no rollup-plugin-dts\nexport const marker = 'repo-local';\n";
     await writeFixture('scripts/esbuild.mjs', local);
