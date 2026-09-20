@@ -223,4 +223,58 @@ describe('upgrade tool package', () => {
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('npm install'), expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
     expect(vi.mocked(execSync)).toHaveBeenCalledWith('npm run build', expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
   });
+
+  it('keeps a monorepo that is not matterbridge on the plain rules', async () => {
+    vi.mocked(isMonorepo).mockResolvedValue(true);
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+    const agents = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
+    expect(agents).toContain('.agents/rules/testing.instructions.md');
+    expect(agents).not.toContain('.agents/rules/matterbridge.instructions.md');
+
+    for (const fileName of [
+      '.agents/rules/matterbridge.instructions.md',
+      '.agents/rules/plugin-frontend.instructions.md',
+      '.agents/rules/chip-tests.instructions.md',
+      '.claude/rules/matterbridge/matterbridge.instructions.md',
+      '.github/instructions/matterbridge/matterbridge.instructions.md',
+    ]) {
+      expect(existsSync(path.join(rootDir, fileName))).toBe(false);
+    }
+    expect(existsSync(path.join(rootDir, '.agents/rules/testing.instructions.md'))).toBe(true);
+
+    // The workflows come from the plain .github template, not from .github-plugin
+    const [build, publish] = await Promise.all([
+      readFile(path.join(rootDir, '.github/workflows/build.yml'), 'utf8'),
+      readFile(path.join(rootDir, '.github/workflows/publish.yml'), 'utf8'),
+    ]);
+    expect(build).not.toContain('(plugin)');
+    expect(publish).not.toContain('(plugin)');
+  });
+
+  it('keeps a repo-local scripts/esbuild.mjs instead of the vendored one', async () => {
+    const local = "// local esbuild-only variant, no rollup-plugin-dts\nexport const marker = 'repo-local';\n";
+    await writeFixture('scripts/esbuild.mjs', local);
+    const pkgPath = path.join(rootDir, 'package.json');
+    const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
+    pkg.automator = { ...pkg.automator, bundle: true };
+    await writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).toBe(local);
+  });
+
+  it('copies the vendored scripts/esbuild.mjs when the repo has none', async () => {
+    const pkgPath = path.join(rootDir, 'package.json');
+    const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
+    pkg.automator = { ...pkg.automator, bundle: true };
+    await writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+    expect(existsSync(path.join(rootDir, 'scripts/esbuild.mjs'))).toBe(true);
+    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).not.toContain('repo-local');
+  });
 });

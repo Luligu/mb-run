@@ -486,6 +486,24 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('@types/node '), expect.anything());
   });
 
+  it('keeps the scripts of a workspace package when automator.skipPackageJson is set', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    const workspacePkgJson = { ...structuredClone(packageJson), automator: { skipPackageJson: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('workspace-skip'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('workspace-skip/package.json'),
+      workspacePkgJson,
+      false,
+      true,
+    );
+
+    expect(workspacePkgJson.scripts).toEqual(packageJson.scripts);
+    expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('skipPackageJson, keeping its scripts'));
+  });
+
   it('sets publish and chip scripts when automator flags are enabled', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);

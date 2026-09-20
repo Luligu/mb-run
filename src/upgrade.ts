@@ -289,9 +289,10 @@ export async function runPackageJsonUpgrade(
     await pressyAnyKey();
   }
 
-  // The Matterbridge rules only make sense for plugins and for the Matterbridge monorepo itself: elsewhere they are removed instead of copied
+  // The Matterbridge rules only make sense for plugins and for the Matterbridge monorepo itself: elsewhere they are removed instead of copied.
+  // Matching on the name rather than on isMonorepo keeps unrelated monorepos (which have workspaces too) on the plain variants.
   const matterbridgeRules = ['matterbridge', 'plugin-frontend', 'chip-tests'];
-  const useMatterbridgeRules = isPlugin || isMonorepo;
+  const useMatterbridgeRules = isPlugin || pkgJson.name === 'matterbridge';
 
   // Copy .agents: the single source of truth for every agent, mirrored by the pointers in .claude and .github
   if (!isWorkspace) {
@@ -360,11 +361,16 @@ export async function runPackageJsonUpgrade(
   // Copy scripts
   if (automator?.app !== true) {
     mkdirSync(path.join(dstDir, 'scripts'), { recursive: true });
+    // A repo-local scripts/esbuild.mjs wins over the vendored one: the vendored copy still bundles declarations through
+    // rollup-plugin-dts, which has no TypeScript 7 (tsgo) release yet, so repos carry their own esbuild-only variant.
+    const esbuildScriptPath = path.join(dstDir, 'scripts', 'esbuild.mjs');
+    const localEsbuildScript = existsSync(esbuildScriptPath) ? readFileSync(esbuildScriptPath, 'utf8') : undefined;
     if (isWorkspace) {
       copyRecursive('scripts/downloads.mjs', 'scripts');
     } else {
       copyRecursive('scripts', 'scripts');
     }
+    if (localEsbuildScript !== undefined) writeFileSync(esbuildScriptPath, localEsbuildScript, 'utf8');
     // Remove legacy scripts that are no longer needed
     if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
@@ -601,10 +607,14 @@ export async function runPackageJsonUpgrade(
     log(magenta('Monorepo detected, skipping script setup for the root package.json.'));
     updateScript = false;
   }
-  // Remove scripts for workspace packages.
+  // Remove scripts for workspace packages, unless the package keeps its own with automator.skipPackageJson.
   if (isWorkspace) {
-    log(magenta('Package is a workspace, removing scripts...'));
-    delete pkgJson.scripts;
+    if (automator?.skipPackageJson === true) {
+      log(magenta('Package is a workspace with skipPackageJson, keeping its scripts...'));
+    } else {
+      log(magenta('Package is a workspace, removing scripts...'));
+      delete pkgJson.scripts;
+    }
     updateScript = false;
   }
   // Skip script setup when set.

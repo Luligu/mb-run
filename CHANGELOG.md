@@ -30,6 +30,12 @@ If you like this project and find it useful, please consider giving it a star on
 - [devcontainer]: Add [`Dev Container`](.devcontainer/README.md) v.2.2.0 with dual Node and Bun runtime support.
 - [agents]: Add a [`shared setup`](.agents/README.md) for all agents: OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity.
 
+### Fixed
+
+- [upgrade]: Select the Matterbridge rules by package name instead of by `isMonorepo`. Any repository with a `workspaces` field was treated as the Matterbridge monorepo and received the plugin variants of `.agents`, `.claude`, `.github` and `AGENTS.md`, pulling the `matterbridge`, `plugin-frontend` and `chip-tests` rules, the plugin workflows and the plugin issue template into unrelated monorepos.
+- [upgrade]: Keep the scripts of a workspace package when it sets `automator.skipPackageJson`. Workspace packages that own their scripts, such as an Electron app with its `electron-builder` targets, lost them on every upgrade.
+- [upgrade]: Keep a repository-local `scripts/esbuild.mjs` instead of overwriting it with the vendored one. The vendored copy still bundles declarations through `rollup-plugin-dts`, which has no TypeScript 7 (tsgo) release yet, so repositories carry their own esbuild-only variant.
+
 ### Changed
 
 - [package]: Upgrade package.
