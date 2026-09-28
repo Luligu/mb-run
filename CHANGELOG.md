@@ -47,6 +47,8 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [antigravity]: Bump the vendored `.antigravity/settings.json` to v.1.0.5: count the removed sandboxing comments and allow the read-only git commands already approved in `.vscode/settings.json`.
+- [vscode]: Bump the vendored `.vscode/settings.json` to v.1.0.14: ask before dependency installs and removals and approve `npm run test:watch` and `npm run test:verbose`, in sync with `.antigravity/settings.json`.
 - [scripts]: Remove the obsolete `eslint-disable` comments from the vendored `scripts/*.mjs` and bump each touched script's patch version (scripts are ignored by oxlint).
 - [version]: Breaking change: rename `--version [tag]` to `--set-version [tag]`, so `--version` no longer rewrites `package.json`. The old `mb-run --version <tag>` form exits with an error pointing to `--set-version`.
 - [package]: Upgrade package.
