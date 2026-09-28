@@ -50,7 +50,7 @@ export function parseVersionTag(tag: string | undefined): 'dev' | 'edge' | 'git'
   if (normalized === 'dev' || normalized === 'edge' || normalized === 'git' || normalized === 'local' || normalized === 'next' || normalized === 'alpha' || normalized === 'beta') {
     return normalized;
   }
-  throw new ExitError(1, 'Missing or invalid --version tag (expected dev, edge, git, local, next, alpha, or beta).');
+  throw new ExitError(1, 'Missing or invalid --set-version tag (expected dev, edge, git, local, next, alpha, or beta).');
 }
 
 /**

@@ -123,7 +123,7 @@ describe('workspace', () => {
         const actual = await vi.importActual<typeof import('../src/clean.js')>('../src/clean.js');
         return actual.fileExists(p);
       });
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).rejects.toBeInstanceOf(ExitError);
     });
   });
@@ -133,13 +133,13 @@ describe('workspace', () => {
       mockExecFileSync.mockImplementation(() => {
         throw new Error('git not found');
       });
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).rejects.toBeInstanceOf(ExitError);
     });
 
     it('throws when git outputs unexpected SHA format', async () => {
       mockExecFileSync.mockReturnValue('XXXXXXXX\n');
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).rejects.toThrow();
     });
   });
@@ -167,7 +167,7 @@ describe('workspace', () => {
         return actual.fileExists(p);
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -188,7 +188,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -213,7 +213,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).rejects.toBeInstanceOf(ExitError);
     });
 
@@ -246,7 +246,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
   });
@@ -273,7 +273,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
   });
@@ -312,7 +312,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -345,7 +345,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -369,7 +369,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -391,7 +391,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).rejects.toBeInstanceOf(ExitError);
     });
   });
@@ -434,7 +434,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--version', 'dev');
+      setArgs('--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
       expect(vi.mocked(await import('node:fs/promises')).writeFile).toHaveBeenCalled();
     });
@@ -469,7 +469,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
   });
@@ -503,7 +503,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
   });
@@ -534,7 +534,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -563,7 +563,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
@@ -601,7 +601,7 @@ describe('workspace', () => {
         return false;
       });
 
-      setArgs('--dry-run', '--version', 'dev');
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
       expect(vi.mocked(await import('node:fs/promises')).writeFile).not.toHaveBeenCalled();
     });

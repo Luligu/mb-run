@@ -52,12 +52,12 @@ npm install --save-dev mb-run
 ## Usage
 
 ```text
-mb-run [flags] [--pack [tag]] [--publish [tag]] [--version [tag]]
+mb-run [flags] [--pack [tag]] [--publish [tag]] [--set-version [tag]]
 ```
 
 Multiple flags can be combined. They are always executed in this fixed order regardless of how they appear on the command line:
 
-> `info → install → upgrade → update → deep-clean → reset → version → clean → build → typecheck → test → format → lint → sort → pack → publish → esbuild → watch`
+> `info → install → upgrade → update → deep-clean → reset → set-version → clean → build → typecheck → test → format → lint → sort → pack → publish → esbuild → watch`
 
 ## Flags
 
@@ -70,7 +70,7 @@ Multiple flags can be combined. They are always executed in this fixed order reg
 | `--reset --production`                 | Same as `--reset` but rebuilds using the production tsconfig.                                                                                                                                                                                                                                                                                                                                         |
 | `--deep-clean`                         | Same filesystem cleanup as `--reset` but skips the install and build steps.                                                                                                                                                                                                                                                                                                                           |
 | `--clean`                              | Removes `dist/` and all `.tsbuildinfo` files.                                                                                                                                                                                                                                                                                                                                                         |
-| `--version [tag]`                      | Updates the version in `package.json` (root and all workspaces) and regenerates `package-lock.json`. Without a tag, strips any prerelease suffix back to base semver. With a tag, produces `<baseVersion>-<tag>-<yyyymmdd>-<7charSha>`.                                                                                                                                                               |
+| `--set-version [tag]`                  | Updates the version in `package.json` (root and all workspaces) and regenerates `package-lock.json`. Without a tag, strips any prerelease suffix back to base semver. With a tag, produces `<baseVersion>-<tag>-<yyyymmdd>-<7charSha>`.                                                                                                                                                               |
 | `--build`                              | Compiles TypeScript with `tsc`. Prefers `tsconfig.build.json` per workspace when present, falls back to `tsconfig.json`.                                                                                                                                                                                                                                                                              |
 | `--build --production`                 | Compiles for production. Prefers `tsconfig.build.production.json`, falls back to `tsconfig.build.json`, then `tsconfig.json`.                                                                                                                                                                                                                                                                         |
 | `--typecheck`                          | Type-checks with `tsc` using the root `tsconfig.json` and `--noEmit`.                                                                                                                                                                                                                                                                                                                                 |
@@ -87,11 +87,12 @@ Multiple flags can be combined. They are always executed in this fixed order reg
 | `--info`                               | Prints system information: platform, hostname, memory, network interfaces, Node.js, npm, and Bun versions, plus Bun install, cache, binary, and global module locations with their related environment variables.                                                                                                                                                                                     |
 | `--dry-run`                            | Logs every intended action without modifying files or executing commands.                                                                                                                                                                                                                                                                                                                             |
 | `--verbose`                            | Prints each external command before it is executed.                                                                                                                                                                                                                                                                                                                                                   |
+| `--version`, `-v`                      | Prints the mb-run version and exits without changing any file. Use `--set-version` to update the package version.                                                                                                                                                                                                                                                                                     |
 | `--help`, `-h`                         | Prints usage text.                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## Version tags
 
-The `--version` flag accepts the following prerelease tags:
+The `--set-version` flag accepts the following prerelease tags:
 
 `dev` · `edge` · `git` · `local` · `next` · `alpha` · `beta`
 
@@ -99,11 +100,11 @@ Examples:
 
 ```bash
 # Tag a dev prerelease
-mb-run --version dev
+mb-run --set-version dev
 # → 1.2.3-dev-20260504-abc1234
 
 # Strip back to base semver
-mb-run --version
+mb-run --set-version
 # → 1.2.3
 ```
 
@@ -120,7 +121,7 @@ mb-run --build --production --dry-run
 mb-run --reset
 
 # Tag a dev prerelease, build, and pack
-mb-run --version dev --build --production --pack
+mb-run --set-version dev --build --production --pack
 
 # Watch mode during development
 mb-run --build --watch

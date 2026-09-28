@@ -29,7 +29,7 @@ import { runWorkspaceBuild, runWorkspaceTypecheck } from './build.js';
 import { cleanOnly, fileExists, resetClean } from './clean.js';
 import { runEsbuild } from './esbuild.js';
 import { runFormatter } from './format.js';
-import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from './help.js';
+import { printPackUsage, printPublishUsage, printUsage, printVersion, printVersionUsage } from './help.js';
 import { isPlugin } from './helpers.js';
 import { systemInfo } from './info.js';
 import { runInstall } from './install.js';
@@ -60,6 +60,18 @@ const isWindows = process.platform === 'win32';
 export async function main(): Promise<void> {
   const repoRoot = process.cwd();
   const rawArgs = process.argv.slice(2);
+
+  // --version only prints the version: it works outside a package root and never touches package.json.
+  // A tag after it is the old --version <tag> form, so point to --set-version instead of silently ignoring it.
+  const printVersionIndex = rawArgs.findIndex((a) => a === '--version' || a === '-v');
+  if (printVersionIndex >= 0) {
+    const nextArg = rawArgs[printVersionIndex + 1];
+    if (nextArg !== undefined && !nextArg.startsWith('-')) {
+      throw new ExitError(1, `--version only prints the mb-run version: use --set-version ${nextArg} to update the package version`);
+    }
+    printVersion();
+    return;
+  }
 
   // Validate that the current working directory is a package root.
   if (!(await fileExists(path.join(repoRoot, 'package.json')))) {
@@ -94,7 +106,7 @@ export async function main(): Promise<void> {
     '--upgrade',
     '--reset',
     '--deep-clean',
-    '--version',
+    '--set-version',
     '--pack',
     '--publish',
     '--esbuild',
@@ -117,7 +129,7 @@ export async function main(): Promise<void> {
 
   const buildOpts = { rootDir: repoRoot, isWindows, dryRun: dryRunMode, verbose: verboseCommands };
 
-  const versionIndex = rawArgs.indexOf('--version');
+  const versionIndex = rawArgs.indexOf('--set-version');
   const candidateVersionArg = versionIndex >= 0 ? rawArgs[versionIndex + 1] : undefined;
   const rawVersionTag = typeof candidateVersionArg === 'string' && !candidateVersionArg.startsWith('-') ? candidateVersionArg : undefined;
 
@@ -212,7 +224,7 @@ export async function main(): Promise<void> {
       versionTag = parseVersionTag(rawVersionTag);
     } catch {
       printVersionUsage();
-      throw new ExitError(1, 'Invalid --version usage');
+      throw new ExitError(1, 'Invalid --set-version usage');
     }
   }
 
@@ -242,7 +254,7 @@ export async function main(): Promise<void> {
     build: rawArgs.includes('--build'),
     typecheck: rawArgs.includes('--typecheck'),
     production: rawArgs.includes('--production'),
-    version: rawArgs.includes('--version'),
+    version: rawArgs.includes('--set-version'),
     watch: rawArgs.includes('--watch'),
     test: rawArgs.includes('--test'),
     lint: rawArgs.includes('--lint'),

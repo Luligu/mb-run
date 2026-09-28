@@ -31,6 +31,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [agents]: Add a [`shared setup`](.agents/README.md) for all agents: OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity.
 - [upgrade]: Add `automator.skipPublishWorkflow` to remove `.github/workflows/publish.yml` after the copy, for repositories that are never published to npm.
 - [vscode]: Add `.github/commit-message-instructions.md` and point the VS Code Copilot "Generate Commit Message" button to it (`settings.json` v.1.0.13) for Conventional Commits.
+- [version]: Add `--version` and `-v` to print the mb-run version. It works outside a package root and never changes any file.
 - [scripts]: Bump the vendored `scripts/clean.mjs` and `scripts/deep-clean.mjs` to v.1.3.0, which log every removed path and a final summary with the elapsed time, add `--help` and `--version`, and reject unknown arguments.
 - [upgrade]: Install `@typescript/typescript6`, `rollup` and `rollup-plugin-dts` alongside `esbuild` when `automator.bundle` is set. `rollup-plugin-dts` bundles the declarations through the legacy compiler API that TypeScript 7 (tsgo) removed, and its optional peer `@typescript/typescript6` supplies that API next to the `typescript` 7 used for the build.
 
@@ -43,6 +44,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [version]: Breaking change: rename `--version [tag]` to `--set-version [tag]`, so `--version` no longer rewrites `package.json`. The old `mb-run --version <tag>` form exits with an error pointing to `--set-version`.
 - [package]: Upgrade package.
 - [package]: Bump `oxfmt` to v.0.68.0.
 - [package]: Bump `oxlint` to v.1.83.0.

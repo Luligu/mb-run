@@ -6,7 +6,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { printPackUsage, printPublishUsage, printUsage, printVersionUsage } from '../src/help.js';
+import pkg from '../package.json' with { type: 'json' };
+import { printPackUsage, printPublishUsage, printUsage, printVersion, printVersionUsage } from '../src/help.js';
 
 const VERSION_TAGS = ['dev', 'edge', 'git', 'local', 'next', 'alpha', 'beta'];
 
@@ -62,7 +63,9 @@ describe('help', () => {
         '--publish',
         '--esbuild',
         '--dry-run',
+        '--set-version',
         '--version',
+        '-v',
         '--verbose',
         '--info',
       ]) {
@@ -200,6 +203,12 @@ describe('help', () => {
     it('documents --version behavior', () => {
       printUsage();
       expect(output).toContain('--version');
+      expect(output).toContain('print the mb-run version');
+    });
+
+    it('documents --set-version behavior', () => {
+      printUsage();
+      expect(output).toContain('--set-version');
     });
 
     it('documents --verbose behavior', () => {
@@ -214,6 +223,19 @@ describe('help', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // printVersion
+  // ---------------------------------------------------------------------------
+  describe('printVersion', () => {
+    it('logs only the package version', () => {
+      // oxlint-disable-next-line eslint/no-console -- referencing the mocked console.log to assert call count
+      const spy = vi.mocked(console.log);
+      printVersion();
+      expect(spy).toHaveBeenCalledOnce();
+      expect(output).toBe(pkg.version);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // printVersionUsage
   // ---------------------------------------------------------------------------
   describe('printVersionUsage', () => {
@@ -224,9 +246,9 @@ describe('help', () => {
       expect(spy).toHaveBeenCalledOnce();
     });
 
-    it('includes --version flag', () => {
+    it('includes --set-version flag', () => {
       printVersionUsage();
-      expect(output).toContain('--version');
+      expect(output).toContain('--set-version');
     });
 
     it('includes all valid tags', () => {

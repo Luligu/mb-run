@@ -66,10 +66,11 @@ ${brightYellow('Options:')}
   ${f('--pack', '[tag] [minify]')}back up, clean, build, npm pack, and restore; bumps version first if tag is provided
   ${f('--publish', '[tag]')}back up, npm publish for root and all workspaces, and restore; bumps version first if tag is provided
   ${f('--esbuild', '[minify]')}bundle with esbuild; minify compresses output and removes comments
-  ${f('--version', '[tag]')}update versions for the current package and all workspaces
+  ${f('--set-version', '[tag]')}update versions for the current package and all workspaces
   ${f('--dry-run')}log intended actions without executing commands or writing files
   ${f('--verbose')}print each command before it is executed
   ${f('--info')}print system information (platform, hostname, memory, network, Node.js/npm versions)
+  ${green('--version')}, ${green('-v')}${' '.repeat(13)}print the mb-run version
   ${green('--help')}, ${green('-h')}${' '.repeat(16)}print this help message
 
   ${brightBlack('Version tags:')} dev | edge | git | local | next | alpha | beta
@@ -79,11 +80,18 @@ ${brightYellow('Options:')}
 }
 
 /**
- * Prints usage text for the --version mode.
+ * Prints the mb-run version.
+ */
+export function printVersion(): void {
+  log(pkg.version);
+}
+
+/**
+ * Prints usage text for the --set-version mode.
  */
 export function printVersionUsage(): void {
   const msg = [
-    `${brightYellow('Usage:')} ${green('mb-run')} ${green('--version')} [dev|edge|git|local|next|alpha|beta]`,
+    `${brightYellow('Usage:')} ${green('mb-run')} ${green('--set-version')} [dev|edge|git|local|next|alpha|beta]`,
     `${cyan('Updates')} package.json + package-lock.json (current package and workspaces) version to:`,
     `  ${brightBlack('<baseVersion>-<dev|edge|git|local|next|alpha|beta>-<yyyymmdd>-<7charSha>')}`,
     `Or with no tag, strips the suffix back to ${brightBlack('<baseVersion>')}.`,

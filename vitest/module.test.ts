@@ -18,6 +18,7 @@ vi.mock('../src/esbuild.js', () => ({ runEsbuild: vi.fn() }));
 vi.mock('../src/pack.js', () => ({ runPack: vi.fn() }));
 vi.mock('../src/self.js', () => ({ checkLatestVersion: vi.fn() }));
 
+import pkg from '../package.json' with { type: 'json' };
 // oxlint-disable-next-line import/no-namespace -- namespace import is required so vi.spyOn can stub the module export
 import * as ansiModule from '../src/ansi.js';
 import { runEsbuild } from '../src/esbuild.js';
@@ -274,33 +275,73 @@ describe('module', () => {
   });
 
   describe('main — --version', () => {
-    it('--dry-run --version (no tag) strips the suffix and resolves', async () => {
-      setArgs('--dry-run', '--version');
+    it('--version prints the version and resolves', async () => {
+      setArgs('--version');
+      await expect(main()).resolves.toBeUndefined();
+      // oxlint-disable-next-line eslint/no-console -- referencing the mocked console.log to assert the printed version
+      expect(vi.mocked(console.log)).toHaveBeenCalledWith(pkg.version);
+    });
+
+    it('-v prints the version and resolves', async () => {
+      setArgs('-v');
+      await expect(main()).resolves.toBeUndefined();
+      // oxlint-disable-next-line eslint/no-console -- referencing the mocked console.log to assert the printed version
+      expect(vi.mocked(console.log)).toHaveBeenCalledWith(pkg.version);
+    });
+
+    it('--version does not require a package.json in the working directory', async () => {
+      const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-version-'));
+      const cwd = vi.spyOn(process, 'cwd').mockReturnValue(tmpDir);
+      try {
+        setArgs('--version');
+        await expect(main()).resolves.toBeUndefined();
+      } finally {
+        cwd.mockRestore();
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('--version ignores the other flags and runs nothing', async () => {
+      vi.mocked(runFormatter).mockClear();
+      setArgs('--version', '--format');
+      await expect(main()).resolves.toBeUndefined();
+      expect(runFormatter).not.toHaveBeenCalled();
+    });
+
+    it('--version followed by a tag throws ExitError pointing to --set-version', async () => {
+      setArgs('--version', 'dev');
+      await expect(main()).rejects.toMatchObject({ code: 1, message: expect.stringContaining('--set-version dev') });
+    });
+  });
+
+  describe('main — --set-version', () => {
+    it('--dry-run --set-version (no tag) strips the suffix and resolves', async () => {
+      setArgs('--dry-run', '--set-version');
       await expect(main()).resolves.toBeUndefined();
     });
 
-    it('--dry-run --version dev resolves', async () => {
-      setArgs('--dry-run', '--version', 'dev');
+    it('--dry-run --set-version dev resolves', async () => {
+      setArgs('--dry-run', '--set-version', 'dev');
       await expect(main()).resolves.toBeUndefined();
     });
 
-    it('--dry-run --version edge resolves', async () => {
-      setArgs('--dry-run', '--version', 'edge');
+    it('--dry-run --set-version edge resolves', async () => {
+      setArgs('--dry-run', '--set-version', 'edge');
       await expect(main()).resolves.toBeUndefined();
     });
 
-    it('--dry-run --version with an invalid tag throws ExitError', async () => {
-      setArgs('--dry-run', '--version', 'invalid-tag');
+    it('--dry-run --set-version with an invalid tag throws ExitError', async () => {
+      setArgs('--dry-run', '--set-version', 'invalid-tag');
       await expect(main()).rejects.toBeInstanceOf(ExitError);
     });
 
-    it('--version tag is not treated as a positional when it follows --version', async () => {
-      setArgs('--dry-run', '--version', 'beta');
+    it('--set-version tag is not treated as a positional when it follows --set-version', async () => {
+      setArgs('--dry-run', '--set-version', 'beta');
       await expect(main()).resolves.toBeUndefined();
     });
 
-    it('next flag after --version that starts with -- is not treated as a tag', async () => {
-      setArgs('--dry-run', '--version', '--build');
+    it('next flag after --set-version that starts with -- is not treated as a tag', async () => {
+      setArgs('--dry-run', '--set-version', '--build');
       await expect(main()).resolves.toBeUndefined();
     });
   });
