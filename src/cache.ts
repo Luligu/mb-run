@@ -149,7 +149,7 @@ export async function backup(rootDir: string): Promise<void> {
     try {
       entries = await readdir(dir, { withFileTypes: true });
     } catch {
-      /* c8 ignore next */
+      /* v8 ignore next */
       continue;
     }
     for (const entry of entries) {
