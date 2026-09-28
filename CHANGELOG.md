@@ -30,6 +30,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [devcontainer]: Add [`Dev Container`](.devcontainer/README.md) v.2.2.0 with dual Node and Bun runtime support.
 - [agents]: Add a [`shared setup`](.agents/README.md) for all agents: OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity.
 - [upgrade]: Add `automator.skipPublishWorkflow` to remove `.github/workflows/publish.yml` after the copy, for repositories that are never published to npm.
+- [vscode]: Add `.github/commit-message-instructions.md` and point the VS Code Copilot "Generate Commit Message" button to it (`settings.json` v.1.0.13) for Conventional Commits.
 - [upgrade]: Install `@typescript/typescript6`, `rollup` and `rollup-plugin-dts` alongside `esbuild` when `automator.bundle` is set. `rollup-plugin-dts` bundles the declarations through the legacy compiler API that TypeScript 7 (tsgo) removed, and its optional peer `@typescript/typescript6` supplies that API next to the `typescript` 7 used for the build.
 
 ### Fixed
