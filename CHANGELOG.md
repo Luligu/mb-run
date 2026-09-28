@@ -49,12 +49,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 - [version]: Breaking change: rename `--version [tag]` to `--set-version [tag]`, so `--version` no longer rewrites `package.json`. The old `mb-run --version <tag>` form exits with an error pointing to `--set-version`.
 - [package]: Upgrade package.
-- [package]: Bump `oxfmt` to v.0.68.0.
-- [package]: Bump `oxlint` to v.1.83.0.
-- [package]: Bump `oxlint-tsgolint` to v.7.0.2002.
-- [package]: Bump `vitest` to v.5.0.1.
-- [package]: Bump `@vitest/coverage-v8` to v.5.0.1.
-- [package]: Bump `@types/node` to v.26.6.2.
+- [package]: Bump `oxfmt` to v.0.71.0.
+- [package]: Bump `oxlint` to v.1.86.0.
+- [package]: Bump `oxlint-tsgolint` to v.7.0.2003.
+- [package]: Bump `vitest` to v.5.0.2.
+- [package]: Bump `@vitest/coverage-v8` to v.5.0.2.
+- [package]: Bump `@types/node` to v.26.6.3.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
