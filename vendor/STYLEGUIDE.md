@@ -106,6 +106,8 @@ Placing this file at root lets Copilot pick patterns. Reinforce by:
 
 ## 13. Commit Messages (conventional subset)
 
+Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). The full rules are in [.github/commit-message-instructions.md](.github/commit-message-instructions.md).
+
 - `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:` prefix.
 - Imperative, lower case first line; no period.
 
