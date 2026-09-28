@@ -1,6 +1,6 @@
 /**
  * run-automator.mjs
- * Version: 1.0.1
+ * Version: 1.0.2
  *
  * Launcher script for a developer "automator".
  *
@@ -13,8 +13,6 @@
  * Usage:
  *   node scripts/run-automator.mjs [args...]
  */
-
-/* eslint-disable n/no-process-exit */
 
 import { spawnSync } from 'node:child_process';
 import { access } from 'node:fs/promises';
@@ -67,7 +65,6 @@ if (!automatorPath) {
     '  - Or set env var ONE_DRIVE_ROOT to your OneDrive root directory',
     '  - Or ensure OneDrive env vars (OneDrive/OneDriveCommercial/OneDriveConsumer) are set',
   ];
-  // eslint-disable-next-line no-console
   console.error(lines.join(os.EOL));
   process.exit(1);
 }

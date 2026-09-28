@@ -47,6 +47,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [scripts]: Remove the obsolete `eslint-disable` comments from the vendored `scripts/*.mjs` and bump each touched script's patch version (scripts are ignored by oxlint).
 - [version]: Breaking change: rename `--version [tag]` to `--set-version [tag]`, so `--version` no longer rewrites `package.json`. The old `mb-run --version <tag>` form exits with an error pointing to `--set-version`.
 - [package]: Upgrade package.
 - [package]: Bump `oxfmt` to v.0.71.0.

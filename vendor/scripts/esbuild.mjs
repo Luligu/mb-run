@@ -1,6 +1,6 @@
 /**
  * esbuild.mjs
- * Version: 1.0.2
+ * Version: 1.0.3
  *
  * Bundles JavaScript files using esbuild.
  *
@@ -10,11 +10,6 @@
  * Requirements:
  *   Node.js 18+ (for global fetch)
  */
-
-/* eslint-disable jsdoc/require-param-description */
-/* eslint-disable jsdoc/require-returns-description */
-/* eslint-disable jsdoc/reject-any-type */
-/* eslint-disable no-console */
 
 import { readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';

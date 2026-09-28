@@ -1,6 +1,6 @@
 /**
  * run-chip-tests.mjs
- * Version: 1.5.1
+ * Version: 1.5.2
  *
  * Manage the `luligu/matterbridge:chip-test` docker container for the plugin in the current working
  * directory and run the Matter CHIP test suite defined in chipTests.json, logging full results to
@@ -51,8 +51,6 @@
  * it doesn't run) without ever invoking it — for tests that can never pass against this image (e.g. ones
  * requiring the CSA reference app's --app-pipe debug hook, which Matterbridge doesn't implement).
  */
-
-/* eslint-disable no-console */
 
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -238,7 +236,6 @@ function waitForContainerReady(sinceIso, timeoutMs = 45000, pollMs = 1000) {
     const result = run('docker', ['logs', '--since', sinceIso, containerName], { capture: true });
     // Matterbridge colorizes its log output with ANSI escapes even without a TTY, splitting the marker
     // text across escape sequences (e.g. "Matterbridge " <esc> "is online"); strip them before matching.
-    // eslint-disable-next-line no-control-regex
     const plainOutput = `${result.stdout ?? ''}${result.stderr ?? ''}`.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
     if (plainOutput.includes(readyLogMarker)) {
       return;
