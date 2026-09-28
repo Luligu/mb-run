@@ -32,12 +32,14 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Add `automator.skipPublishWorkflow` to remove `.github/workflows/publish.yml` after the copy, for repositories that are never published to npm.
 - [vscode]: Add `.github/commit-message-instructions.md` and point the VS Code Copilot "Generate Commit Message" button to it (`settings.json` v.1.0.13) for Conventional Commits.
 - [styleguide]: Link the Conventional Commits spec and `.github/commit-message-instructions.md` in section 13 of the vendored `STYLEGUIDE.md`.
+- [styleguide]: Add a Changelog section to the vendored `STYLEGUIDE.md`: Keep a Changelog format and Semantic Versioning, as stated in every fleet `CHANGELOG.md`.
 - [version]: Add `--version` and `-v` to print the mb-run version. It works outside a package root and never changes any file.
 - [scripts]: Bump the vendored `scripts/clean.mjs` and `scripts/deep-clean.mjs` to v.1.3.0, which log every removed path and a final summary with the elapsed time, add `--help` and `--version`, and reject unknown arguments.
 - [upgrade]: Install `@typescript/typescript6`, `rollup` and `rollup-plugin-dts` alongside `esbuild` when `automator.bundle` is set. `rollup-plugin-dts` bundles the declarations through the legacy compiler API that TypeScript 7 (tsgo) removed, and its optional peer `@typescript/typescript6` supplies that API next to the `typescript` 7 used for the build.
 
 ### Fixed
 
+- [styleguide]: Bump the vendored `STYLEGUIDE.md` to v.1.1.0 and audit it against the fleet config: fix the lux example (`+ 1`, no negative values), the import order, align commit types, JSDoc and file headers with lint and apply-style, replace the Copilot hints with an Agents section, and scope Matterbridge-only rules.
 - [esbuild]: Bump the vendored `scripts/esbuild.mjs` to v.1.0.2, which logs each obfuscated file. With the declaration bundling dependencies now installed, `npm run bundle` and `npm run obfuscate` work again under tsgo.
 - [upgrade]: Install `@types/node` unpinned again. DefinitelyTyped no longer lets the last published Node.js line take over the `latest` dist-tag, so the `@types/node@24` pin on the LTS major is obsolete and was already being superseded by the `ncu -u` pass of `--update`.
 - [upgrade]: Select the Matterbridge rules by package name instead of by `isMonorepo`. Any repository with a `workspaces` field was treated as the Matterbridge monorepo and received the plugin variants of `.agents`, `.claude`, `.github` and `AGENTS.md`, pulling the `matterbridge`, `plugin-frontend` and `chip-tests` rules, the plugin workflows and the plugin issue template into unrelated monorepos.
