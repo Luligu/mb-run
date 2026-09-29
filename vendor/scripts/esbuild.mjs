@@ -11,6 +11,8 @@
  *   Node.js 18+ (for global fetch)
  */
 
+/* oxlint-disable no-console */
+
 import { readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -47,14 +49,14 @@ if (dirs.length === 0) {
 /**
  * Recursively lists all files under a directory.
  *
- * @param {string} rootDir
- * @returns {Promise<string[]>}
+ * @param {string} rootDir - Directory to walk.
+ * @returns {Promise<string[]>} Absolute paths of all files below rootDir.
  */
 const listFilesRecursive = async (rootDir) => {
   /** @type {string[]} */
   const files = [];
 
-  /** @param {string} currentDir */
+  /** @param {string} currentDir - Directory being walked. */
   const walk = async (currentDir) => {
     const entries = await readdir(currentDir, { withFileTypes: true });
     for (const entry of entries) {
@@ -71,11 +73,11 @@ const listFilesRecursive = async (rootDir) => {
   return files;
 };
 
-/** @param {string} distDir */
+/** @param {string} distDir - Dist directory to bundle in place. */
 const bundleDir = async (distDir) => {
   console.log(`[esbuild] dir: ${distDir}`);
   const dirStat = await stat(distDir).catch(() => null);
-  if (!dirStat || !dirStat.isDirectory()) {
+  if (!dirStat?.isDirectory()) {
     throw new Error(`Not a directory: ${distDir}`);
   }
 

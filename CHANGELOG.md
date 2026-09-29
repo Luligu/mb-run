@@ -51,6 +51,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [vscode]: Bump the vendored `.vscode/settings.json` to v.1.0.14: ask before dependency installs and removals and approve `npm run test:watch` and `npm run test:verbose`, in sync with `.antigravity/settings.json`.
 - [scripts]: Remove the obsolete `eslint-disable` comments from the vendored `scripts/*.mjs` and bump each touched script's patch version.
 - [scripts]: Make the vendored `scripts/*.mjs` pass oxlint: file-level `no-console` disables, behavior-preserving fixes, and local disables where a fix would change runtime behavior.
+- [esbuild]: Make the vendored `scripts/esbuild.mjs` pass oxlint: file-level `no-console` disable, JSDoc descriptions and an optional chain.
 - [oxlint]: Bump the vendored `.oxlintrc.root.json` to v.1.0.19: lint `scripts/` and `bin/`, and ignore `docs/**`, `**/tmp/**` and `**/bun.lock`.
 - [oxfmt]: Bump the vendored `.oxfmtrc.root.json` to v.1.0.7: ignore `docs/**`, `**/tmp/**` and `**/bun.lock`, and drop the `scripts/*.html` and `eslint.config.js` ignores.
 - [scripts]: Remove the unused vendored `scripts/run-automator.mjs`, which every upgrade deleted right after copying it.
