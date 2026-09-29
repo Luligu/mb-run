@@ -16,6 +16,8 @@
  * - Print tag/title/description and pause for user confirmation before creating
  */
 
+/* oxlint-disable no-console */
+
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -90,6 +92,7 @@ async function promptToContinue({ tag, title, description }) {
   console.log(`Tag: ${tag}`);
   console.log(`Title: ${title}`);
   console.log('Description:');
+  // oxlint-disable-next-line typescript/prefer-nullish-coalescing
   console.log(description || '(empty)');
   console.log('---');
 
@@ -106,7 +109,7 @@ async function promptToContinue({ tag, title, description }) {
   }
 }
 
-function runGhReleaseCreate({ tag, title, notesFilePath }) {
+async function runGhReleaseCreate({ tag, title, notesFilePath }) {
   return new Promise((resolve, reject) => {
     const args = ['release', 'create', tag, '--title', title, '--notes-file', notesFilePath, '--target', 'main'];
     const child = spawn('gh', args, {
@@ -157,6 +160,7 @@ async function main() {
   }
 }
 
+// oxlint-disable-next-line typescript/use-unknown-in-catch-callback-variable
 main().catch((err) => {
   console.error(`create-release: ${err?.message ?? err}`);
   console.error('Make sure you are authenticated with GitHub CLI: gh auth status');

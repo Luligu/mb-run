@@ -52,16 +52,18 @@
  * requiring the CSA reference app's --app-pipe debug hook, which Matterbridge doesn't implement).
  */
 
+/* oxlint-disable no-console */
+
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import path from 'node:path';
 
 const root = process.cwd();
 const containerName = 'chip-test';
 const image = 'luligu/matterbridge:chip-test';
-const testsFile = resolve(root, 'chipTests.json');
-const logFile = resolve(root, 'chipTests.log');
-const summaryLogFile = resolve(root, 'chipTestsSummary.log');
+const testsFile = path.resolve(root, 'chipTests.json');
+const logFile = path.resolve(root, 'chipTests.log');
+const summaryLogFile = path.resolve(root, 'chipTestsSummary.log');
 // Node storage for the bridged endpoints; only stateful cluster attributes that get written during a
 // test create a file here, so these globs only ever remove test-mutated state, never device identity.
 const matterstorageRoot = '/root/.matterbridge/matterstorage/Matterbridge';
@@ -175,7 +177,7 @@ function start() {
     '-p',
     '8585:8283',
     '-v',
-    `${join(root, 'temp')}:/tmp/matter_testing/logs`,
+    `${path.join(root, 'temp')}:/tmp/matter_testing/logs`,
     '-v',
     `${root}:/root/Matterbridge/${pluginName}`,
     // Shadows just the node_modules subpath of the bind mount above with a named volume backed by the
@@ -236,6 +238,7 @@ function waitForContainerReady(sinceIso, timeoutMs = 45000, pollMs = 1000) {
     const result = run('docker', ['logs', '--since', sinceIso, containerName], { capture: true });
     // Matterbridge colorizes its log output with ANSI escapes even without a TTY, splitting the marker
     // text across escape sequences (e.g. "Matterbridge " <esc> "is online"); strip them before matching.
+    // oxlint-disable-next-line eslint/no-control-regex
     const plainOutput = `${result.stdout ?? ''}${result.stderr ?? ''}`.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
     if (plainOutput.includes(readyLogMarker)) {
       return;
@@ -280,7 +283,7 @@ function loadChipTestsFile() {
   const parsed = JSON.parse(raw);
 
   pluginConfig = parsed.config;
-  if (!pluginConfig || !pluginConfig.name) {
+  if (!pluginConfig?.name) {
     fail(`Expected a "config" object with a "name" property in ${testsFile}`);
   }
   pluginName = pluginConfig.name;
@@ -355,6 +358,7 @@ function filterTests(tests, nameFilter) {
   }
 
   const needle = nameFilter.toLowerCase();
+  // oxlint-disable-next-line typescript/prefer-nullish-coalescing
   const filtered = tests.filter((test) => test.name.toLowerCase().includes(needle) || test.test.toLowerCase().includes(needle));
   if (filtered.length === 0) {
     fail(`No test found with "name" or "test" including ${JSON.stringify(nameFilter)}`);

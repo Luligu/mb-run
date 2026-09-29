@@ -365,6 +365,7 @@ export async function runPackageJsonUpgrade(
     if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'install-experimental.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'prune-tags.sh'));
     unlinkSafe(path.join(dstDir, 'scripts', 'git-status.sh'));
     unlinkSafe(path.join(dstDir, 'scripts', 'mb-run.mjs'));
