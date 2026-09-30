@@ -27,6 +27,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Fixed
 
+- [oxc]: Exclude `scripts` directories from the vendored root lint and format configs.
 - [upgrade]: Drop the npm-only `--no-fund --no-audit` flags from `bun link matterbridge` in the plugin `softReset:bun` script.
 - [scripts]: Bump the vendored `scripts/clean.mjs` and `scripts/deep-clean.mjs` to v.1.3.1, which warn on unreadable paths instead of silently skipping them.
 
