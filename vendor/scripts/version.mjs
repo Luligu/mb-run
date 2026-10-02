@@ -1,12 +1,13 @@
 /**
  * version.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Updates package.json version to:
  *   <baseVersion>-<dev|edge|git|local|bun>-<yyyymmdd>-<7charSha>
  *
  * Usage:
  *   node scripts/version.mjs --version, -v  Show the script version
+ *   node scripts/version.mjs --help, -h     Show the help
  *   node scripts/version.mjs <dev|edge|git|local|bun> [--dry-run]
  *
  * The script runs only when executed directly. Importing it exposes `main` without side effects.
@@ -19,7 +20,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
 
 function usage() {
   return [
@@ -33,6 +34,7 @@ function usage() {
     '  --dry-run, -n   Print the next version but do not write package.json',
     '',
     '  --version, -v  Show the script version',
+    '  --help, -h     Show this help message',
   ].join('\n');
 }
 
@@ -106,6 +108,11 @@ function requirePlainSemver(version) {
 export async function main(args = process.argv.slice(2), repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')) {
   if (args.includes('--version') || args.includes('-v')) {
     console.log(scriptVersion);
+    return 0;
+  }
+
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(usage());
     return 0;
   }
 

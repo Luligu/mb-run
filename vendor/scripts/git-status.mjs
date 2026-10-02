@@ -1,12 +1,13 @@
 /**
  * git-status.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Prints a summary of the current git repository status.
  *
  * Usage:
  *   node scripts/git-status.mjs --version, -v  Show the script version
- *   node scripts/git-status.mjs
+ *   node scripts/git-status.mjs --help, -h     Show the help
+ *   node scripts/git-status.mjs [--dry-run|-n] [topN] [remote]
  *
  * The script runs only when executed directly. Importing it exposes `main` without side effects.
  */
@@ -18,7 +19,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
 
 class ExitError extends Error {
   /**
@@ -35,14 +36,16 @@ class ExitError extends Error {
 
 function usage() {
   return [
-    'Usage: node scripts/git-status.mjs [topN] [remote]',
+    'Usage: node scripts/git-status.mjs [--dry-run|-n] [topN] [remote]',
     '',
     'Examples:',
     '  node scripts/git-status.mjs',
     '  node scripts/git-status.mjs 50',
     '  node scripts/git-status.mjs 100 origin',
     '',
+    '  --dry-run, -n  Print the parsed options without running the analysis',
     '  --version, -v  Show the script version',
+    '  --help, -h     Show this help message',
   ].join('\n');
 }
 
@@ -104,7 +107,7 @@ function fail(message, code = 1) {
  * Parse args.
  *
  * @param {string[]} argv argv value.
- * @returns {{remote: string, topN: number} | undefined} The result.
+ * @returns {{dryRun: boolean, remote: string, topN: number} | undefined} The result.
  */
 function parseArgs(argv) {
   if (argv.includes('--help') || argv.includes('-h')) {
@@ -113,12 +116,14 @@ function parseArgs(argv) {
     return undefined;
   }
 
-  const [topNArg = '30', remote = 'origin'] = argv;
+  const dryRun = argv.includes('--dry-run') || argv.includes('-n');
+  const [topNArg = '30', remote = 'origin'] = argv.filter((arg) => arg !== '--dry-run' && arg !== '-n');
   if (!/^\d+$/.test(topNArg) || Number(topNArg) <= 0) {
     fail(`Invalid topN value: ${JSON.stringify(topNArg)}\n\n${usage()}`);
   }
 
   return {
+    dryRun,
     remote,
     topN: Number(topNArg),
   };
@@ -356,7 +361,12 @@ function run(args) {
   if (!parsedArgs) {
     return 0;
   }
-  const { topN, remote } = parsedArgs;
+  const { dryRun, topN, remote } = parsedArgs;
+
+  if (dryRun) {
+    console.log(`[dry-run] Would report the repository status (top ${topN}, remote ${remote}).`);
+    return 0;
+  }
 
   if (git(['rev-parse', '--is-inside-work-tree'], { allowFailure: true }) === undefined) {
     fail('Not a git repository.');

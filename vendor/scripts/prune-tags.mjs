@@ -1,6 +1,6 @@
 /**
  * prune-tags.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Deletes old remote git tags that do not match a given prefix.
  *
@@ -17,7 +17,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
 
 class ExitError extends Error {
   /**

@@ -1,12 +1,13 @@
 /**
  * downloads.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Prints daily npm downloads for the last month for the package in ../package.json.
  *
  * Usage:
  *   node scripts/downloads.mjs --version, -v  Show the script version
- *   node scripts/downloads.mjs
+ *   node scripts/downloads.mjs --help, -h     Show the help
+ *   node scripts/downloads.mjs [--dry-run|-n]
  *
  * Requirements:
  *   Node.js 18+ (for global fetch)
@@ -22,7 +23,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
 
 /**
  * @typedef {{ day: string, downloads: number }} DownloadRow
@@ -35,6 +36,23 @@ const scriptVersion = '1.1.0';
 /**
  * @typedef {{ start: string, end: string, package: string, downloads: number }} NpmDownloadsPointResponse
  */
+
+/**
+ * Builds the help text.
+ *
+ * @returns {string} The usage message.
+ */
+function usage() {
+  return [
+    'Usage: node scripts/downloads.mjs [--dry-run|-n]',
+    '',
+    'Print the daily npm downloads of the last month for the package in ../package.json.',
+    '',
+    '  --dry-run, -n  Print the package name without querying the npm registry',
+    '  --version, -v  Show the script version',
+    '  --help, -h     Show this help message',
+  ].join('\n');
+}
 
 /**
  * Read and parse a JSON file.
@@ -208,9 +226,10 @@ const style = {
  * Print the downloads of the package.
  *
  * @param {string} pkgPath - Path of the package.json.
+ * @param {boolean} dryRun - When true, print the package name without querying the npm registry.
  * @returns {Promise<void>}
  */
-async function printDownloads(pkgPath) {
+async function printDownloads(pkgPath, dryRun) {
   const pkgUnknown = await readJson(pkgPath);
   if (!pkgUnknown || typeof pkgUnknown !== 'object') {
     throw new Error(`Unexpected JSON in ${pkgPath}`);
@@ -221,6 +240,11 @@ async function printDownloads(pkgPath) {
   const name = pkg.name;
   if (typeof name !== 'string' || !name) {
     throw new Error(`Missing/invalid "name" in ${pkgPath}`);
+  }
+
+  if (dryRun) {
+    console.log(`[dry-run] Would fetch the npm downloads of ${name}`);
+    return;
   }
 
   const [lastMonthData, currentDayData] = await Promise.all([fetchLastMonthDownloads(name), fetchCurrentDayDownloads(name)]);
@@ -289,8 +313,13 @@ export async function main(args = process.argv.slice(2), pkgPath = fileURLToPath
     return 0;
   }
 
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(usage());
+    return 0;
+  }
+
   try {
-    await printDownloads(pkgPath);
+    await printDownloads(pkgPath, args.includes('--dry-run') || args.includes('-n'));
     return 0;
   } catch (err) {
     console.error(err instanceof Error ? err.stack : String(err));

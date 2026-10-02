@@ -1,6 +1,6 @@
 /**
  * deep-clean.mjs
- * Version: 1.4.0
+ * Version: 2.0.0
  *
  * Dependency-free replacement for:
  *   npx shx rm -rf *.tsbuildinfo dist build coverage jest temp bun.lock package-lock.json npm-shrinkwrap.json \
@@ -22,6 +22,7 @@
  * Usage:
  *   node scripts/deep-clean.mjs
  *   node scripts/deep-clean.mjs --workspaces
+ *   node scripts/deep-clean.mjs --dry-run, -n
  *   node scripts/deep-clean.mjs --version
  *   node scripts/deep-clean.mjs --help
  *
@@ -36,7 +37,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-const version = '1.4.0';
+const scriptVersion = '2.0.0';
 const scriptName = path.basename(import.meta.filename);
 
 /**
@@ -46,7 +47,7 @@ const scriptName = path.basename(import.meta.filename);
  * @returns {number | null} The exit code after printing the version, the help or an argument error, null when the clean should run.
  */
 const handleArgs = (args) => {
-  const knownArgs = new Set(['--workspaces', '--version', '-v', '--help', '-h']);
+  const knownArgs = new Set(['--workspaces', '--dry-run', '-n', '--version', '-v', '--help', '-h']);
   const unknownArgs = args.filter((arg) => !knownArgs.has(arg));
   if (unknownArgs.length > 0) {
     console.error(`Unknown argument${unknownArgs.length === 1 ? '' : 's'}: ${unknownArgs.join(', ')}. Run with --help for usage.`);
@@ -54,12 +55,12 @@ const handleArgs = (args) => {
   }
 
   if (args.includes('--version') || args.includes('-v')) {
-    console.log(version);
+    console.log(scriptVersion);
     return 0;
   }
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log(`${scriptName} v.${version}
+    console.log(`${scriptName} v.${scriptVersion}
 
 Remove every *.tsbuildinfo file, the build/test output directories and the lock files,\nand empty .cache and node_modules.
 
@@ -68,6 +69,7 @@ Usage:
 
 Options:
   --workspaces   Also clean every workspace listed in the root package.json
+  --dry-run, -n  List what would be removed without removing anything
   --version, -v  Show the script version
   --help, -h     Show this help message`);
     return 0;
@@ -92,6 +94,7 @@ const red = (text) => (useColor ? `\u001B[31m${text}\u001B[0m` : text);
  *
  * @typedef {object} CleanState
  * @property {string} root Root directory of the run.
+ * @property {boolean} dryRun When true, list the paths without removing them.
  * @property {number} removed Number of removed paths.
  * @property {string | null} loggedDir Directory whose heading was printed last.
  */
@@ -124,11 +127,12 @@ const logRemoved = (state, dir, entry, count = 1) => {
 /**
  * Remove a path with retries for temporary locks.
  *
+ * @param {CleanState} state State of the run.
  * @param {string} dir Directory containing the target.
  * @param {string} target Relative path to remove.
  * @returns {string | null} Removed entry, or null when skipped.
  */
-const rm = (dir, target) => {
+const rm = (state, dir, target) => {
   let stats;
   try {
     stats = lstatSync(path.resolve(dir, target));
@@ -138,6 +142,8 @@ const rm = (dir, target) => {
     console.warn(`Skipped unreadable path (${error.code}): ${error.path ?? target}`);
     return null;
   }
+
+  if (state.dryRun) return stats.isDirectory() ? `${target}/` : target;
 
   try {
     rmSync(path.resolve(dir, target), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
@@ -172,13 +178,13 @@ const clean = (state, dir, workspace) => {
   }
   targets.push('dist', 'build', 'coverage', 'jest', 'temp', 'bun.lock', 'package-lock.json', 'npm-shrinkwrap.json');
   for (const target of targets) {
-    const entry = rm(dir, target);
+    const entry = rm(state, dir, target);
     if (entry !== null) logRemoved(state, dir, entry);
   }
 
   if (workspace) {
     for (const target of ['.cache', 'node_modules']) {
-      const entry = rm(dir, target);
+      const entry = rm(state, dir, target);
       if (entry !== null) logRemoved(state, dir, entry);
     }
     return;
@@ -196,7 +202,7 @@ const clean = (state, dir, workspace) => {
     // The contents are logged as one entry: a fresh node_modules holds hundreds of packages.
     let emptied = 0;
     for (const entry of entries) {
-      if (rm(path.resolve(dir, sub), entry) !== null) emptied += 1;
+      if (rm(state, path.resolve(dir, sub), entry) !== null) emptied += 1;
     }
     if (emptied > 0) logRemoved(state, dir, `${sub}/* (${emptied} entr${emptied === 1 ? 'y' : 'ies'})`, emptied);
   }
@@ -249,10 +255,10 @@ export const main = (args = process.argv.slice(2), root = process.cwd()) => {
   const exitCode = handleArgs(args);
   if (exitCode !== null) return exitCode;
 
-  console.log(`${scriptName} v.${version}`);
+  console.log(`${scriptName} v.${scriptVersion}`);
   const start = performance.now();
   /** @type {CleanState} */
-  const state = { root, removed: 0, loggedDir: null };
+  const state = { root, dryRun: args.includes('--dry-run') || args.includes('-n'), removed: 0, loggedDir: null };
 
   clean(state, root, false);
 
@@ -263,7 +269,9 @@ export const main = (args = process.argv.slice(2), root = process.cwd()) => {
   }
 
   const elapsed = `${Math.round(performance.now() - start)}ms`;
-  console.log(state.removed === 0 ? `Nothing to clean in ${elapsed}.` : `Cleaned ${state.removed} path${state.removed === 1 ? '' : 's'} in ${elapsed}.`);
+  const paths = `${state.removed} path${state.removed === 1 ? '' : 's'}`;
+  if (state.removed === 0) console.log(`Nothing to clean in ${elapsed}.`);
+  else console.log(state.dryRun ? `Dry run: would clean ${paths} in ${elapsed}.` : `Cleaned ${paths} in ${elapsed}.`);
   return 0;
 };
 

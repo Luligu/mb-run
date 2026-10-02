@@ -1,6 +1,6 @@
 /**
  * prune-releases.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Prunes old releases for a given tag prefix.
  *
@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
 
 /** @typedef {Parameters<typeof formatRelease>[0] & {id?: number}} Release */
 

@@ -25,6 +25,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.0.3] - Dev branch
 
+### Added
+
+- [scripts]: Sync the own and vendored `scripts/*.mjs` to v.2.0.0 from matterbridge-native (adds `--help`, `--version` and `--dry-run` to `git-sync-dev.mjs`) and add `bun-bundle.mjs`.
+
 ### Fixed
 
 - [oxc]: Exclude `scripts` directories from the vendored root lint and format configs.

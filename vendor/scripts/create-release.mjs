@@ -1,6 +1,6 @@
 /**
  * create-release.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Create a GitHub release from the current package.json version and CHANGELOG.md entry.
  *
@@ -17,7 +17,8 @@
  *
  * Usage:
  *   node scripts/create-release.mjs --version, -v  Show the script version
- *   node scripts/create-release.mjs
+ *   node scripts/create-release.mjs --help, -h     Show the help
+ *   node scripts/create-release.mjs [--dry-run|-n]
  *
  * The script runs only when executed directly. Importing it exposes `main` without side effects.
  */
@@ -32,7 +33,24 @@ import process from 'node:process';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 
-const scriptVersion = '1.1.0';
+const scriptVersion = '2.0.0';
+
+/**
+ * Builds the help text.
+ *
+ * @returns {string} The usage message.
+ */
+function usage() {
+  return [
+    'Usage: node scripts/create-release.mjs [--dry-run|-n]',
+    '',
+    'Create a GitHub release from the package.json version and the CHANGELOG.md entry.',
+    '',
+    '  --dry-run, -n  Print the tag, title and description without asking or creating the release',
+    '  --version, -v  Show the script version',
+    '  --help, -h     Show this help message',
+  ].join('\n');
+}
 
 /**
  * Strip leading.
@@ -120,22 +138,27 @@ async function readJson(filePath) {
 }
 
 /**
- * Prompt to continue.
+ * Print exactly what will be used to create the release.
  *
  * @param {{tag: string, title: string, description: string}} options options value.
- * @returns {Promise<void>} The result.
+ * @returns {void}
  */
-async function promptToContinue({ tag, title, description }) {
-  // Print exactly what will be used, then pause.
-  // User can hit Enter to proceed or type anything else to abort.
-  // (Keeps it simple and explicit.)
+function printRelease({ tag, title, description }) {
   console.log('---');
   console.log(`Tag: ${tag}`);
   console.log(`Title: ${title}`);
   console.log('Description:');
   console.log(description || '(empty)');
   console.log('---');
+}
 
+/**
+ * Prompt to continue.
+ *
+ * @returns {Promise<void>} The result.
+ */
+async function promptToContinue() {
+  // User can hit Enter to proceed or type anything else to abort.
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await rl.question('Press Enter to create the release, or type "no" to abort: ');
@@ -184,9 +207,10 @@ async function runGhReleaseCreate({ tag, title, notesFilePath, cwd }) {
  * Create the release from the package.json version and the CHANGELOG.md entry.
  *
  * @param {string} repoRoot Directory containing the package.json and the CHANGELOG.md.
+ * @param {boolean} dryRun When true, print the release without asking or creating it.
  * @returns {Promise<void>} Resolves when the release is created.
  */
-async function createRelease(repoRoot) {
+async function createRelease(repoRoot, dryRun) {
   const packageJsonPath = path.join(repoRoot, 'package.json');
   const changelogPath = path.join(repoRoot, 'CHANGELOG.md');
 
@@ -203,7 +227,12 @@ async function createRelease(repoRoot) {
   const changelogText = await fs.readFile(changelogPath, 'utf8');
   const description = extractChangelogSection(changelogText, versionNoV);
 
-  await promptToContinue({ tag, title, description });
+  printRelease({ tag, title, description });
+  if (dryRun) {
+    console.log('[dry-run] Release not created.');
+    return;
+  }
+  await promptToContinue();
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'matterbridge-test-release-'));
   const notesFilePath = path.join(tmpDir, `release-notes-${versionNoV}.md`);
@@ -229,8 +258,13 @@ export async function main(args = process.argv.slice(2), repoRoot = path.resolve
     return 0;
   }
 
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(usage());
+    return 0;
+  }
+
   try {
-    await createRelease(repoRoot);
+    await createRelease(repoRoot, args.includes('--dry-run') || args.includes('-n'));
     return 0;
   } catch (err) {
     console.error(`create-release: ${err instanceof Error ? err.message : String(err)}`);

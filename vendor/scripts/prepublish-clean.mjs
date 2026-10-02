@@ -1,6 +1,6 @@
 /**
  * prepublish-clean.mjs
- * Version: 1.2.0
+ * Version: 2.0.0
  *
  * Dependency-free replacement for:
  *   npx shx rm -rf node_modules/* node_modules/.[!.]* node_modules/..?* package-lock.json npm-shrinkwrap.json
@@ -15,8 +15,8 @@
  *
  * Usage:
  *   node scripts/prepublish-clean.mjs --version, -v  Show the script version
- *   node scripts/prepublish-clean.mjs
- *   node scripts/prepublish-clean.mjs --workspaces
+ *   node scripts/prepublish-clean.mjs --help, -h     Show the help
+ *   node scripts/prepublish-clean.mjs [--dry-run|-n] [--workspaces]
  *
  * The script runs only when executed directly. Importing it exposes `main` without side effects.
  */
@@ -26,7 +26,24 @@
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-const scriptVersion = '1.2.0';
+const scriptVersion = '2.0.0';
+
+/**
+ * Builds the help text.
+ *
+ * @returns {string} The usage message.
+ */
+const usage = () =>
+  [
+    'Usage: node scripts/prepublish-clean.mjs [--dry-run|-n] [--workspaces]',
+    '',
+    'Empty node_modules and remove the lock files.',
+    '',
+    '  --workspaces   Also clean every workspace listed in the root package.json',
+    '  --dry-run, -n  Print what would be removed without removing anything',
+    '  --version, -v  Show the script version',
+    '  --help, -h     Show this help message',
+  ].join('\n');
 
 // `maxRetries` lets Node retry the EPERM/EBUSY errors Windows raises when a node_modules
 // binary is read-only or briefly locked (antivirus, file indexer, an open handle). A lock held
@@ -37,9 +54,14 @@ const scriptVersion = '1.2.0';
  *
  * @param {string} dir Parent directory.
  * @param {string} target Relative path to remove.
+ * @param {boolean} dryRun When true, print the path instead of removing it.
  * @returns {void}
  */
-const rm = (dir, target) => {
+const rm = (dir, target, dryRun) => {
+  if (dryRun) {
+    if (existsSync(path.resolve(dir, target))) console.log(`[dry-run] Would remove ${path.resolve(dir, target)}`);
+    return;
+  }
   try {
     rmSync(path.resolve(dir, target), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   } catch (caughtError) {
@@ -57,21 +79,22 @@ const rm = (dir, target) => {
  * Clean dependencies and lock files.
  *
  * @param {string} dir Directory to clean.
+ * @param {boolean} dryRun When true, print what would be removed instead of removing it.
  * @returns {void}
  */
-const clean = (dir) => {
+const clean = (dir, dryRun) => {
   // Empty the contents (including dotfiles) of node_modules but keep the directory itself.
   try {
     for (const entry of readdirSync(path.resolve(dir, 'node_modules'))) {
-      rm(path.resolve(dir, 'node_modules'), entry);
+      rm(path.resolve(dir, 'node_modules'), entry, dryRun);
     }
   } catch {
     // node_modules does not exist, nothing to empty.
   }
 
   // Fully remove the lock files.
-  rm(dir, 'package-lock.json');
-  rm(dir, 'npm-shrinkwrap.json');
+  rm(dir, 'package-lock.json', dryRun);
+  rm(dir, 'npm-shrinkwrap.json', dryRun);
 };
 
 /**
@@ -123,11 +146,17 @@ export const main = (args = process.argv.slice(2), root = process.cwd()) => {
     return 0;
   }
 
-  clean(root);
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(usage());
+    return 0;
+  }
+
+  const dryRun = args.includes('--dry-run') || args.includes('-n');
+  clean(root, dryRun);
 
   if (args.includes('--workspaces')) {
     for (const workspaceDir of getWorkspaceDirs(root)) {
-      clean(workspaceDir);
+      clean(workspaceDir, dryRun);
     }
   }
   return 0;

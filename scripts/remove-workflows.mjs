@@ -1,6 +1,6 @@
 /**
  * remove-workflows.mjs
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Removes GitHub Actions workflow runs that are older than one week, plus all
  * cancelled workflow runs regardless of age. Collects all pages before deleting runs
@@ -25,7 +25,7 @@ import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const SCRIPT_VERSION = '1.1.0';
+const scriptVersion = '2.0.0';
 const PAGE_SIZE = 100;
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const ACTIVE_STATUSES = new Set(['queued', 'in_progress', 'waiting', 'pending', 'requested']);
@@ -58,7 +58,7 @@ Requirements:
  * @returns {void}
  */
 function printVersion() {
-  console.log(SCRIPT_VERSION);
+  console.log(scriptVersion);
 }
 
 /**
