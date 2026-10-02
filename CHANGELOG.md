@@ -30,6 +30,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [oxc]: Exclude `scripts` directories from the vendored root lint and format configs.
 - [upgrade]: Drop the npm-only `--no-fund --no-audit` flags from `bun link matterbridge` in the plugin `softReset:bun` script.
 - [scripts]: Bump the vendored `scripts/clean.mjs` and `scripts/deep-clean.mjs` to v.1.3.1, which warn on unreadable paths instead of silently skipping them.
+- [scripts]: Sync the own and vendored `scripts/*.mjs` with the latest versions from matterbridge-native (`clean.mjs` and `deep-clean.mjs` v.1.4.0, `prepublish-clean.mjs` v.1.2.0, the others v.1.1.0).
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

@@ -1,18 +1,24 @@
 /**
  * git-sync-dev.mjs
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Syncs the dev branch with origin/main via merge or rebase, after creating
  * a timestamped local backup branch and fetching from origin.
  *
  * Usage:
+ *   node scripts/git-sync-dev.mjs --version, -v  Show the script version
  *   node scripts/git-sync-dev.mjs merge
  *   node scripts/git-sync-dev.mjs rebase
+ *
+ * The script runs only when executed directly. Importing it exposes `main` without side effects.
  */
 
 /* oxlint-disable no-console */
 
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+
+const scriptVersion = '1.1.0';
 
 /**
  * Executes Git with inherited standard input/output.
@@ -45,24 +51,41 @@ function createTimestamp() {
   return `${year}${month}${day}-${hours}${minutes}${seconds}`;
 }
 
-const operation = process.argv[2];
+/**
+ * Sync the dev branch with origin/main.
+ *
+ * @param {string[]} [args] Command line arguments, without the runtime and script paths.
+ * @returns {number} The exit code.
+ */
+export function main(args = process.argv.slice(2)) {
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(scriptVersion);
+    return 0;
+  }
 
-if (operation !== 'merge' && operation !== 'rebase') {
-  throw new Error('Usage: node scripts/git-sync-dev.mjs <merge|rebase>');
+  const operation = args[0];
+
+  if (operation !== 'merge' && operation !== 'rebase') {
+    throw new Error('Usage: node scripts/git-sync-dev.mjs <merge|rebase>');
+  }
+
+  const backupBranch = `dev-backup-${createTimestamp()}`;
+
+  git(['fetch', 'origin']);
+  git(['switch', 'dev']);
+  git(['branch', backupBranch]);
+
+  console.log(`Created backup branch: ${backupBranch}`);
+
+  if (operation === 'merge') {
+    git(['merge', 'origin/main']);
+    git(['push', 'origin', 'dev']);
+  } else {
+    git(['rebase', 'origin/main']);
+    git(['push', '--force-with-lease', 'origin', 'dev']);
+  }
+  return 0;
 }
 
-const backupBranch = `dev-backup-${createTimestamp()}`;
-
-git(['fetch', 'origin']);
-git(['switch', 'dev']);
-git(['branch', backupBranch]);
-
-console.log(`Created backup branch: ${backupBranch}`);
-
-if (operation === 'merge') {
-  git(['merge', 'origin/main']);
-  git(['push', 'origin', 'dev']);
-} else {
-  git(['rebase', 'origin/main']);
-  git(['push', '--force-with-lease', 'origin', 'dev']);
-}
+// `import.meta.main` needs Node.js 22.18 or 24.2; older runtimes fall back to comparing the executed script path.
+if (import.meta.main ?? path.resolve(process.argv[1] ?? '') === import.meta.filename) process.exitCode = main();

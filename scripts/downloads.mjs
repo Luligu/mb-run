@@ -1,24 +1,28 @@
 /**
  * downloads.mjs
- * Version: 1.0.2
+ * Version: 1.1.0
  *
  * Prints daily npm downloads for the last month for the package in ../package.json.
  *
  * Usage:
+ *   node scripts/downloads.mjs --version, -v  Show the script version
  *   node scripts/downloads.mjs
  *
  * Requirements:
  *   Node.js 18+ (for global fetch)
+ *
+ * The script runs only when executed directly. Importing it exposes `main` without side effects.
  */
 
 /* oxlint-disable no-console */
 /* oxlint-disable typescript/no-unnecessary-type-conversion */
-/* oxlint-disable typescript/use-unknown-in-catch-callback-variable */
-/* oxlint-disable typescript/prefer-nullish-coalescing */
 /* oxlint-disable typescript/no-unsafe-type-assertion */
 
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const scriptVersion = '1.1.0';
 
 /**
  * @typedef {{ day: string, downloads: number }} DownloadRow
@@ -60,7 +64,7 @@ async function fetchLastMonthDownloads(pkgName) {
     throw new Error(`HTTP ${res.status} fetching ${url}\n${text}`);
   }
 
-  const data = await res.json();
+  const data = /** @type {NpmDownloadsRangeResponse} */ (await res.json());
   if (!data || !Array.isArray(data.downloads)) {
     throw new Error(`Unexpected response shape from ${url}`);
   }
@@ -85,7 +89,7 @@ async function fetchCurrentDayDownloads(pkgName) {
     throw new Error(`HTTP ${res.status} fetching ${url}\n${text}`);
   }
 
-  const data = await res.json();
+  const data = /** @type {NpmDownloadsPointResponse} */ (await res.json());
   if (!data || typeof data.downloads !== 'number') {
     throw new Error(`Unexpected response shape from ${url}`);
   }
@@ -149,8 +153,7 @@ const colorEnabled = Boolean(process.stdout.isTTY && !process.env.NO_COLOR && pr
  * @returns {string} Styled text.
  */
 function ansi(code, text) {
-  if (!colorEnabled) return text;
-  return `\u001b[${code}m${text}\u001b[0m`;
+  return colorEnabled ? `\u001b[${code}m${text}\u001b[0m` : text;
 }
 
 /**
@@ -202,12 +205,12 @@ const style = {
 };
 
 /**
- * Entrypoint.
+ * Print the downloads of the package.
  *
+ * @param {string} pkgPath - Path of the package.json.
  * @returns {Promise<void>}
  */
-async function main() {
-  const pkgPath = fileURLToPath(new URL('../package.json', import.meta.url));
+async function printDownloads(pkgPath) {
   const pkgUnknown = await readJson(pkgPath);
   if (!pkgUnknown || typeof pkgUnknown !== 'object') {
     throw new Error(`Unexpected JSON in ${pkgPath}`);
@@ -273,7 +276,27 @@ async function main() {
   console.log(`${style.dim('Max:     ')} ${formatNumber(maxRow.downloads)} (${maxRow.day})`);
 }
 
-main().catch((err) => {
-  console.error(err?.stack || String(err));
-  process.exitCode = 1;
-});
+/**
+ * Entrypoint.
+ *
+ * @param {string[]} [args] - Command line arguments, without the runtime and script paths.
+ * @param {string} [pkgPath] - Path of the package.json.
+ * @returns {Promise<number>} The exit code.
+ */
+export async function main(args = process.argv.slice(2), pkgPath = fileURLToPath(new URL('../package.json', import.meta.url))) {
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(scriptVersion);
+    return 0;
+  }
+
+  try {
+    await printDownloads(pkgPath);
+    return 0;
+  } catch (err) {
+    console.error(err instanceof Error ? err.stack : String(err));
+    return 1;
+  }
+}
+
+// `import.meta.main` needs Node.js 22.18 or 24.2; older runtimes fall back to comparing the executed script path.
+if (import.meta.main ?? path.resolve(process.argv[1] ?? '') === import.meta.filename) process.exitCode = await main();
