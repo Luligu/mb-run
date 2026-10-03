@@ -323,8 +323,13 @@ export async function runPackageJsonUpgrade(
   // Copy .devcontainer
   if (!isWorkspace && automator?.skipDevContainer !== true) {
     removeDirSafe(path.join(dstDir, '.devcontainer'));
-    if (isPlugin) copyRecursive('.devcontainer-plugin', '.devcontainer');
-    else copyRecursive('.devcontainer', '.devcontainer');
+    if (isPlugin) {
+      copyRecursive('.devcontainer-plugin', '.devcontainer');
+      // Docker creates the mount target in the workspace, so the apps/frontend/node_modules volume leaves an empty apps/frontend behind: keep it only for plugins with a frontend
+      if (!existsSync(path.join(dstDir, 'apps', 'frontend', 'package.json'))) {
+        for (const runtime of ['node', 'bun']) removeFrontendMount(path.join('.devcontainer', runtime, 'devcontainer.json'));
+      }
+    } else copyRecursive('.devcontainer', '.devcontainer');
   }
 
   // Copy .github (Copilot pointers, workflows and issue templates)
@@ -925,6 +930,25 @@ export function unlinkSafe(filePath: string): boolean {
 
   unlinkSync(resolvedPath);
   log(`${green('Deleted:')} ${path.relative(process.cwd(), resolvedPath)}`);
+  return true;
+}
+
+/**
+ * Removes the apps/frontend/node_modules volume mount from a devcontainer.json, logging the action. The file is JSONC, so the mount is removed by line instead of by parsing. The path is resolved relative to the current dstDir.
+ *
+ * @param {string} filePath Relative or absolute path to the devcontainer.json file.
+ * @returns {boolean} True if the mount was removed, false if the file or the mount did not exist.
+ */
+export function removeFrontendMount(filePath: string): boolean {
+  const resolvedPath = resolveDstPath(filePath);
+  if (!existsSync(resolvedPath)) return false;
+
+  const lines = readFileSync(resolvedPath, 'utf8').split('\n');
+  const kept = lines.filter((line) => !(line.trimStart().startsWith('"source=') && line.includes('/apps/frontend/node_modules,')));
+  if (kept.length === lines.length) return false;
+
+  writeFileSync(resolvedPath, kept.join('\n'));
+  log(`${green('Removed:')} the apps/frontend/node_modules volume from ${path.relative(process.cwd(), resolvedPath)}`);
   return true;
 }
 

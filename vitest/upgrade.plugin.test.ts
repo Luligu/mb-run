@@ -31,7 +31,7 @@ import { execSync } from 'node:child_process';
 
 import { resolveWorkspacePackageJsonPaths } from '../src/cache.js';
 import { isLibrary, isMonorepo, isPlugin } from '../src/helpers.js';
-import { runUpgrade } from '../src/upgrade.js';
+import { removeFrontendMount, runUpgrade } from '../src/upgrade.js';
 
 let rootDir = '';
 
@@ -171,5 +171,39 @@ describe('upgrade plugin package', () => {
     expect(vi.mocked(resolveWorkspacePackageJsonPaths)).toHaveBeenCalledWith(rootDir);
     expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('keywords[]=matterbridge'), expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
     expect(vi.mocked(execSync)).toHaveBeenCalledWith('npm link --no-fund --no-audit matterbridge', expect.objectContaining({ cwd: rootDir, stdio: 'inherit' }));
+  });
+
+  describe('apps/frontend/node_modules dev container volume', () => {
+    const frontendMount = 'target=${containerWorkspaceFolder}/apps/frontend/node_modules,type=volume';
+
+    it('removes the volume from the node and bun devcontainer.json when the plugin has no frontend', async () => {
+      await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+      for (const runtime of ['node', 'bun']) {
+        const devcontainer = await readFile(path.join(rootDir, '.devcontainer', runtime, 'devcontainer.json'), 'utf8');
+        expect(devcontainer).not.toContain('apps/frontend/node_modules');
+        expect(devcontainer).toContain('/node_modules,type=volume');
+        expect(devcontainer).toContain('-cache,target=${containerWorkspaceFolder}/.cache,type=volume');
+      }
+    });
+
+    it('leaves a missing devcontainer.json and a devcontainer.json without the volume untouched', async () => {
+      const missing = path.join(rootDir, 'missing', 'devcontainer.json');
+      const withoutMount = path.join(rootDir, 'devcontainer.json');
+      await writeFixture('devcontainer.json', '{\n  "mounts": [\n    "source=x,target=/y,type=volume"\n  ]\n}\n');
+
+      expect(removeFrontendMount(missing)).toBe(false);
+      expect(removeFrontendMount(withoutMount)).toBe(false);
+      expect(await readFile(withoutMount, 'utf8')).toBe('{\n  "mounts": [\n    "source=x,target=/y,type=volume"\n  ]\n}\n');
+    });
+
+    it('keeps the volume in the node and bun devcontainer.json when the plugin has a frontend', async () => {
+      await writeFixture('apps/frontend/package.json', '{}\n');
+      await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
+
+      for (const runtime of ['node', 'bun']) {
+        expect(await readFile(path.join(rootDir, '.devcontainer', runtime, 'devcontainer.json'), 'utf8')).toContain(frontendMount);
+      }
+    });
   });
 });
