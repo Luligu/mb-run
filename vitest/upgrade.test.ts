@@ -148,6 +148,26 @@ describe('upgrade', () => {
     expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('Upgrading'));
   });
 
+  it.each(['patterns', 'whitespace'])('should merge local ignores when upgrading with %s ignore files', async (contents) => {
+    vi.mocked(writeFileSync).mockClear();
+    const rootDir = path.resolve('local-ignores');
+    const config = '{"ignorePatterns": ["**/bun.lock"]}';
+    const localIgnore = contents === 'whitespace' ? '\r\n  \r\n' : '\r\n    "custom/**", // comment\r\n\r\n    "$&.ts"\r\n';
+    vi.mocked(parsePackageJson).mockResolvedValue(structuredClone(packageJson));
+    vi.mocked(existsSync).mockImplementation((filePath) => /\.(oxfmt|oxlint)(ignore|rc\.json)$/.test(String(filePath)));
+    vi.mocked(readFileSync).mockImplementation((filePath) => {
+      if (String(filePath).endsWith('ignore')) return localIgnore;
+      return config;
+    });
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false });
+
+    for (const tool of ['oxfmt', 'oxlint']) {
+      const writes = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, `.${tool}rc.json`));
+      expect(writes).toEqual([[path.join(rootDir, `.${tool}rc.json`), `{"ignorePatterns": ["**/bun.lock",\n${localIgnore}]}`, 'utf8']]);
+    }
+  });
+
   it('upgrades a package with missing metadata without waiting for terminal input', async () => {
     vi.mocked(parsePackageJson).mockResolvedValue({});
     vi.mocked(readFileSync).mockReturnValue('{}');

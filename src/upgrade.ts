@@ -3,7 +3,7 @@
  * @description This file contains upgrade utilities for the mb-run command.
  * @author Luca Liguori
  * @created 2026-05-03
- * @version 1.0.0
+ * @version 1.0.1
  * @license Apache-2.0
  *
  * Copyright 2026, 2027, 2028 Luca Liguori.
@@ -381,6 +381,12 @@ export async function runPackageJsonUpgrade(
 
     copyRecursive('.oxlintrc.root.json', '.oxlintrc.json');
     copyRecursive('.oxfmtrc.root.json', '.oxfmtrc.json');
+    for (const tool of ['oxlint', 'oxfmt']) {
+      const ignorePath = resolveDstPath(`.${tool}ignore`);
+      if (!existsSync(ignorePath)) continue;
+      const replacement = `"**/bun.lock",\n${readFileSync(ignorePath, 'utf8')}`;
+      fileReplace(`.${tool}rc.json`, '"**/bun.lock"', replacement.replaceAll('$', '$$$$'));
+    }
     unlinkSafe('.prettierignore');
     unlinkSafe('eslint.config.js');
     unlinkSafe('prettier.config.js');
