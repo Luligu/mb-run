@@ -27,6 +27,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [template]: Rename the bundled vendor directory to template and update runtime paths, package files and exclusions.
 - [upgrade]: Merge local `.oxfmtignore` and `.oxlintignore` patterns into the generated configurations.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>

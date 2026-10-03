@@ -46,13 +46,13 @@ describe('oxfmt', () => {
       expect(args[1]).toBe(path.join(tmpDir, '.oxfmtrc.json'));
     });
 
-    it('uses the vendor fallback when no project .oxfmtrc.json exists', async () => {
+    it('uses the template fallback when no project .oxfmtrc.json exists', async () => {
       await runOxFormat({ rootDir: tmpDir, isWindows: false, dryRun: false, check: false });
       const args = mockRunBin.mock.calls[0][1];
-      expect(args[1]).toMatch(/vendor[/\\]\.oxfmtrc\.root\.json$/u);
+      expect(args[1]).toMatch(/template[/\\]\.oxfmtrc\.root\.json$/u);
     });
 
-    it('vendor fallback path resolves to an existing file', async () => {
+    it('template fallback path resolves to an existing file', async () => {
       const { access } = await import('node:fs/promises');
       await runOxFormat({ rootDir: tmpDir, isWindows: false, dryRun: false, check: false });
       const configPath = mockRunBin.mock.calls[0][1][1];

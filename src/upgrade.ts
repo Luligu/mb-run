@@ -37,7 +37,7 @@ import { getErrorMessage } from './error.js';
 import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js';
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
-const srcDir = path.join(configDirname, '..', 'vendor');
+const srcDir = path.join(configDirname, '..', 'template');
 const commandFailures: Array<{ command: string; status: number | undefined; message: string }> = [];
 let dstDir: string;
 

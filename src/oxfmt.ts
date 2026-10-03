@@ -44,7 +44,7 @@ export interface OxFormatOptions {
  *
  * When `.oxfmtrc.json` is present in `opts.rootDir`, it is used as the format
  * configuration.  Otherwise, the bundled fallback configuration from
- * `vendor/.oxfmtrc.root.json` is used.
+ * `template/.oxfmtrc.root.json` is used.
  *
  * @param {OxFormatOptions} opts OxFormat options.
  * @returns {Promise<void>} Resolves when formatting completes without errors.
@@ -56,7 +56,7 @@ export async function runOxFormat(opts: OxFormatOptions): Promise<void> {
     configPath = projectConfig;
   } else {
     const selfDir = path.dirname(url.fileURLToPath(import.meta.url));
-    configPath = path.join(selfDir, '..', 'vendor', '.oxfmtrc.root.json');
+    configPath = path.join(selfDir, '..', 'template', '.oxfmtrc.root.json');
   }
   await runBin('oxfmt', ['-c', configPath, opts.check ? '--check' : '--write'], {
     rootDir: opts.rootDir,

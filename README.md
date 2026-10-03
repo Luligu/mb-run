@@ -90,6 +90,8 @@ Multiple flags can be combined. They are always executed in this fixed order reg
 | `--version`, `-v`                      | Prints the mb-run version and exits without changing any file. Use `--set-version` to update the package version.                                                                                                                                                                                                                                                                                     |
 | `--help`, `-h`                         | Prints usage text.                                                                                                                                                                                                                                                                                                                                                                                    |
 
+Bundled scaffolding and fallback lint/format configurations are shipped in the `template/` directory.
+
 `--upgrade` inserts the contents of local `.oxfmtignore` and `.oxlintignore` files verbatim after the final shared ignore pattern in the corresponding configuration. These files should contain JSON array entries.
 
 ## Version tags

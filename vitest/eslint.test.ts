@@ -46,13 +46,13 @@ describe('eslint', () => {
       expect(args[1]).toBe(path.join(tmpDir, 'eslint.config.js'));
     });
 
-    it('uses the vendor fallback when no project eslint.config.js exists', async () => {
+    it('uses the template fallback when no project eslint.config.js exists', async () => {
       await runEsLint({ rootDir: tmpDir, isWindows: false, dryRun: false, fix: false });
       const args = mockRunBin.mock.calls[0][1];
-      expect(args[1]).toMatch(/vendor[/\\]eslint\.config\.js$/u);
+      expect(args[1]).toMatch(/template[/\\]eslint\.config\.js$/u);
     });
 
-    it('vendor fallback path resolves to an existing file', async () => {
+    it('template fallback path resolves to an existing file', async () => {
       const { access } = await import('node:fs/promises');
       await runEsLint({ rootDir: tmpDir, isWindows: false, dryRun: false, fix: false });
       const configPath = mockRunBin.mock.calls[0][1][1];

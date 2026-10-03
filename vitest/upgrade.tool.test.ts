@@ -271,7 +271,7 @@ describe('upgrade tool package', () => {
     expect(existsSync(path.join(rootDir, '.github/workflows/codeql.yml'))).toBe(true);
   });
 
-  it('copies the vendored scripts/esbuild.mjs when bundling is enabled', async () => {
+  it('copies the template scripts/esbuild.mjs when bundling is enabled', async () => {
     const pkgPath = path.join(rootDir, 'package.json');
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
     pkg.automator = { ...pkg.automator, bundle: true };

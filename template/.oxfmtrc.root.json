@@ -18,7 +18,6 @@
     "**/scripts/**",
     "**/temp/**",
     "**/tmp/**",
-    "vendor/**",
     "**/package-lock.json",
     "**/bun.lock"
   ],

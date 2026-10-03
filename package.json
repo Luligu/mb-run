@@ -61,7 +61,7 @@
   "files": [
     "bin",
     "dist",
-    "vendor",
+    "template",
     "npm-shrinkwrap.json",
     "CHANGELOG.md"
   ],

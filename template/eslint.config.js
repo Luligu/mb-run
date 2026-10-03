@@ -27,7 +27,7 @@ const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
 export default defineConfig([
   {
     name: 'Global Ignores',
-    ignores: ['**/.cache', '**/apps', '**/build', '**/chip', '**/coverage', '**/dist', '**/jest', '**/mock', '**/node_modules', '**/screenshots', '**/temp', '**/vendor'],
+    ignores: ['**/.cache', '**/apps', '**/build', '**/chip', '**/coverage', '**/dist', '**/jest', '**/mock', '**/node_modules', '**/screenshots', '**/temp', '**/template'],
   },
   {
     name: 'JavaScript & TypeScript Source Files',

@@ -44,7 +44,7 @@ export interface PrettierOptions {
  *
  * When `prettier.config.js` is present in `opts.rootDir`, it is used as the
  * format configuration.  Otherwise, the bundled fallback configuration from
- * `vendor/prettier.config.js` is used.
+ * `template/prettier.config.js` is used.
  *
  * @param {PrettierOptions} opts Prettier options.
  * @returns {Promise<void>} Resolves when formatting completes without errors.
@@ -56,7 +56,7 @@ export async function runPrettier(opts: PrettierOptions): Promise<void> {
     configPath = projectConfig;
   } else {
     const selfDir = path.dirname(url.fileURLToPath(import.meta.url));
-    configPath = path.join(selfDir, '..', 'vendor', 'prettier.config.js');
+    configPath = path.join(selfDir, '..', 'template', 'prettier.config.js');
   }
   await runBin('prettier', ['--config', configPath, '--log-level=silent', '--cache', '--cache-location', '.cache/.prettiercache', opts.check ? '--check' : '--write', '.'], {
     rootDir: opts.rootDir,

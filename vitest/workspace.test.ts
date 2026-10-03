@@ -58,7 +58,7 @@ const mockReadFile = readFile as unknown as Mock;
 const mockReaddir = readdir as unknown as Mock;
 const mockFileExists = vi.mocked(fileExists);
 
-const repoRoot = path.join(process.cwd(), 'vendor', 'tool');
+const repoRoot = path.join(process.cwd(), 'template', 'tool');
 const rootPkgPath = path.join(repoRoot, 'package.json');
 
 function makeChild(exitCode: number): EventEmitter {

@@ -44,7 +44,7 @@ export interface EsLintOptions {
  *
  * When `eslint.config.js` is present in `opts.rootDir`, it is used as the lint
  * configuration.  Otherwise, the bundled fallback configuration from
- * `vendor/eslint.config.js` is used.
+ * `template/eslint.config.js` is used.
  *
  * @param {EsLintOptions} opts EsLint options.
  * @returns {Promise<void>} Resolves when linting completes without errors.
@@ -56,7 +56,7 @@ export async function runEsLint(opts: EsLintOptions): Promise<void> {
     configPath = projectConfig;
   } else {
     const selfDir = path.dirname(url.fileURLToPath(import.meta.url));
-    configPath = path.join(selfDir, '..', 'vendor', 'eslint.config.js');
+    configPath = path.join(selfDir, '..', 'template', 'eslint.config.js');
   }
   await runBin('eslint', ['--config', configPath, '--cache', '--cache-location', '.cache/.eslintcache', ...(opts.fix ? ['--fix'] : []), '--max-warnings=0', '.'], {
     rootDir: opts.rootDir,

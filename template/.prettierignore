@@ -13,7 +13,7 @@ temp/
 jest/
 node_modules/
 screenshots/
-vendor/
+template/
 
 # Ignore specific files
 package-lock.json

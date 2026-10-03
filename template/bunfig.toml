@@ -18,7 +18,7 @@ pathIgnorePatterns = [
   '**/src/',
   '**/temp/',
   '**/test/',
-  '**/vendor/',
+  '**/template/',
   '**/vitest/',
 ]
 
@@ -34,7 +34,7 @@ coveragePathIgnorePatterns = [
   '**/scripts/',
   '**/src/mock/',
   '**/temp/',
-  '**/vendor/',
+  '**/template/',
   '**/vitest/**',
   '**/src/**/*.d.ts',
   '**/src/**/*.{spec,test}.{ts,mts,cts}',

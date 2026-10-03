@@ -46,13 +46,13 @@ describe('oxlint', () => {
       expect(args[1]).toBe(path.join(tmpDir, '.oxlintrc.json'));
     });
 
-    it('uses the vendor fallback when no project .oxlintrc.json exists', async () => {
+    it('uses the template fallback when no project .oxlintrc.json exists', async () => {
       await runOxLint({ rootDir: tmpDir, isWindows: false, dryRun: false, fix: false });
       const args = mockRunBin.mock.calls[0][1];
-      expect(args[1]).toMatch(/vendor[/\\]\.oxlintrc\.root\.json$/u);
+      expect(args[1]).toMatch(/template[/\\]\.oxlintrc\.root\.json$/u);
     });
 
-    it('vendor fallback path resolves to an existing file', async () => {
+    it('template fallback path resolves to an existing file', async () => {
       const { access } = await import('node:fs/promises');
       await runOxLint({ rootDir: tmpDir, isWindows: false, dryRun: false, fix: false });
       const configPath = mockRunBin.mock.calls[0][1][1];
