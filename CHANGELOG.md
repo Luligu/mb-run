@@ -23,14 +23,17 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.0.4] - Dev branch
+## [1.0.4] - 2026-10-03
 
 ### Changed
 
 - [upgrade]: Replace the legacy `vite.config.ts` with `vitest.config.ts` and update test-runner detection.
-
 - [template]: Rename the bundled vendor directory to template and update runtime paths, package files and exclusions.
 - [upgrade]: Merge local `.oxfmtignore` and `.oxlintignore` patterns into the generated configurations.
+
+### Fixed
+
+- [devcontainer]: Remove the `apps/frontend/node_modules` volume from the plugin `devcontainer.json` files (node and bun) when the plugin has no `apps/frontend/package.json`, so Docker no longer creates an empty `apps/frontend` in the workspace.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
@@ -43,7 +46,6 @@ If you like this project and find it useful, please consider giving it a star on
 ### Fixed
 
 - [oxc]: Exclude `scripts` directories from the vendored root lint and format configs.
-- [devcontainer]: Remove the `apps/frontend/node_modules` volume from the plugin `devcontainer.json` files (node and bun) when the plugin has no `apps/frontend/package.json`, so Docker no longer creates an empty `apps/frontend` in the workspace.
 - [upgrade]: Drop the npm-only `--no-fund --no-audit` flags from `bun link matterbridge` in the plugin `softReset:bun` script.
 - [scripts]: Bump the vendored `scripts/clean.mjs` and `scripts/deep-clean.mjs` to v.1.3.1, which warn on unreadable paths instead of silently skipping them.
 - [scripts]: Sync the own and vendored `scripts/*.mjs` with the latest versions from matterbridge-native (`clean.mjs` and `deep-clean.mjs` v.1.4.0, `prepublish-clean.mjs` v.1.2.0, the others v.1.1.0).
