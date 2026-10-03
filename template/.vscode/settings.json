@@ -20,6 +20,7 @@
     "source.format.oxc": "always",
     "source.fixAll.oxc": "always"
   },
+  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/template/**}",
   "diffEditor.ignoreTrimWhitespace": false,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
