@@ -79,6 +79,7 @@ describe('upgrade tool package', () => {
         2,
       ),
     );
+    await writeFixture('vite.config.ts', 'obsolete\n');
     await writeFixture('.gitignore', 'existing-rule\n');
     await writeFixture('.localignore', 'local-rule\n');
     await writeFixture('.gitlocalignore', 'git-local-rule\n');
@@ -122,6 +123,9 @@ describe('upgrade tool package', () => {
 
   it('upgrades a normal tool package with Jest and Vitest', async () => {
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: true, enableVitest: true });
+
+    expect(existsSync(path.join(rootDir, 'vite.config.ts'))).toBe(false);
+    expect(await readFile(path.join(rootDir, 'vitest.config.ts'), 'utf8')).toBe(await readFile(new URL('../template/vitest.config.ts', import.meta.url), 'utf8'));
 
     const packageJson = JSON.parse(await readFile(path.join(rootDir, 'package.json'), 'utf8')) as {
       devDependencies: Record<string, string>;
@@ -177,7 +181,7 @@ describe('upgrade tool package', () => {
       '.vscode/settings.json',
       'scripts/clean.mjs',
       'jest.config.js',
-      'vite.config.ts',
+      'vitest.config.ts',
       'tsconfig.base.json',
       'tsconfig.jest.json',
       'tsconfig.build.json',

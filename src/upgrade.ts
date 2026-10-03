@@ -401,12 +401,14 @@ export async function runPackageJsonUpgrade(
       if (!isMonorepo) unlinkSafe('jest.config.js');
     }
     if (opts.enableVitest) {
-      copyRecursive('vite.config.ts', 'vite.config.ts');
+      copyRecursive('vitest.config.ts', 'vitest.config.ts');
+      unlinkSafe('vite.config.ts');
       mkDirSafe(path.join(dstDir, 'vitest'));
     } else {
       log(magenta('No Vitest flag set, removing Vitest...'));
       if (!isMonorepo) unlinkSafe('tsconfig.vitest.json');
       if (!isMonorepo) unlinkSafe('vite.config.ts');
+      if (!isMonorepo) unlinkSafe('vitest.config.ts');
     }
     if (opts.enableBuntest) {
       copyRecursive('bunfig.toml', 'bunfig.toml');

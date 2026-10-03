@@ -58,7 +58,7 @@ export interface TestOptions {
 export async function runTests(opts: TestOptions): Promise<void> {
   const [hasJestConfig, hasVitestConfig, hasJestBin, hasVitestBin] = await Promise.all([
     fileExists(path.join(opts.rootDir, 'jest.config.js')),
-    fileExists(path.join(opts.rootDir, 'vite.config.ts')),
+    fileExists(path.join(opts.rootDir, 'vitest.config.ts')),
     binExists('jest', opts),
     binExists('vitest', opts),
   ]);
@@ -66,7 +66,7 @@ export async function runTests(opts: TestOptions): Promise<void> {
   const shouldRunJest = hasJestConfig && hasJestBin;
   const shouldRunVitest = hasVitestConfig && hasVitestBin;
   if (!shouldRunJest && !shouldRunVitest) {
-    throw new ExitError(1, 'No test runner found: install Jest with jest.config.js or Vitest with vite.config.ts.');
+    throw new ExitError(1, 'No test runner found: install Jest with jest.config.js or Vitest with vitest.config.ts.');
   }
 
   if (shouldRunJest) await runJest(opts);

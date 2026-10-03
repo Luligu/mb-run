@@ -1,4 +1,4 @@
-// vite.config.ts 2.0.6
+// vitest.config.ts 2.0.8
 
 // This Vitest configuration is designed for a TypeScript project.
 
@@ -17,10 +17,12 @@ export default defineConfig({
       '**/coverage/',
       '**/dist/',
       '**/node_modules/',
+      '**/out/',
       '**/screenshots/',
       '**/scripts/',
       '**/src/mock/',
       '**/temp/',
+      '**/tmp/',
       '**/template/',
     ],
     globals: true,
@@ -41,13 +43,15 @@ export default defineConfig({
         '**/coverage/',
         '**/dist/',
         '**/node_modules/',
+        '**/out/',
         '**/screenshots/',
         '**/scripts/',
         '**/src/mock/',
+        '**/src/**/*.d.ts',
         '**/temp/',
+        '**/tmp/',
         '**/template/',
         '**/vitest/**',
-        '**/src/**/*.d.ts',
       ],
     },
   },

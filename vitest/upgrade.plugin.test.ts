@@ -148,7 +148,7 @@ describe('upgrade plugin package', () => {
       'CLAUDE.md',
       'GEMINI.md',
       'jest.config.js',
-      'vite.config.ts',
+      'vitest.config.ts',
       'CODE_OF_CONDUCT.md',
     ]) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);

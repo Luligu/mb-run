@@ -113,7 +113,7 @@ describe('upgrade library package', () => {
     expect(changelog).toContain('bmc-button.svg');
     expect(changelog).toContain('build.yml');
 
-    for (const fileName of ['jest.config.js', 'vite.config.ts', 'tsconfig.jest.json', 'CODEOWNERS', 'CONTRIBUTING.md', 'STYLEGUIDE.md']) {
+    for (const fileName of ['jest.config.js', 'vitest.config.ts', 'tsconfig.jest.json', 'CODEOWNERS', 'CONTRIBUTING.md', 'STYLEGUIDE.md']) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
     expect(existsSync(path.join(rootDir, 'CODE_OF_CONDUCT.md'))).toBe(true);

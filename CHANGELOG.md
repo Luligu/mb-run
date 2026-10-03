@@ -27,6 +27,8 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [upgrade]: Replace the legacy `vite.config.ts` with `vitest.config.ts` and update test-runner detection.
+
 - [template]: Rename the bundled vendor directory to template and update runtime paths, package files and exclusions.
 - [upgrade]: Merge local `.oxfmtignore` and `.oxlintignore` patterns into the generated configurations.
 

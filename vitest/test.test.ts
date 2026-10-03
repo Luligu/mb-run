@@ -55,7 +55,7 @@ describe('test', () => {
   });
 
   it('runs Vitest when its configuration and binary are present', async () => {
-    mockFileExists.mockImplementation(async (filePath) => filePath.endsWith('vite.config.ts'));
+    mockFileExists.mockImplementation(async (filePath) => filePath.endsWith('vitest.config.ts'));
     mockBinExists.mockImplementation(async (name) => name === 'vitest');
     await runTests(baseOpts);
     expect(mockRunVitest).toHaveBeenCalledWith(baseOpts);
