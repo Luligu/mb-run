@@ -573,4 +573,53 @@ describe('upgrade', () => {
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('package.json'), expect.stringContaining('npmPublishTagLatest'), 'utf8');
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('package.json'), expect.stringContaining('chip:test'), 'utf8');
   });
+
+  it('configures softReset and softReset:bun scripts for Node, Bun, and plugin variants', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    const pkgPlugin = { ...structuredClone(packageJson), automator: { node: true, bun: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('soft-reset-plugin-both'), isWindows: false, dryRun: false },
+      path.resolve('soft-reset-plugin-both/package.json'),
+      pkgPlugin,
+      false,
+      false,
+      true,
+      false,
+    );
+    expect(pkgPlugin.scripts).toMatchObject({
+      'softReset': 'npm install --no-fund --no-audit && npm prune --no-fund --no-audit && npm link --no-fund --no-audit matterbridge && npm run build && npm run typecheck',
+      'softReset:bun': 'bun install && bun prune && bun link matterbridge && bun run build && bun run typecheck',
+    });
+
+    const pkgPluginBunOnly = { ...structuredClone(packageJson), automator: { node: false, bun: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('soft-reset-plugin-bun'), isWindows: false, dryRun: false },
+      path.resolve('soft-reset-plugin-bun/package.json'),
+      pkgPluginBunOnly,
+      false,
+      false,
+      true,
+      false,
+    );
+    const bunOnlyPluginScripts = pkgPluginBunOnly.scripts as Record<string, string | undefined>;
+    expect(bunOnlyPluginScripts['softReset']).toBe('bun install && bun prune && bun link matterbridge && bun run build && bun run typecheck');
+    expect(bunOnlyPluginScripts['softReset:bun']).toBeUndefined();
+
+    const pkgNoPluginBunOnly = { ...structuredClone(packageJson), automator: { node: false, bun: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('soft-reset-no-plugin-bun'), isWindows: false, dryRun: false },
+      path.resolve('soft-reset-no-plugin-bun/package.json'),
+      pkgNoPluginBunOnly,
+      false,
+      false,
+      false,
+      false,
+    );
+    const bunOnlyNoPluginScripts = pkgNoPluginBunOnly.scripts as Record<string, string | undefined>;
+    expect(bunOnlyNoPluginScripts['softReset']).toBe('bun install && bun prune && bun run build && bun run typecheck');
+    expect(bunOnlyNoPluginScripts['softReset:bun']).toBeUndefined();
+  });
 });
