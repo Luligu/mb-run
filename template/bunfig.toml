@@ -1,4 +1,17 @@
-# Matterbridge — Bun-native test runner config v 1.0.1.
+# Matterbridge — Bun-native test runner config v 1.0.2.
+
+[install]
+# Installation strategy: "hoisted" places dependencies in the shared node_modules root;
+# "isolated" keeps each package's dependencies in its own node_modules directory.
+# Default: "hoisted".
+linker = "isolated"
+
+# globalStore (isolated linker only) symlinks packages from a store shared by all projects in
+# ~/.bun/install/cache/links instead of copying them into node_modules/.bun.
+# Their real path is outside the project, so a dependency's undeclared import can't reach the
+# project's fallback node_modules (e.g. bun-types -> undici-types until Bun 1.4.3).
+# Default: false.
+globalStore = false
 
 [test]
 # Optional setup run before any test (env, global mocks):
@@ -22,6 +35,9 @@ pathIgnorePatterns = [
   '**/vitest/',
 ]
 
+# Source files kept out of the coverage report. pathIgnorePatterns above decides which files are
+# scanned for tests; this one decides which files are measured. Whole paths only: Bun has no
+# line-level ignore, so /* istanbul ignore */, /* c8 ignore */ and /* v8 ignore */ do nothing.
 coveragePathIgnorePatterns = [
   '**/.cache/',
   '**/apps/',
@@ -39,11 +55,21 @@ coveragePathIgnorePatterns = [
   '**/src/**/*.d.ts',
   '**/src/**/*.{spec,test}.{ts,mts,cts}',
 ]
-coverage = true
+
+# 'text' prints the table at the end of the run, 'lcov' writes coverageDir/lcov.info for CI and
+# editor gutters. Keep 'text': outside --parallel the coverageThreshold check below only runs when
+# the text reporter is enabled, and an lcov-only run exits 0 however low the coverage is.
 coverageReporter = ['lcov', 'text']
+
+# Where the lcov reporter writes. Covered by the '**/coverage/' entries in both ignore lists above,
+# so the report never measures itself.
 coverageDir = "./coverage/bun"
 
 # Exclude test files from coverage reports
 coverageSkipTestFiles = true
-# Don't use sourcemaps for coverage analysis
-coverageIgnoreSourcemaps = true
+
+# Use sourcemaps so coverage line numbers map to the TypeScript sources
+coverageIgnoreSourcemaps = false
+
+# Fail the run if coverage drops below 100%. Applies to the whole run, not per file.
+coverageThreshold = { lines = 1.0, functions = 1.0 }

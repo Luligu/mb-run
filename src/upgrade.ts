@@ -149,17 +149,17 @@ export async function runPackageJsonUpgrade(
         vitest?: boolean;
         /* use Bun for testing */
         buntest?: boolean;
-        /* remove git scripts */
+        /* add git scripts */
         git?: boolean;
         /* add chip test scripts */
         chip?: boolean;
-        /* remove version scripts */
+        /* add version scripts */
         version?: boolean;
-        /* remove publish scripts */
+        /* add publish scripts */
         publish?: boolean;
-        /* use bundle */
+        /* use bundle and add bundle scripts */
         bundle?: boolean;
-        /* use obfuscate */
+        /* use obfuscate and add obfuscate scripts */
         obfuscate?: boolean;
         /* signal package is private */
         private?: boolean;
@@ -415,12 +415,12 @@ export async function runPackageJsonUpgrade(
       if (!isMonorepo) unlinkSafe('vite.config.ts');
       if (!isMonorepo) unlinkSafe('vitest.config.ts');
     }
-    if (opts.enableBuntest) {
+    if (opts.useBun || opts.enableBuntest) {
       copyRecursive('bunfig.toml', 'bunfig.toml');
       mkDirSafe(path.join(dstDir, 'buntest'));
     } else {
       log(magenta('No Bun test flag set, removing Bun test...'));
-      if (!isMonorepo) unlinkSafe('bunfig.toml');
+      unlinkSafe('bunfig.toml');
     }
   }
 
@@ -436,16 +436,16 @@ export async function runPackageJsonUpgrade(
     if (isMonorepo) {
       fileReplace(
         'tsconfig.json',
-        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts"]',
-        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts", "packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "packages/*/vitest/**/*.ts"]',
+        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts", "buntest/**/*.ts"]',
+        '["src/**/*.ts", "test/**/*.ts", "vitest/**/*.ts", "buntest/**/*.ts", "packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "packages/*/vitest/**/*.ts", "packages/*/buntest/**/*.ts"]',
       );
     } else {
       copyRecursive('tsconfig.build.json', 'tsconfig.build.json');
       copyRecursive(isLibrary ? 'tsconfig.build.production.library.json' : 'tsconfig.build.production.json', 'tsconfig.build.production.json');
       if (opts.useBun) {
-        fileReplace('tsconfig.json', '["node"', '["node", "bun"');
-        fileReplace('tsconfig.build.json', '["node"]', '["node", "bun"]');
-        fileReplace('tsconfig.build.production.json', '["node"]', '["node", "bun"]');
+        fileReplace('tsconfig.json', '["node"', '["bun"');
+        fileReplace('tsconfig.build.json', '["node"]', '["bun"]');
+        fileReplace('tsconfig.build.production.json', '["node"]', '["bun"]');
       }
       if (isWorkspace) {
         fileReplace('tsconfig.json', '"extends": "./tsconfig.base.json"', '"extends": "../../tsconfig.base.json"');
@@ -467,6 +467,11 @@ export async function runPackageJsonUpgrade(
         fileReplace('tsconfig.json', ', "vitest/globals"', '');
         fileReplace('tsconfig.json', ', "vitest/**/*.ts"', '');
         fileReplace('tsconfig.json', ', "packages/*/vitest/**/*.ts"', '');
+      }
+      if (!opts.enableBuntest) {
+        log(magenta('No BunTest flag set, removing BunTest from tsconfig.json...'));
+        fileReplace('tsconfig.json', ', "buntest/**/*.ts"', '');
+        fileReplace('tsconfig.json', ', "packages/*/buntest/**/*.ts"', '');
       }
     }
   }
@@ -534,7 +539,7 @@ export async function runPackageJsonUpgrade(
   // Update package.json fields via npm pkg set
   const npmPkgSets = [];
   if (opts.useNode) npmPkgSets.push(['engines.node', '>=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0']);
-  else if (opts.useBun) npmPkgSets.push(['engines.bun', '>=1.0.0']);
+  else if (opts.useBun) npmPkgSets.push(['engines.bun', '>=1.4.2']);
   if (!pkgJson.license) npmPkgSets.push(['license', 'Apache-2.0']);
   if (!pkgJson.type) npmPkgSets.push(['type', 'module']);
   if (!pkgJson.main) npmPkgSets.push(['main', 'dist/module.js']);
@@ -552,6 +557,8 @@ export async function runPackageJsonUpgrade(
   for (const [key, value] of npmPkgSets) {
     if (automator?.skipPackageJson !== true) runSafe(`npm pkg set "${key}=${value}"`);
   }
+  if (opts.useNode) runSafe(`npm pkg delete engines.bun`);
+  else if (opts.useBun) runSafe(`npm pkg delete engines.node`);
 
   // Remove old files that should not be in the package
   unlinkSafe('yellow-button.png');
@@ -689,6 +696,11 @@ export async function runPackageJsonUpgrade(
       'test:vitest:watch': opts.enableJest && opts.enableVitest ? 'vitest watch' : undefined,
       'test:vitest:verbose': opts.enableJest && opts.enableVitest ? 'vitest run --reporter verbose' : undefined,
       'test:vitest:coverage': opts.enableJest && opts.enableVitest ? vitestCoverageScript : undefined,
+
+      'test:bun': opts.enableBuntest ? 'bun test --parallel' : undefined,
+      'test:bun:watch': opts.enableBuntest ? 'bun test --parallel --watch ' : undefined,
+      'test:bun:coverage': opts.enableBuntest ? 'bun test --parallel --coverage' : undefined,
+
       'lint': 'oxlint --disable-nested-config',
       'lint:fix': 'oxlint --disable-nested-config --fix',
       'format': 'oxfmt',
@@ -716,8 +728,12 @@ export async function runPackageJsonUpgrade(
       'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
 
       'reset': 'npm run deepClean && npm run softReset',
-      'softReset': `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`,
-      'softReset:bun': `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck`,
+      'softReset': opts.useNode
+        ? `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`
+        : opts.useBun
+          ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck`
+          : undefined,
+      'softReset:bun': opts.useNode && opts.useBun ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck` : undefined,
       'checkDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset`,
       'updateDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset`,
       'runMeBeforePublish':
