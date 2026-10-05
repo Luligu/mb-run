@@ -523,6 +523,42 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('rollup-plugin-dts'), expect.anything());
   });
 
+  it('configures the bundle and obfuscate scripts for non-library and library packages', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    const pkgTool = { ...structuredClone(packageJson), automator: { bundle: true, obfuscate: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('bundle-scripts-tool'), isWindows: false, dryRun: false },
+      path.resolve('bundle-scripts-tool/package.json'),
+      pkgTool,
+      false,
+      false,
+      false,
+      false,
+    );
+    expect(pkgTool.scripts).toMatchObject({
+      bundle: 'npm run cleanBuild && node scripts/esbuild.mjs dist',
+      obfuscate: 'npm run cleanBuild && node scripts/esbuild.mjs dist --obfuscate',
+    });
+
+    const pkgLibrary = { ...structuredClone(packageJson), automator: { bundle: true, obfuscate: true } };
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('bundle-scripts-library'), isWindows: false, dryRun: false },
+      path.resolve('bundle-scripts-library/package.json'),
+      pkgLibrary,
+      false,
+      false,
+      false,
+      true,
+    );
+    expect(pkgLibrary.scripts).toMatchObject({
+      bundle: 'npm run cleanBuild && node scripts/esbuild.mjs dist --declaration',
+      obfuscate: 'npm run cleanBuild && node scripts/esbuild.mjs dist --obfuscate --declaration',
+    });
+  });
+
   it('installs jestTypes and vitestTypes devDependencies for workspace packages', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);

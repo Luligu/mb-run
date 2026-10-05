@@ -25,6 +25,11 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.0.5] - Dev branch
 
+### Added
+
+- [upgrade]: Add the `bundle` and `obfuscate` scripts (esbuild, with `--declaration` for libraries) when `automator.bundle` / `automator.obfuscate` are enabled.
+- [template]: Update `scripts/esbuild.mjs` to 2.0.0 with `--external`, `--entry-points`, `--dry-run`, `--version` and `--help` options.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.0.4] - 2026-10-03

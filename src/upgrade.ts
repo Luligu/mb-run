@@ -727,6 +727,9 @@ export async function runPackageJsonUpgrade(
       'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
       'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
 
+      'bundle': automator?.bundle === true ? `npm run cleanBuild && node scripts/esbuild.mjs dist${isLibrary ? ' --declaration' : ''}` : undefined,
+      'obfuscate': automator?.obfuscate === true ? `npm run cleanBuild && node scripts/esbuild.mjs dist --obfuscate${isLibrary ? ' --declaration' : ''}` : undefined,
+
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': opts.useNode
         ? `npm install --no-fund --no-audit && npm prune --no-fund --no-audit${isPlugin ? ' && npm link --no-fund --no-audit matterbridge' : ''} && npm run build && npm run typecheck`
