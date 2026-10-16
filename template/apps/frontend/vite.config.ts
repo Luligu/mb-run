@@ -9,7 +9,7 @@ export default defineConfig(({ command }) => {
   // Use the Matterbridge plugin path in development so the SPA and API proxy use the
   // same URLs as Matterbridge. Use relative paths in production so the built SPA and
   // API resolve correctly when Matterbridge serves the plugin.
-  const base = command === 'serve' ? '/plugins/matterbridge-security/' : './';
+  const base = command === 'serve' ? '/plugins/matterbridge-plugin-template/' : './';
 
   return {
     base,
