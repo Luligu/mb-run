@@ -49,7 +49,7 @@ describe('oxlint', () => {
     it('uses the template fallback when no project .oxlintrc.json exists', async () => {
       await runOxLint({ rootDir: tmpDir, isWindows: false, dryRun: false, fix: false });
       const args = mockRunBin.mock.calls[0][1];
-      expect(args[1]).toMatch(/template[/\\]\.oxlintrc\.root\.json$/u);
+      expect(args[1]).toMatch(/template[/\\]\.oxlintrc\.json\.template$/u);
     });
 
     it('template fallback path resolves to an existing file', async () => {

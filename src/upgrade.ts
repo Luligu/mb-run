@@ -173,11 +173,15 @@ export async function runPackageJsonUpgrade(
         skipDevContainer?: boolean;
         /* set coverage thresholds for tests */
         coverage?: { lines?: number; functions?: number; statements?: number; branches?: number };
+        /* set package-specific ignore patterns */
+        ignore?: { git?: string[]; oxfmt?: string[]; oxlint?: string[]; vitest?: string[]; buntest?: string[] };
       }
     | undefined;
   log(`Automator:${reset()}\n${inspect(automator, true, 2, true)}`);
   const coverage = automator?.coverage;
   log(`Automator coverage:${reset()}\n${inspect(coverage, true, 2, true)}`);
+  const ignore = automator?.ignore;
+  log(`Automator ignore:${reset()}\n${inspect(ignore, true, 2, true)}`);
   if (automator?.node !== undefined) opts.useNode = automator.node;
   if (automator?.bun !== undefined) opts.useBun = automator.bun;
   if (automator?.jest !== undefined) opts.enableJest = automator.jest;
@@ -352,7 +356,23 @@ export async function runPackageJsonUpgrade(
     mkdirSync(path.join(dstDir, '.vscode'), { recursive: true });
     copyRecursive('.vscode/settings.json', '.vscode/settings.json');
     copyRecursive('.vscode/extensions.json', '.vscode/extensions.json');
-    if (!existsSync('.vscode/tasks.json')) copyRecursive('.vscode/tasks.json', '.vscode/tasks.json');
+    if (existsSync(resolveDstPath('.vscode/tasks.json'))) {
+      const startMarker = '// --DO NOT EDIT BELOW THIS LINE--';
+      const endMarker = '// --DO NOT EDIT ABOVE THIS LINE--';
+      const targetTasks = readFileSync(resolveDstPath('.vscode/tasks.json'), 'utf8');
+      if (/\/\/ --DO NOT EDIT BELOW THIS LINE--[\s\S]*\/\/ --DO NOT EDIT ABOVE THIS LINE--/.test(targetTasks)) {
+        const templateTasks = readFileSync(path.join(srcDir, '.vscode', 'tasks.json'), 'utf8');
+        let templateContent = templateTasks.slice(templateTasks.indexOf(startMarker) + startMarker.length, templateTasks.indexOf(endMarker));
+        if (targetTasks.slice(targetTasks.indexOf(endMarker) + endMarker.length).includes('{')) {
+          templateContent = templateContent.replace(/\}(\r?\n\s*)$/, '},$1');
+        }
+        fileReplaceFromTo('.vscode/tasks.json', startMarker, endMarker, templateContent);
+      } else {
+        log(magenta('No DO NOT EDIT markers found in .vscode/tasks.json, skipping update...'));
+      }
+    } else {
+      copyRecursive('.vscode/tasks.json', '.vscode/tasks.json');
+    }
   }
 
   // Copy scripts
@@ -365,6 +385,7 @@ export async function runPackageJsonUpgrade(
     }
     // Remove legacy scripts that are no longer needed
     if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
+    if (!opts.useBun) unlinkSafe(path.join(dstDir, 'scripts', 'bun-bundle.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
     if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
     if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
@@ -380,16 +401,19 @@ export async function runPackageJsonUpgrade(
   if (!isWorkspace) {
     copyRecursive('.gitattributes', '.gitattributes');
 
-    copyRecursive('.gitignore.txt', '.gitignore');
-    appendFileToFileIfExists('.localignore', '.gitignore');
-    appendFileToFileIfExists('.gitlocalignore', '.gitignore');
+    copyRecursive('.gitignore.template', '.gitignore');
+    if (ignore?.git?.length) {
+      const comment = '# Package specific directories and files that should be ignored (mb-run --upgrade merges the .localignore .gitlocalignore files from packages)';
+      const replacement = `${comment}\n${ignore.git.join('\n')}`;
+      fileReplace('.gitignore', comment, replacement.replaceAll('$', '$$$$'));
+    }
 
-    copyRecursive('.oxlintrc.root.json', '.oxlintrc.json');
-    copyRecursive('.oxfmtrc.root.json', '.oxfmtrc.json');
-    for (const tool of ['oxlint', 'oxfmt']) {
-      const ignorePath = resolveDstPath(`.${tool}ignore`);
-      if (!existsSync(ignorePath)) continue;
-      const replacement = `"**/bun.lock",\n${readFileSync(ignorePath, 'utf8')}`;
+    copyRecursive('.oxlintrc.json.template', '.oxlintrc.json');
+    copyRecursive('.oxfmtrc.json.template', '.oxfmtrc.json');
+    for (const tool of ['oxlint', 'oxfmt'] as const) {
+      const patterns = ignore?.[tool];
+      if (!patterns?.length) continue;
+      const replacement = `"**/bun.lock",\n${patterns.map((pattern) => `    ${JSON.stringify(pattern)}`).join(',\n')}`;
       fileReplace(`.${tool}rc.json`, '"**/bun.lock"', replacement.replaceAll('$', '$$$$'));
     }
     unlinkSafe('.prettierignore');
@@ -407,6 +431,14 @@ export async function runPackageJsonUpgrade(
     }
     if (opts.enableVitest) {
       copyRecursive('vitest.config.ts', 'vitest.config.ts');
+      if (ignore?.vitest?.length) {
+        const testExcludeAnchor = `'**/tmp/',\n    ],`;
+        const testExcludeReplacement = `'**/tmp/',\n${ignore.vitest.map((pattern) => `      '${pattern}',`).join('\n')}\n    ],`;
+        fileReplace('vitest.config.ts', testExcludeAnchor, testExcludeReplacement.replaceAll('$', '$$$$'));
+        const coverageExcludeAnchor = `'**/tmp/',\n      ],`;
+        const coverageExcludeReplacement = `'**/tmp/',\n${ignore.vitest.map((pattern) => `        '${pattern}',`).join('\n')}\n      ],`;
+        fileReplace('vitest.config.ts', coverageExcludeAnchor, coverageExcludeReplacement.replaceAll('$', '$$$$'));
+      }
       unlinkSafe('vite.config.ts');
       mkDirSafe(path.join(dstDir, 'vitest'));
     } else {

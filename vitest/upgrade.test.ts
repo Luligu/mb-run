@@ -148,24 +148,94 @@ describe('upgrade', () => {
     expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('Upgrading'));
   });
 
-  it.each(['patterns', 'whitespace'])('should merge local ignores when upgrading with %s ignore files', async (contents) => {
+  it.each(['patterns', 'empty'])('should merge local ignores when upgrading with %s automator.ignore entries', async (mode) => {
     vi.mocked(writeFileSync).mockClear();
     const rootDir = path.resolve('local-ignores');
-    const config = '{"ignorePatterns": ["**/bun.lock"]}';
-    const localIgnore = contents === 'whitespace' ? '\r\n  \r\n' : '\r\n    "custom/**", // comment\r\n\r\n    "$&.ts"\r\n';
+    const oxcConfig = '{"ignorePatterns": ["**/bun.lock"]}';
+    const vitestConfig = "    exclude: [\n      '**/tmp/',\n    ],\n      exclude: [\n        '**/tmp/',\n      ],";
+    const patterns = mode === 'empty' ? [] : ['custom/**', '$&.ts'];
+    vi.mocked(parsePackageJson).mockResolvedValue({
+      ...structuredClone(packageJson),
+      automator: { ...packageJson.automator, vitest: true, ignore: { oxfmt: patterns, oxlint: patterns, vitest: patterns } },
+    });
+    vi.mocked(existsSync).mockImplementation((filePath) => /(\.(oxfmt|oxlint)rc\.json|vitest\.config\.ts)$/.test(String(filePath)));
+    vi.mocked(readFileSync).mockImplementation((filePath) => (String(filePath).endsWith('vitest.config.ts') ? vitestConfig : oxcConfig));
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableVitest: true });
+
+    for (const tool of ['oxfmt', 'oxlint']) {
+      const writes = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, `.${tool}rc.json`));
+      const expectedWrites = mode === 'empty' ? [] : [[path.join(rootDir, `.${tool}rc.json`), '{"ignorePatterns": ["**/bun.lock",\n    "custom/**",\n    "$&.ts"]}', 'utf8']];
+      expect(writes).toEqual(expectedWrites);
+    }
+
+    const vitestWrites = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, 'vitest.config.ts'));
+    const expectedVitestWrites =
+      mode === 'empty'
+        ? []
+        : [
+            [
+              path.join(rootDir, 'vitest.config.ts'),
+              "    exclude: [\n      '**/tmp/',\n      'custom/**',\n      '$&.ts',\n    ],\n      exclude: [\n        '**/tmp/',\n      ],",
+              'utf8',
+            ],
+            [
+              path.join(rootDir, 'vitest.config.ts'),
+              "    exclude: [\n      '**/tmp/',\n    ],\n      exclude: [\n        '**/tmp/',\n        'custom/**',\n        '$&.ts',\n      ],",
+              'utf8',
+            ],
+          ];
+    expect(vitestWrites).toEqual(expectedVitestWrites);
+  });
+
+  it('replaces the managed section of .vscode/tasks.json when the file already exists', async () => {
+    vi.mocked(writeFileSync).mockClear();
+    const rootDir = path.resolve('existing-tasks');
+    const templateTasks = '{\n  "tasks": [\n    // --DO NOT EDIT BELOW THIS LINE--\n    { "label": "Build" }\n    // --DO NOT EDIT ABOVE THIS LINE--\n  ]\n}';
+    const targetTasksWithCustom =
+      '{\n  "tasks": [\n    // --DO NOT EDIT BELOW THIS LINE--\n    { "label": "Old" },\n    // --DO NOT EDIT ABOVE THIS LINE--\n    { "label": "Custom" }\n  ]\n}';
+    const targetTasksWithoutCustom = '{\n  "tasks": [\n    // --DO NOT EDIT BELOW THIS LINE--\n    { "label": "Old" }\n    // --DO NOT EDIT ABOVE THIS LINE--\n  ]\n}';
     vi.mocked(parsePackageJson).mockResolvedValue(structuredClone(packageJson));
-    vi.mocked(existsSync).mockImplementation((filePath) => /\.(oxfmt|oxlint)(ignore|rc\.json)$/.test(String(filePath)));
+    vi.mocked(existsSync).mockImplementation((filePath) => String(filePath) === path.join(rootDir, '.vscode', 'tasks.json'));
     vi.mocked(readFileSync).mockImplementation((filePath) => {
-      if (String(filePath).endsWith('ignore')) return localIgnore;
-      return config;
+      if (String(filePath).includes(path.join('template', '.vscode', 'tasks.json'))) return templateTasks;
+      if (String(filePath) === path.join(rootDir, '.vscode', 'tasks.json')) return targetTasksWithCustom;
+      return '{}';
     });
 
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false });
 
-    for (const tool of ['oxfmt', 'oxlint']) {
-      const writes = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, `.${tool}rc.json`));
-      expect(writes).toEqual([[path.join(rootDir, `.${tool}rc.json`), `{"ignorePatterns": ["**/bun.lock",\n${localIgnore}]}`, 'utf8']]);
-    }
+    const tasksWritesWithCustom = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, '.vscode', 'tasks.json'));
+    expect(tasksWritesWithCustom).toEqual([
+      [
+        path.join(rootDir, '.vscode', 'tasks.json'),
+        '{\n  "tasks": [\n    // --DO NOT EDIT BELOW THIS LINE--\n    { "label": "Build" },\n    // --DO NOT EDIT ABOVE THIS LINE--\n    { "label": "Custom" }\n  ]\n}',
+        'utf8',
+      ],
+    ]);
+
+    vi.mocked(writeFileSync).mockClear();
+    vi.mocked(readFileSync).mockImplementation((filePath) => {
+      if (String(filePath).includes(path.join('template', '.vscode', 'tasks.json'))) return templateTasks;
+      if (String(filePath) === path.join(rootDir, '.vscode', 'tasks.json')) return targetTasksWithoutCustom;
+      return '{}';
+    });
+
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false });
+
+    const tasksWritesWithoutCustom = vi.mocked(writeFileSync).mock.calls.filter(([filePath]) => filePath === path.join(rootDir, '.vscode', 'tasks.json'));
+    expect(tasksWritesWithoutCustom).toEqual([
+      [
+        path.join(rootDir, '.vscode', 'tasks.json'),
+        '{\n  "tasks": [\n    // --DO NOT EDIT BELOW THIS LINE--\n    { "label": "Build" }\n    // --DO NOT EDIT ABOVE THIS LINE--\n  ]\n}',
+        'utf8',
+      ],
+    ]);
+
+    vi.mocked(writeFileSync).mockClear();
+    vi.mocked(readFileSync).mockReturnValue('{\n  "tasks": []\n}');
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false });
+    expect(vi.mocked(log)).toHaveBeenCalledWith(expect.stringContaining('No DO NOT EDIT markers found in .vscode/tasks.json, skipping update...'));
   });
 
   it('upgrades a package with missing metadata without waiting for terminal input', async () => {

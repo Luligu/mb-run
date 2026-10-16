@@ -65,7 +65,7 @@ describe('upgrade tool package', () => {
           license: 'Apache-2.0',
           author: 'Fixture Author',
           files: ['dist'],
-          automator: { jest: true, vitest: true },
+          automator: { jest: true, vitest: true, ignore: { git: ['local-rule', 'git-local-rule'] } },
           scripts: { stale: 'echo stale' },
           devDependencies: {
             '@types/node': '0.0.0',
@@ -81,8 +81,6 @@ describe('upgrade tool package', () => {
     );
     await writeFixture('vite.config.ts', 'obsolete\n');
     await writeFixture('.gitignore', 'existing-rule\n');
-    await writeFixture('.localignore', 'local-rule\n');
-    await writeFixture('.gitlocalignore', 'git-local-rule\n');
     await writeFixture('LICENSE', 'fixture license\n');
     await writeFixture('README.md', 'yellow-button.png src="./bmc-button.svg" src="matterbridge.svg" build-matterbridge-plugin.yml (https://github.com/prettier/prettier)\n');
     await writeFixture(
@@ -220,6 +218,7 @@ describe('upgrade tool package', () => {
       'scripts/prune-tags.sh',
       'scripts/git-status.sh',
       'scripts/mb-run.mjs',
+      'scripts/bun-bundle.mjs',
     ]) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(false);
     }

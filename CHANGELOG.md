@@ -30,6 +30,13 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Add the `bundle` and `obfuscate` scripts (esbuild, with `--declaration` for libraries) when `automator.bundle` / `automator.obfuscate` are enabled.
 - [template]: Update `scripts/esbuild.mjs` to 2.0.0 with `--external`, `--entry-points`, `--dry-run`, `--version` and `--help` options.
 
+### Changed
+
+- [template]: Rename `.gitignore.txt`, `.oxfmtrc.root.json` and `.oxlintrc.root.json` to `.gitignore.template`, `.oxfmtrc.json.template` and `.oxlintrc.json.template`.
+- [upgrade]: Merge `automator.ignore.git`, `automator.ignore.oxfmt`, `automator.ignore.oxlint` and `automator.ignore.vitest` into `.gitignore`, `.oxfmtrc.json`, `.oxlintrc.json` and `vitest.config.ts`.
+- [upgrade]: Update `.vscode/tasks.json` between the `DO NOT EDIT` markers from `template/.vscode/tasks.json` when `.vscode/tasks.json` already exists.
+- [upgrade]: Remove `scripts/bun-bundle.mjs` when `automator.bun` is not enabled.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.0.4] - 2026-10-03

@@ -89,6 +89,17 @@
       "functions": 100,
       "branches": 100,
       "statements": 100
+    },
+    "ignore": {
+      "oxfmt": [
+        "template/**"
+      ],
+      "oxlint": [
+        "template/**"
+      ],
+      "vitest": [
+        "**/template/"
+      ]
     }
   },
   "scripts": {

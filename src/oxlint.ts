@@ -44,7 +44,7 @@ export interface OxLintOptions {
  *
  * When `.oxlintrc.json` is present in `opts.rootDir`, it is used as the lint
  * configuration.  Otherwise, the bundled fallback configuration from
- * `template/.oxlintrc.root.json` is used.
+ * `template/.oxlintrc.json.template` is used.
  *
  * @param {OxLintOptions} opts OxLint options.
  * @returns {Promise<void>} Resolves when linting completes without errors.
@@ -56,7 +56,7 @@ export async function runOxLint(opts: OxLintOptions): Promise<void> {
     configPath = projectConfig;
   } else {
     const selfDir = path.dirname(url.fileURLToPath(import.meta.url));
-    configPath = path.join(selfDir, '..', 'template', '.oxlintrc.root.json');
+    configPath = path.join(selfDir, '..', 'template', '.oxlintrc.json.template');
   }
   await runBin('oxlint', ['-c', configPath, ...(opts.fix ? ['--fix'] : [])], {
     rootDir: opts.rootDir,
