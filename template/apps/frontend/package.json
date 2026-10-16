@@ -1,0 +1,40 @@
+{
+  "name": "matterbridge-template-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for the matterbridge-template plugin",
+  "author": "https://github.com/Luligu",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "clean": "node ../../scripts/clean.mjs",
+    "deepClean": "node ../../scripts/deep-clean.mjs",
+    "reset": "npm run deepClean && npm run softReset",
+    "softReset": "npm install --no-fund --no-audit && npm prune --no-fund --no-audit && npm run build && npm run typecheck",
+    "checkDependencies": "npx --yes --package npm-check-updates ncu && npm run softReset",
+    "updateDependencies": "npx --yes --package npm-check-updates ncu -u && npm run softReset",
+    "runMeBeforePublish": "npm run format && npm run lint && npm run build && npm run typecheck"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "9.5.0",
+    "@mui/material": "9.5.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4"
+  }
+}

@@ -710,6 +710,7 @@ export async function runPackageJsonUpgrade(
       'disable': isPlugin ? 'matterbridge --disable .' : undefined,
       'link': isPlugin ? 'npm link --no-fund --no-audit matterbridge' : undefined,
       'unlink': isPlugin ? 'npm unlink matterbridge' : undefined,
+
       'build': 'tsc --project tsconfig.build.json',
       'buildDts': isLibrary ? 'tsc --project tsconfig.build.json --incremental false --composite false --declaration --declarationMap false --emitDeclarationOnly' : undefined,
       'buildProduction': 'tsc --project tsconfig.build.production.json',
@@ -720,6 +721,7 @@ export async function runPackageJsonUpgrade(
       'deepClean': 'node scripts/deep-clean.mjs',
       'watch': 'tsc --project tsconfig.build.json --watch',
       'typecheck': 'tsc --project tsconfig.json --noEmit',
+
       'test': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest' : 'vitest run',
       'test:watch': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --watch' : 'vitest watch',
       'test:verbose': opts.enableJest && opts.enableVitest ? 'cross-env NODE_OPTIONS="--experimental-vm-modules --no-warnings" jest --verbose' : 'vitest run --reporter verbose',
@@ -733,15 +735,17 @@ export async function runPackageJsonUpgrade(
       'test:bun:watch': opts.enableBuntest ? 'bun test --parallel --watch ' : undefined,
       'test:bun:coverage': opts.enableBuntest ? 'bun test --parallel --coverage' : undefined,
 
-      'lint': 'oxlint --disable-nested-config',
-      'lint:fix': 'oxlint --disable-nested-config --fix',
+      'lint': 'oxlint',
+      'lint:fix': 'oxlint --fix',
       'format': 'oxfmt',
       'format:check': 'oxfmt --check',
+
       'preversion': automator?.version === true ? 'npm run runMeBeforePublish' : undefined,
       'postversion': automator?.version === true ? 'npm run build' : undefined,
       'version:patch': automator?.version === true ? 'npm version patch --no-git-tag-version' : undefined,
       'version:minor': automator?.version === true ? 'npm version minor --no-git-tag-version' : undefined,
       'version:major': automator?.version === true ? 'npm version major --no-git-tag-version' : undefined,
+
       'git:status': automator?.git === true ? 'git status && git branch -vv && git stash list && git fsck --full --no-reflogs --no-dangling && git worktree list' : undefined,
       'git:remote': automator?.git === true ? 'git remote -v && git remote show origin' : undefined,
       'git:prune': automator?.git === true ? 'git fetch --prune --prune-tags' : undefined,
@@ -769,8 +773,8 @@ export async function runPackageJsonUpgrade(
           ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck`
           : undefined,
       'softReset:bun': opts.useNode && opts.useBun ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck` : undefined,
-      'checkDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu && npm run softReset`,
-      'updateDependencies': `npm install --no-fund --no-audit --no-save npm-check-updates && ncu -u && npm run softReset`,
+      'checkDependencies': `npx --yes --package npm-check-updates ncu`,
+      'updateDependencies': `npx --yes --package npm-check-updates ncu -u && npm run softReset`,
       'runMeBeforePublish':
         'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
         (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +

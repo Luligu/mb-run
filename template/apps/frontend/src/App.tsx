@@ -34,7 +34,7 @@ function Header({ mode, onToggleMode }: { mode: ThemeMode; onToggleMode: () => v
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <img src={matterbridgeLogo} alt="Matterbridge" width={64} height={64} />
         <Typography variant="h4" component="h1">
-          Matterbridge plugin
+          Matterbridge plugin template
         </Typography>
       </Box>
       <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
@@ -47,7 +47,7 @@ function Header({ mode, onToggleMode }: { mode: ThemeMode; onToggleMode: () => v
 }
 
 /**
- * Single-page app for the matterbridge-security plugin frontend.
+ * Single-page app for the matterbridge plugin template frontend.
  *
  * @returns {JSX.Element} The rendered page.
  */
