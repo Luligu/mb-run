@@ -23,7 +23,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.1.1] - Dev branch
+## [1.1.1] - 2026-10-17
+
+### Changed
+
+- [template]: Update `vitest.config.ts` to 2.0.9 with a JUnit reporter writing `.cache/vitest/junit.xml`.
+- [template]: Update `bunfig.toml` to 1.0.3 with `/**` directory ignore patterns and a JUnit reporter writing `.cache/bun/junit.xml`.
 
 ### Fixed
 
