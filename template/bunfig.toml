@@ -1,6 +1,7 @@
-# Matterbridge — Bun-native test runner config v 1.0.2.
+# Matterbridge — Bun-native test runner config v 1.0.3.
 
 [install]
+
 # Installation strategy: "hoisted" places dependencies in the shared node_modules root;
 # "isolated" keeps each package's dependencies in its own node_modules directory.
 # Default: "hoisted".
@@ -18,40 +19,41 @@ globalStore = false
 # preload = ["./buntest/setup.ts"]
 
 # Bun scans root for *.test.{js|jsx|ts|tsx} *_test.{js|jsx|ts|tsx} *.spec.{js|jsx|ts|tsx} *_spec.{js|jsx|ts|tsx}.
+# Directory entries end in /** so they match the directory's contents, the same form the coverage list
+# below needs.
 pathIgnorePatterns = [
-  '**/.cache/',
-  '**/apps/',
-  '**/build/',
-  '**/chip/',
-  '**/coverage/',
-  '**/dist/',
-  '**/node_modules/',
-  '**/screenshots/',
-  '**/scripts/',
-  '**/src/',
-  '**/temp/',
-  '**/test/',
-  '**/template/',
-  '**/vitest/',
+  '**/.cache/**',
+  '**/build/**',
+  '**/coverage/**',
+  '**/dist/**',
+  '**/node_modules/**',
+  '**/screenshots/**',
+  '**/scripts/**',
+  '**/src/**',
+  '**/temp/**',
+  '**/tmp/**',
+  '**/test/**',
+  '**/vitest/**',
 ]
 
 # Source files kept out of the coverage report. pathIgnorePatterns above decides which files are
 # scanned for tests; this one decides which files are measured. Whole paths only: Bun has no
 # line-level ignore, so /* istanbul ignore */, /* c8 ignore */ and /* v8 ignore */ do nothing.
+# Each pattern is matched against every source file path after the run, never against a directory,
+# so a directory entry must end in /** ('**/dist/**').
 coveragePathIgnorePatterns = [
-  '**/.cache/',
-  '**/apps/',
-  '**/build/',
-  '**/chip/',
-  '**/coverage/',
-  '**/dist/',
-  '**/node_modules/',
-  '**/screenshots/',
-  '**/scripts/',
-  '**/src/mock/',
-  '**/temp/',
-  '**/template/',
+  '**/.cache/**',
+  '**/build/**',
+  '**/coverage/**',
+  '**/dist/**',
+  '**/node_modules/**',
+  '**/screenshots/**',
+  '**/scripts/**',
+  '**/temp/**',
+  '**/tmp/**',
+  '**/test/**',
   '**/vitest/**',
+  '**/buntest/**',
   '**/src/**/*.d.ts',
   '**/src/**/*.{spec,test}.{ts,mts,cts}',
 ]
@@ -73,3 +75,9 @@ coverageIgnoreSourcemaps = false
 
 # Fail the run if coverage drops below 100%. Applies to the whole run, not per file.
 coverageThreshold = { lines = 1.0, functions = 1.0 }
+
+[test.reporter]
+
+# Every run also writes a JUnit XML report with the duration of each test (handy to find slow tests:
+# --parallel prints no per-test lines). It holds test results only, coverage stays in coverageDir.
+junit = ".cache/bun/junit.xml"

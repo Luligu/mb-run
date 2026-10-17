@@ -25,6 +25,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.1] - Dev branch
 
+### Fixed
+
+- [template]: Install optional frontend dependencies before plugin lint in CI, coverage and publish workflows.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.0] - 2026-10-16
