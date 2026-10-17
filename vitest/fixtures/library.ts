@@ -9,6 +9,8 @@ import { copyFile, cp, mkdir, readdir, readFile, symlink, writeFile } from 'node
 import path from 'node:path';
 import process from 'node:process';
 
+import { expect } from 'vitest';
+
 /** The mb-run repository root, whose installed packages back the fixture node_modules. */
 const repoDir = path.resolve(import.meta.dirname, '..', '..');
 
@@ -499,8 +501,10 @@ export async function installIntoConsumer(packageDir: string, consumerDir: strin
  * Creates a consumer project that imports the library by package name, with TypeScript 7 and
  * full declaration checking (`skipLibCheck: false`) so broken or incomplete declarations fail.
  *
- * The consumer only has the library's real runtime dependency (cross-spawn): if any shipped
- * file still references an unshipped workspace package, resolution fails.
+ * Only the files are written: the caller installs the library and its runtime dependencies (by
+ * copying them or with a real `npm install` of the tarball), then links the TypeScript toolchain.
+ * The consumer never has the workspace packages: if any shipped file still references one,
+ * resolution fails.
  *
  * @param {string} consumerDir Empty consumer directory.
  * @param {string} packageName Library package name.
@@ -545,8 +549,6 @@ formatGreeting({ name: 42 });
 export { events, formatted, punctuation };
 ${devicesCode}`,
   });
-  // npm hoists cross-spawn's own dependencies (path-key) next to it.
-  await linkInstalledPackages(consumerDir, ['typescript', '@types/node', 'cross-spawn', 'path-key']);
 }
 
 /**
@@ -598,8 +600,8 @@ ${devicesCode}console.log(JSON.stringify(result));
  */
 export function expectedRuntimeResult(withDevices: boolean): Record<string, unknown> {
   const base = { emitted: 'runtime Hello, Matter!', formatted: 'Hello, Bridge.', level: 'debug' };
-  // path-key returns the PATH variable name as spelled in this environment (Path on Windows).
-  return withDevices ? { ...base, loud: 'LOUD HELLO, MATTER!', registered: 'registered loud', sameClass: true, pathVariable: isWindows ? 'Path' : 'PATH' } : base;
+  // path-key returns the PATH variable name as spelled in this environment: Windows names are case-insensitive (PATH on CI runners, Path on most desktops).
+  return withDevices ? { ...base, loud: 'LOUD HELLO, MATTER!', registered: 'registered loud', sameClass: true, pathVariable: expect.stringMatching(/^path$/i) } : base;
 }
 
 /**

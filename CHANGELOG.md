@@ -39,6 +39,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Fixed
 
+- [pack]: Generate the shipped `npm-shrinkwrap.json` in an isolated temporary directory, so workspace links (npm 10) and `npm link` symlinks in `node_modules` no longer leak into it.
 - [dts]: Bundle all declaration entries in one Rollup run with shared chunks in `dist/_chunks/`, so classes exported from several subpaths are declared once and stay assignable across them.
 - [esbuild]: Keep every package import external unless it is a workspace package or listed in `automator.esbuild.bundle`, and warn about imported packages no `package.json` declares, instead of bundling a second copy of them.
 - [dts]: Drop `--composite` (rejected by `tsc --build`, TS5094) and add `--force` to the monorepo declaration build, so monorepo libraries bundle again.

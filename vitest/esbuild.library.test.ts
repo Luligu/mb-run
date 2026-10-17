@@ -24,6 +24,7 @@ import {
   expectedRuntimeResult,
   findDeclarationProblems,
   installIntoConsumer,
+  linkInstalledPackages,
   isWindows,
   listFiles,
   MONOREPO_NAME,
@@ -157,6 +158,8 @@ describe('esbuild + dts (real tools, realistic fixtures)', () => {
   async function expectConsumable(packageName: string, utilsSubpath: string | null, devicesSubpath: string | null = null): Promise<string> {
     const installedDir = await installIntoConsumer(rootDir, consumerDir, packageName);
     await createConsumer(consumerDir, packageName, utilsSubpath, devicesSubpath);
+    // dist is copied in place, so link its runtime dependency and the hoisted path-key the way npm would install them.
+    await linkInstalledPackages(consumerDir, ['typescript', '@types/node', 'cross-spawn', 'path-key']);
 
     await runWorkspaceTypecheck({ rootDir: consumerDir, isWindows, dryRun: false, mode: 'build', watch: false });
 

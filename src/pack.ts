@@ -21,7 +21,8 @@
  * limitations under the License.
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 import { runWorkspaceBuild } from './build.js';
@@ -53,6 +54,44 @@ export interface PackOptions {
 }
 
 /**
+ * Generates the `npm-shrinkwrap.json` shipped in the tarball, in an isolated temporary directory.
+ *
+ * `npm install --package-lock-only` does not install anything, but it still reads the project's
+ * `node_modules`: it records workspace links (`node_modules/@scope/pkg` → `packages/pkg`, kept as
+ * `extraneous` entries by npm 10) and `npm link` symlinks (as `link` entries pointing to local
+ * paths). Neither exists for whoever installs the tarball. The temporary directory holds only the
+ * packed `package.json` (and the project's `.npmrc`, for registry and auth settings), so npm
+ * resolves every entry from the registry or its cache.
+ *
+ * @param {PackOptions} opts Pack options.
+ * @returns {Promise<void>} Resolves when `npm-shrinkwrap.json` is written to the project root.
+ */
+async function createIsolatedShrinkwrap(opts: PackOptions): Promise<void> {
+  const installArgs = ['install', '--package-lock-only', '--omit=dev', '--no-fund', '--no-audit', '--silent'];
+  const shrinkwrapArgs = ['shrinkwrap', '--omit=dev', '--silent'];
+  const shrinkwrapPath = path.join(opts.rootDir, 'npm-shrinkwrap.json');
+  if (opts.dryRun) {
+    const lockDir = path.join(os.tmpdir(), 'mb-run-shrinkwrap-XXXXXX');
+    await runCommand('npm', installArgs, { cwd: lockDir, dryRun: true });
+    await runCommand('npm', shrinkwrapArgs, { cwd: lockDir, dryRun: true });
+    logWriteFile(shrinkwrapPath);
+    return;
+  }
+
+  const lockDir = await mkdtemp(path.join(os.tmpdir(), 'mb-run-shrinkwrap-'));
+  try {
+    await copyFile(path.join(opts.rootDir, 'package.json'), path.join(lockDir, 'package.json'));
+    if (await fileExists(path.join(opts.rootDir, '.npmrc'))) await copyFile(path.join(opts.rootDir, '.npmrc'), path.join(lockDir, '.npmrc'));
+    await runCommand('npm', installArgs, { cwd: lockDir, dryRun: false });
+    await runCommand('npm', shrinkwrapArgs, { cwd: lockDir, dryRun: false });
+    logWriteFile(shrinkwrapPath);
+    await copyFile(path.join(lockDir, 'npm-shrinkwrap.json'), shrinkwrapPath);
+  } finally {
+    await rm(lockDir, { recursive: true, force: true });
+  }
+}
+
+/**
  * Performs the full npm-pack workflow: back up, prepare, pack, then restore.
  *
  * Steps performed in order:
@@ -66,8 +105,8 @@ export interface PackOptions {
  *     so the generated shrinkwrap records every runtime dependency needed by bundled code;
  *     strip local workspace package names from `dependencies` and remove `workspaces`
  * 8. Delete `package-lock.json` and `npm-shrinkwrap.json`
- * 9. Generate a production-only `package-lock.json` without modifying `node_modules`
- * 10. Convert the lockfile to `npm-shrinkwrap.json`
+ * 9. Generate a production-only `package-lock.json` in an isolated temporary directory (see {@link createIsolatedShrinkwrap})
+ * 10. Convert the lockfile to `npm-shrinkwrap.json` there and copy it into the project
  * 11. `npm pack`
  * 12. Restore all files from memory (always, even on error)
  * 13. Restore the original lockfiles
@@ -207,14 +246,8 @@ export async function runPack(opts: PackOptions): Promise<void> {
     // Step 8: Delete package-lock.json and npm-shrinkwrap.json.
     for (const lockfilePath of lockfilePaths) await removeFile(lockfilePath, opts);
 
-    // Step 9: Generate a production lockfile without changing node_modules.
-    await runCommand('npm', ['install', '--package-lock-only', '--omit=dev', '--no-fund', '--no-audit', '--silent'], { cwd: opts.rootDir, dryRun: opts.dryRun });
-
-    // Step 10: Convert package-lock.json to npm-shrinkwrap.json.
-    await runCommand('npm', ['shrinkwrap', '--omit=dev', '--silent'], {
-      cwd: opts.rootDir,
-      dryRun: opts.dryRun,
-    });
+    // Steps 9-10: Generate the production lockfile and npm-shrinkwrap.json away from node_modules.
+    await createIsolatedShrinkwrap(opts);
 
     // Step 11: npm pack.
     await runCommand('npm', ['pack'], {

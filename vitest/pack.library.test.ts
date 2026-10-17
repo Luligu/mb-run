@@ -5,7 +5,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -15,6 +15,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { runWorkspaceTypecheck } from '../src/build.js';
 import { initLogger } from '../src/logger.js';
 import { runPack } from '../src/pack.js';
+import { runCommand } from '../src/spawn.js';
 import {
   consumerRuntimeScript,
   createConsumer,
@@ -22,7 +23,7 @@ import {
   createSinglePackageFixture,
   expectedRuntimeResult,
   findDeclarationProblems,
-  installIntoConsumer,
+  linkInstalledPackages,
   isWindows,
   listFiles,
   MONOREPO_NAME,
@@ -106,6 +107,26 @@ describe('pack (real tools, realistic fixtures)', () => {
   }
 
   /**
+   * Lists shrinkwrap entries a user's `npm install` could not reproduce: links, entries outside
+   * `node_modules/` (workspace folders, paths on the packing machine) and entries without a
+   * registry tarball.
+   *
+   * @param {Record<string, unknown>} shrinkwrap Parsed `npm-shrinkwrap.json`.
+   * @returns {string[]} One message per problem.
+   */
+  function findShrinkwrapProblems(shrinkwrap: Record<string, unknown>): string[] {
+    const problems: string[] = [];
+    for (const [name, entry] of Object.entries(shrinkwrap['packages'] as Record<string, { link?: boolean; extraneous?: boolean; resolved?: string }>)) {
+      if (name === '') continue;
+      if (entry.link === true) problems.push(`${name}: link`);
+      if (entry.extraneous === true) problems.push(`${name}: extraneous`);
+      if (!name.startsWith('node_modules/')) problems.push(`${name}: outside node_modules`);
+      if (!entry.resolved?.startsWith('https://')) problems.push(`${name}: resolved ${entry.resolved}`);
+    }
+    return problems;
+  }
+
+  /**
    * Reads and parses a JSON file.
    *
    * @param {string} filePath JSON file path.
@@ -116,7 +137,8 @@ describe('pack (real tools, realistic fixtures)', () => {
   }
 
   /**
-   * Installs the packed package into a fresh consumer, then type-checks it, runs it and runs its bin.
+   * Installs the tarball into a fresh consumer with a real `npm install`, which reads the shipped
+   * `npm-shrinkwrap.json`, then type-checks the consumer, runs it and runs the bin.
    *
    * @param {string} packageDir Extracted package directory.
    * @param {string} packageName Library package name.
@@ -125,8 +147,17 @@ describe('pack (real tools, realistic fixtures)', () => {
    * @returns {Promise<void>} Resolves when every consumer check passed.
    */
   async function expectConsumable(packageDir: string, packageName: string, utilsSubpath: string | null, devicesSubpath: string | null = null): Promise<void> {
-    const installedDir = await installIntoConsumer(packageDir, consumerDir, packageName);
     await createConsumer(consumerDir, packageName, utilsSubpath, devicesSubpath);
+    await runCommand('npm', ['install', path.join(rootDir, `${packageName}-1.0.0.tgz`), '--no-fund', '--no-audit', '--silent'], { cwd: consumerDir });
+    // npm prunes packages it did not install, so the TypeScript toolchain is linked afterwards.
+    await linkInstalledPackages(consumerDir, ['typescript', '@types/node']);
+    const installedDir = path.join(consumerDir, 'node_modules', packageName);
+    // npm installed real copies from the registry or its cache (no link back to the developer's machine) and no workspace package.
+    for (const runtimeDependency of ['cross-spawn', 'path-key']) {
+      expect((await lstat(path.join(consumerDir, 'node_modules', runtimeDependency))).isSymbolicLink()).toBe(false);
+    }
+    expect((await readdir(path.join(consumerDir, 'node_modules'))).filter((name) => name === '@fixture')).toEqual([]);
+    expect(await readFile(path.join(installedDir, 'package.json'), 'utf8')).toBe(await readFile(path.join(packageDir, 'package.json'), 'utf8'));
 
     await runWorkspaceTypecheck({ rootDir: consumerDir, isWindows, dryRun: false, mode: 'build', watch: false });
 
@@ -164,6 +195,7 @@ describe('pack (real tools, realistic fixtures)', () => {
       const lockedPackages = shrinkwrap['packages'] as Record<string, { dev?: boolean }>;
       expect(Object.keys(lockedPackages)).toContain('node_modules/cross-spawn');
       expect(Object.values(lockedPackages).filter((lockedPackage) => lockedPackage.dev === true)).toEqual([]);
+      expect(findShrinkwrapProblems(shrinkwrap)).toEqual([]);
 
       const packedFiles = await listFiles(packageDir);
       expect(packedFiles).toContain('dist/module.js');
@@ -208,6 +240,7 @@ describe('pack (real tools, realistic fixtures)', () => {
       const lockedNames = Object.keys(shrinkwrap['packages'] as Record<string, unknown>);
       expect(lockedNames).toContain('node_modules/cross-spawn');
       expect(lockedNames.filter((name) => name.includes('@fixture/') || name.startsWith('packages/'))).toEqual([]);
+      expect(findShrinkwrapProblems(shrinkwrap)).toEqual([]);
 
       const packedFiles = await listFiles(packageDir);
       expect(packedFiles).toContain('dist/export.js');

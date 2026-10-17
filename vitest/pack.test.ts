@@ -17,6 +17,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>();
   return {
     ...actual,
+    copyFile: vi.fn().mockResolvedValue(undefined),
+    mkdtemp: vi.fn().mockResolvedValue('/tmp/mb-run-shrinkwrap-test'),
     readFile: vi.fn(),
     rm: vi.fn().mockResolvedValue(undefined),
     writeFile: vi.fn().mockResolvedValue(undefined),
@@ -65,7 +67,7 @@ vi.mock('../src/version.js', () => ({
   updateWorkspaceDependencyVersions: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { readFile, writeFile } = await import('node:fs/promises');
+const { copyFile, readFile, rm, writeFile } = await import('node:fs/promises');
 const { runWorkspaceBuild } = await import('../src/build.js');
 const { backup, resolveWorkspacePackageJsonPaths, restore } = await import('../src/cache.js');
 const { fileExists } = await import('../src/clean.js');
@@ -75,6 +77,8 @@ const { isLibrary } = await import('../src/helpers.js');
 const { runCommand } = await import('../src/spawn.js');
 const { updateRootVersion } = await import('../src/version.js');
 
+const mockCopyFile = vi.mocked(copyFile);
+const mockRm = vi.mocked(rm);
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 const mockRunWorkspaceBuild = vi.mocked(runWorkspaceBuild);
@@ -108,6 +112,8 @@ describe('pack', () => {
     mockReadFile.mockResolvedValue(simplePkg);
     mockReadFile.mockClear();
     mockWriteFile.mockClear();
+    mockCopyFile.mockClear();
+    mockRm.mockClear();
     mockRunCommand.mockClear();
     mockRunEsbuild.mockClear();
     mockBackup.mockClear();
@@ -140,13 +146,15 @@ describe('pack', () => {
         expect(mockRunCommand).toHaveBeenCalled();
       });
 
-      it('generates the production lockfile without installing node_modules', async () => {
+      it('generates the production lockfile without installing node_modules, away from the project', async () => {
         await runPack(makeOpts({ dryRun: true }));
         expect(mockRunCommand).toHaveBeenCalledWith(
           'npm',
           ['install', '--package-lock-only', '--omit=dev', '--no-fund', '--no-audit', '--silent'],
-          expect.objectContaining({ cwd: rootDir, dryRun: true }),
+          expect.objectContaining({ cwd: expect.stringContaining('mb-run-shrinkwrap-'), dryRun: true }),
         );
+        expect(mockCopyFile).not.toHaveBeenCalled();
+        expect(mockRm).not.toHaveBeenCalledWith(expect.stringContaining('mb-run-shrinkwrap-'), expect.anything());
       });
 
       it('does not minify the bundle by default', async () => {
@@ -323,6 +331,29 @@ describe('pack', () => {
         await runPack(makeOpts());
         const fullInstallCall = mockRunCommand.mock.calls.find((call) => call[1][0] === 'install' && !call[1].includes('--package-lock-only'));
         expect(fullInstallCall).toBeUndefined();
+      });
+
+      it('generates npm-shrinkwrap.json in an isolated directory holding only package.json and .npmrc, then removes it', async () => {
+        const lockDir = '/tmp/mb-run-shrinkwrap-test';
+        mockFileExists.mockImplementation(async (filePath) => filePath === path.join(rootDir, '.npmrc'));
+        await runPack(makeOpts());
+        expect(mockCopyFile).toHaveBeenCalledWith(path.join(rootDir, 'package.json'), path.join(lockDir, 'package.json'));
+        expect(mockCopyFile).toHaveBeenCalledWith(path.join(rootDir, '.npmrc'), path.join(lockDir, '.npmrc'));
+        expect(mockRunCommand).toHaveBeenCalledWith('npm', expect.arrayContaining(['install', '--package-lock-only']), { cwd: lockDir, dryRun: false });
+        expect(mockRunCommand).toHaveBeenCalledWith('npm', ['shrinkwrap', '--omit=dev', '--silent'], { cwd: lockDir, dryRun: false });
+        expect(mockCopyFile).toHaveBeenCalledWith(path.join(lockDir, 'npm-shrinkwrap.json'), path.join(rootDir, 'npm-shrinkwrap.json'));
+        expect(mockRm).toHaveBeenCalledWith(lockDir, { recursive: true, force: true });
+        expect(mockRunCommand).toHaveBeenCalledWith('npm', ['pack'], { cwd: rootDir, dryRun: false });
+      });
+
+      it('skips .npmrc when the project has none and removes the isolated directory even when npm fails', async () => {
+        mockRunCommand.mockImplementation(async (_command, args) => {
+          if (args[0] === 'shrinkwrap') throw new Error('npm shrinkwrap failed');
+        });
+        await expect(runPack(makeOpts())).rejects.toThrow('npm shrinkwrap failed');
+        expect(mockCopyFile).not.toHaveBeenCalledWith(path.join(rootDir, '.npmrc'), expect.anything());
+        expect(mockCopyFile).not.toHaveBeenCalledWith(expect.stringContaining('npm-shrinkwrap.json'), expect.anything());
+        expect(mockRm).toHaveBeenCalledWith('/tmp/mb-run-shrinkwrap-test', { recursive: true, force: true });
       });
 
       it('restores the original lockfiles after packing', async () => {
