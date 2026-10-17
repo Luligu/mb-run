@@ -48,6 +48,8 @@ export interface PackOptions {
   tag?: 'dev' | 'edge' | 'git' | 'local' | 'next' | 'alpha' | 'beta' | null;
   /** When true, minify the generated bundle. */
   minify?: boolean;
+  /** When true, obfuscate the generated JavaScript. */
+  obfuscate?: boolean;
 }
 
 /**
@@ -58,8 +60,8 @@ export interface PackOptions {
  * 2. If `opts.tag` is set, bump the version via `updateRootVersion` + `updateWorkspaceDependencyVersions` + `npm install --package-lock-only`
  * 3. Clean build artifacts
  * 4. Build the workspace for production
- * 5. Bundle with esbuild and rebuild declarations for library packages
- * 6. Strip `devDependencies` and `scripts` from `package.json`; redirect bundled binary launchers to `dist/bin`; remove type metadata for non-library packages
+ * 5. Bundle with esbuild, then rebuild and bundle declarations for library packages
+ * 6. Strip `devDependencies` and `scripts` from `package.json`; redirect bundled binary launchers to `dist/bin` and exclude the source launchers from `files`; remove type metadata for non-library packages
  * 7. Merge all `dependencies` from workspace packages into the root `dependencies`
  *     so the generated shrinkwrap records every runtime dependency needed by bundled code;
  *     strip local workspace package names from `dependencies` and remove `workspaces`
@@ -113,13 +115,14 @@ export async function runPack(opts: PackOptions): Promise<void> {
       watch: false,
     });
 
-    // Step 5: Bundle with esbuild and rebuild declarations for library packages.
+    // Step 5: Bundle with esbuild, then rebuild and bundle declarations for library packages.
     await runEsbuild({
       rootDir: opts.rootDir,
       isWindows: opts.isWindows,
       dryRun: opts.dryRun,
       verbose: opts.verbose,
       minify: opts.minify,
+      obfuscate: opts.obfuscate,
     });
 
     const workspacePkgPaths = await resolveWorkspacePackageJsonPaths(opts.rootDir);
@@ -138,10 +141,14 @@ export async function runPack(opts: PackOptions): Promise<void> {
         // those outputs so packed monorepos do not retain workspace-only imports.
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const packageBinEntries = packageBin as Record<string, unknown>;
+        const packageFiles = pkg['files'];
         for (const [binName, binPath] of Object.entries(packageBinEntries)) {
           if (typeof binPath !== 'string' || binPath.startsWith('dist/')) continue;
           if (await fileExists(path.join(opts.rootDir, binPath))) {
-            packageBinEntries[binName] = `dist/${binPath.replace(/^\.\//, '')}`;
+            const sourceLauncher = binPath.replace(/^\.\//, '');
+            packageBinEntries[binName] = `dist/${sourceLauncher}`;
+            // The source launcher still imports workspace packages: keep it out of the tarball.
+            if (Array.isArray(packageFiles) && !packageFiles.includes(`!${sourceLauncher}`)) packageFiles.push(`!${sourceLauncher}`);
           }
         }
       }

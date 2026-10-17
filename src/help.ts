@@ -63,9 +63,9 @@ ${brightYellow('Options:')}
   ${f('--sort')}sort top-level keys in all package.json files
   ${f('--update')}run ncu -u across all workspaces then npm install
   ${f('--upgrade', '[keywords...]')}upgrade config files; keywords: node | bun | jest | vitest | buntest | bundle | obfuscate | promiserules | typeaware | experimental
-  ${f('--pack', '[tag] [minify]')}back up, clean, build, npm pack, and restore; bumps version first if tag is provided
+  ${f('--pack', '[tag] [minify] [obfuscate]')}back up, clean, build, npm pack, and restore; bumps version first if tag is provided
   ${f('--publish', '[tag]')}back up, npm publish for root and all workspaces, and restore; bumps version first if tag is provided
-  ${f('--esbuild', '[minify]')}bundle with esbuild; minify compresses output and removes comments
+  ${f('--esbuild', '[minify] [obfuscate]')}bundle with esbuild; minify compresses output and removes comments, obfuscate obfuscates the bundled JavaScript
   ${f('--set-version', '[tag]')}update versions for the current package and all workspaces
   ${f('--dry-run')}log intended actions without executing commands or writing files
   ${f('--verbose')}print each command before it is executed
@@ -105,10 +105,10 @@ export function printVersionUsage(): void {
  */
 export function printPackUsage(): void {
   const msg = [
-    `${brightYellow('Usage:')} ${green('mb-run')} ${green('--pack')} [dev|edge|git|local|next|alpha|beta] [minify]`,
+    `${brightYellow('Usage:')} ${green('mb-run')} ${green('--pack')} [dev|edge|git|local|next|alpha|beta] [minify] [obfuscate]`,
     `${cyan('Runs')} the full pack workflow. With an optional tag, first bumps the version to:`,
     `  ${brightBlack('<baseVersion>-<dev|edge|git|local|next|alpha|beta>-<yyyymmdd>-<7charSha>')}`,
-    `Then backs up package.json, builds for production, packs, and restores. Add ${brightBlack('minify')} to compress the esbuild output.`,
+    `Then backs up package.json, builds for production, packs, and restores. Add ${brightBlack('minify')} to compress the esbuild output and ${brightBlack('obfuscate')} to obfuscate it.`,
   ].join('\n');
 
   log(msg);

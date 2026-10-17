@@ -386,6 +386,16 @@ describe('module', () => {
       expect(runEsbuild).toHaveBeenLastCalledWith(expect.objectContaining({ minify: true }));
     });
 
+    it('passes the obfuscate keyword to esbuild, alone or with minify', async () => {
+      setArgs('--dry-run', '--esbuild', 'obfuscate');
+      await expect(main()).resolves.toBeUndefined();
+      expect(runEsbuild).toHaveBeenLastCalledWith(expect.objectContaining({ minify: false, obfuscate: true }));
+
+      setArgs('--dry-run', '--esbuild', 'minify', 'obfuscate');
+      await expect(main()).resolves.toBeUndefined();
+      expect(runEsbuild).toHaveBeenLastCalledWith(expect.objectContaining({ minify: true, obfuscate: true }));
+    });
+
     it('stops reading esbuild keywords at the next flag', async () => {
       setArgs('--dry-run', '--esbuild', 'minify', '--build');
       await expect(main()).resolves.toBeUndefined();
@@ -399,6 +409,16 @@ describe('module', () => {
   });
 
   describe('main — --pack', () => {
+    it('passes obfuscate to pack in any keyword order, alone or with minify and a tag', async () => {
+      setArgs('--dry-run', '--pack', 'obfuscate');
+      await expect(main()).resolves.toBeUndefined();
+      expect(runPack).toHaveBeenLastCalledWith(expect.objectContaining({ minify: false, obfuscate: true }));
+
+      setArgs('--dry-run', '--pack', 'obfuscate', 'edge', 'minify');
+      await expect(main()).resolves.toBeUndefined();
+      expect(runPack).toHaveBeenLastCalledWith(expect.objectContaining({ minify: true, obfuscate: true, tag: 'edge' }));
+    });
+
     it('passes minify to pack only when requested', async () => {
       setArgs('--dry-run', '--pack', 'edge', 'minify');
       await expect(main()).resolves.toBeUndefined();
@@ -408,7 +428,7 @@ describe('module', () => {
     it('does not minify when the keyword is omitted', async () => {
       setArgs('--dry-run', '--pack', 'edge');
       await expect(main()).resolves.toBeUndefined();
-      expect(runPack).toHaveBeenLastCalledWith(expect.objectContaining({ minify: false, tag: 'edge' }));
+      expect(runPack).toHaveBeenLastCalledWith(expect.objectContaining({ minify: false, obfuscate: false, tag: 'edge' }));
     });
 
     it('stops reading pack keywords at the next flag', async () => {

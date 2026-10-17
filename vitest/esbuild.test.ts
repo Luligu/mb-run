@@ -18,14 +18,16 @@ vi.mock('esbuild', () => ({ build: vi.fn().mockResolvedValue({}) }));
 
 vi.mock('../src/dts.js', () => ({
   runDtsBuild: vi.fn().mockImplementation(async () => {}),
+  runDtsBundle: vi.fn().mockResolvedValue([]),
 }));
 
-import { build as mockBuild } from 'esbuild';
+import { build as mockBuild, type BuildOptions, type OnResolveArgs, type OnResolveResult, type PluginBuild } from 'esbuild';
 
-const { runDtsBuild } = await import('../src/dts.js');
+const { runDtsBuild, runDtsBundle } = await import('../src/dts.js');
 
 const mockedBuild = vi.mocked(mockBuild);
 const mockRunDtsBuild = vi.mocked(runDtsBuild);
+const mockRunDtsBundle = vi.mocked(runDtsBundle);
 
 let tmpDir: string;
 
@@ -38,6 +40,8 @@ describe('esbuild', () => {
     mockedBuild.mockResolvedValue({ metafile: { inputs: {}, outputs: {} } } as Awaited<ReturnType<typeof mockBuild>>);
     mockRunDtsBuild.mockClear();
     mockRunDtsBuild.mockImplementation(async () => {});
+    mockRunDtsBundle.mockClear();
+    mockRunDtsBundle.mockResolvedValue([]);
   });
 
   afterEach(async () => {
@@ -99,6 +103,28 @@ describe('esbuild', () => {
       expect(mockRunDtsBuild).toHaveBeenCalledWith({ rootDir: tmpDir, isWindows: false, dryRun: true });
     });
 
+    it('obfuscates every JavaScript output in place, keeping a launcher shebang, when obfuscate=true', async () => {
+      await writePkg(tmpDir, { name: 'my-pkg', version: '1.0.0', main: './dist/module.js' });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+      await mkdir(path.join(tmpDir, 'dist', 'bin'), { recursive: true });
+      await writeFile(path.join(tmpDir, 'dist', 'module.js'), "export function greet(name) {\n  return 'Hello, ' + name;\n}\n");
+      await writeFile(path.join(tmpDir, 'dist', 'bin', 'cli.js'), "#!/usr/bin/env node\nimport { greet } from '../module.js';\nconsole.log(greet('cli'));\n");
+      await writeFile(path.join(tmpDir, 'dist', 'style.css'), 'body { color: red; }\n');
+      mockedBuild.mockResolvedValueOnce({
+        metafile: { inputs: {}, outputs: { 'dist/module.js': {}, 'dist/bin/cli.js': {}, 'dist/style.css': {} } },
+      } as unknown as Awaited<ReturnType<typeof mockBuild>>);
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false, obfuscate: true });
+
+      const moduleCode = await readFile(path.join(tmpDir, 'dist', 'module.js'), 'utf8');
+      expect(moduleCode).toMatch(/_0x[0-9a-f]+/);
+      expect(moduleCode).toContain('export');
+      const cliCode = await readFile(path.join(tmpDir, 'dist', 'bin', 'cli.js'), 'utf8');
+      expect(cliCode.startsWith('#!/usr/bin/env node\n')).toBe(true);
+      expect(cliCode).toMatch(/_0x[0-9a-f]+/);
+      expect(await readFile(path.join(tmpDir, 'dist', 'style.css'), 'utf8')).toBe('body { color: red; }\n');
+    });
+
     it('prints esbuild options when verbose=true and still runs build', async () => {
       initLogger({ dryRun: false, verbose: true, rootDir: tmpDir });
       await writePkg(tmpDir, {
@@ -117,7 +143,7 @@ describe('esbuild', () => {
   });
 
   describe('runEsbuild — declaration build', () => {
-    it('runs declaration build after bundling library packages', async () => {
+    it('runs declaration build and bundle after bundling library packages', async () => {
       await writePkg(tmpDir, {
         name: 'my-pkg',
         version: '1.0.0',
@@ -130,6 +156,8 @@ describe('esbuild', () => {
 
       expect(mockedBuild).toHaveBeenCalledOnce();
       expect(mockRunDtsBuild).toHaveBeenCalledWith({ rootDir: tmpDir, isWindows: true, dryRun: false });
+      expect(mockRunDtsBundle).toHaveBeenCalledWith({ rootDir: tmpDir, dryRun: false });
+      expect(mockRunDtsBuild.mock.invocationCallOrder[0]).toBeLessThan(mockRunDtsBundle.mock.invocationCallOrder[0]);
     });
 
     it('skips declaration build after bundling non-library packages', async () => {
@@ -143,6 +171,7 @@ describe('esbuild', () => {
       await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
 
       expect(mockRunDtsBuild).not.toHaveBeenCalled();
+      expect(mockRunDtsBundle).not.toHaveBeenCalled();
     });
   });
 
@@ -630,6 +659,63 @@ describe('esbuild', () => {
       const opts = mockedBuild.mock.calls[0][0] as { external: string[] };
       expect(opts.external).not.toContain('@matter/main');
       expect(opts.external).toContain('@jest/globals');
+    });
+
+    it('keeps every package import external unless it is a workspace package or bundled, and warns about undeclared packages', async () => {
+      await writePkg(tmpDir, {
+        name: 'my-pkg',
+        version: '1.0.0',
+        main: './dist/module.js',
+        workspaces: ['packages/*'],
+        dependencies: { declared: '1.0.0' },
+        automator: { esbuild: { bundle: ['inlined', '@inlined/*'], external: ['@explicit/*'] } },
+      });
+      await writePkg(path.join(tmpDir, 'packages', 'local'), { name: '@my/local', version: '1.0.0', main: './dist/module.js' });
+      await writeTs(path.join(tmpDir, 'src', 'module.ts'));
+      const resolved: Record<string, unknown> = {};
+      mockedBuild.mockImplementationOnce((async (options: BuildOptions) => {
+        const plugin = options.plugins?.find((candidate) => candidate.name === 'mb-run-external-packages');
+        let onResolve: ((args: Pick<OnResolveArgs, 'path' | 'kind'>) => OnResolveResult | undefined) | undefined;
+        await plugin?.setup({ onResolve: (_options: unknown, callback: typeof onResolve) => (onResolve = callback) } as unknown as PluginBuild);
+        const imports: Array<[string, OnResolveArgs['kind']]> = [
+          ['entry', 'entry-point'],
+          [path.join(tmpDir, 'src', 'module.ts'), 'import-statement'],
+          ['@my/local/sub', 'import-statement'],
+          ['inlined/deep', 'import-statement'],
+          ['@inlined/pkg', 'import-statement'],
+          ['declared/sub', 'import-statement'],
+          ['@explicit/thing', 'import-statement'],
+          ['node:fs', 'import-statement'],
+          ['fs', 'import-statement'],
+          ['bun:test', 'dynamic-import'],
+          ['undeclared/sub', 'import-statement'],
+          ['@undeclared/pkg/deep', 'dynamic-import'],
+        ];
+        for (const [specifier, kind] of imports) resolved[specifier] = onResolve?.({ path: specifier, kind })?.external ?? 'bundled';
+        return { metafile: { inputs: {}, outputs: {} } };
+      }) as unknown as typeof mockBuild);
+
+      await runEsbuild({ rootDir: tmpDir, isWindows: false, dryRun: false });
+
+      expect(resolved).toEqual({
+        'entry': 'bundled',
+        [path.join(tmpDir, 'src', 'module.ts')]: 'bundled',
+        '@my/local/sub': 'bundled',
+        'inlined/deep': 'bundled',
+        '@inlined/pkg': 'bundled',
+        'declared/sub': true,
+        '@explicit/thing': true,
+        'node:fs': true,
+        'fs': true,
+        'bun:test': true,
+        'undeclared/sub': true,
+        '@undeclared/pkg/deep': true,
+      });
+      // oxlint-disable-next-line no-console -- verifies the warning output
+      const logCalls = vi.mocked(console.log).mock.calls;
+      const warnings = logCalls.map(([message]) => String(message)).filter((message) => message.includes('not declared'));
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toContain('kept external: @undeclared/pkg, undeclared.');
     });
 
     it('rejects non-array and invalid bundled package declarations', async () => {

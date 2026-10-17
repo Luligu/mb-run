@@ -159,6 +159,11 @@ describe('pack', () => {
         expect(mockRunEsbuild).toHaveBeenCalledWith({ ...makeOpts({ dryRun: true, minify: true }), verbose: undefined });
       });
 
+      it('obfuscates the bundle when requested', async () => {
+        await runPack(makeOpts({ dryRun: true, obfuscate: true }));
+        expect(mockRunEsbuild).toHaveBeenCalledWith(expect.objectContaining({ obfuscate: true }));
+      });
+
       it('calls updateRootVersion and queues install --package-lock-only when tag is set', async () => {
         await runPack(makeOpts({ dryRun: true, tag: 'dev' }));
         expect(mockUpdateRootVersion).toHaveBeenCalledWith('dev', expect.objectContaining({ rootDir }));
@@ -232,6 +237,23 @@ describe('pack', () => {
 
         const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as { bin?: Record<string, string> };
         expect(written.bin).toEqual({ 'my-cli': 'dist/bin/my-cli.js' });
+      });
+
+      it('excludes redirected source launchers from files once, even when several bins share one launcher', async () => {
+        mockFileExists.mockImplementation(async (filePath) => filePath === path.join(rootDir, 'bin', 'my-cli.js') || filePath === path.join(rootDir, './bin/my-cli.js'));
+        mockReadFile.mockResolvedValue(
+          JSON.stringify({
+            ...JSON.parse(simplePkg),
+            files: ['bin', 'dist'],
+            bin: { 'my-cli': 'bin/my-cli.js', 'my_cli': './bin/my-cli.js' },
+          }),
+        );
+
+        await runPack(makeOpts());
+
+        const written = JSON.parse(mockWriteFile.mock.calls[0]?.[1] as string) as { bin?: Record<string, string>; files?: string[] };
+        expect(written.bin).toEqual({ 'my-cli': 'dist/bin/my-cli.js', 'my_cli': 'dist/bin/my-cli.js' });
+        expect(written.files).toEqual(['bin', 'dist', '!bin/my-cli.js']);
       });
 
       it('leaves bundled and missing binary launchers unchanged', async () => {

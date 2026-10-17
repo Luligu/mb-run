@@ -137,12 +137,16 @@ export async function main(): Promise<void> {
   const packArgIndices = new Set<number>();
   let rawPackTag: string | undefined;
   let packMinify = false;
+  let packObfuscate = false;
   if (packIndex >= 0) {
     for (let i = packIndex + 1; i < rawArgs.length; i++) {
       const packArg = rawArgs[i];
       if (packArg.startsWith('-')) break;
       if (packArg === 'minify') {
         packMinify = true;
+        packArgIndices.add(i);
+      } else if (packArg === 'obfuscate') {
+        packObfuscate = true;
         packArgIndices.add(i);
       } else if (rawPackTag === undefined) {
         rawPackTag = packArg;
@@ -184,7 +188,7 @@ export async function main(): Promise<void> {
   }
 
   const esbuildIndex = rawArgs.indexOf('--esbuild');
-  const esbuildValidKeywords = new Set(['minify']);
+  const esbuildValidKeywords = new Set(['minify', 'obfuscate']);
   const esbuildArgIndices = new Set<number>();
   const esbuildArgs = new Set<string>();
   if (esbuildIndex >= 0) {
@@ -427,7 +431,7 @@ export async function main(): Promise<void> {
 
   if (want.pack) {
     log(`${savePos()}⏳ Packing...`);
-    await runPack({ ...buildOpts, tag: packTag, minify: packMinify });
+    await runPack({ ...buildOpts, tag: packTag, minify: packMinify, obfuscate: packObfuscate });
     log(`${restorePos(0)}${green('✅')} Pack complete in ${getElapsed()}.${clearEnd()}`);
   }
 
@@ -444,7 +448,7 @@ export async function main(): Promise<void> {
 
   if (want.esbuild) {
     log(`${savePos()}⏳ Bundling with esbuild...`);
-    await runEsbuild({ ...buildOpts, minify: esbuildArgs.has('minify') });
+    await runEsbuild({ ...buildOpts, minify: esbuildArgs.has('minify'), obfuscate: esbuildArgs.has('obfuscate') });
     log(`${restorePos()}${green('✅')} Esbuild complete in ${getElapsed()}.${clearEnd()}`);
   }
 

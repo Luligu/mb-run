@@ -24,7 +24,9 @@
 import path from 'node:path';
 
 import { runBin } from './build.js';
-import { isMonorepo } from './helpers.js';
+import { resolveWorkspacePackageJsonPaths } from './cache.js';
+import { fileExists } from './clean.js';
+import { isMonorepo, parsePackageJson } from './helpers.js';
 
 /** Context shared by declaration-bundling operations. */
 export interface DtsOptions {
@@ -36,11 +38,19 @@ export interface DtsOptions {
   dryRun: boolean;
 }
 
+/** A generated declaration file that is both the Rollup input and output. */
+interface DeclarationEntryPoint {
+  /** Absolute declaration file path. */
+  filePath: string;
+}
+
 /**
  * Rebuilds declaration files for library packages.
  *
- * TypeScript 7 does not currently expose the API used by declaration bundlers, so this step
- * reruns TypeScript in declaration-only mode after JavaScript bundling.
+ * Reruns TypeScript in declaration-only mode after JavaScript bundling, producing the
+ * per-file declarations that {@link runDtsBundle} then bundles. Monorepos build their
+ * project references with `--force`: `tsc --build` trusts its `.tsbuildinfo` files and
+ * would otherwise skip re-emitting the declarations that esbuild just pruned.
  *
  * @param {DtsOptions} opts Declaration build options.
  * @returns {Promise<void>} Resolves when declaration emit completes.
@@ -48,8 +58,101 @@ export interface DtsOptions {
 export async function runDtsBuild(opts: DtsOptions): Promise<void> {
   const tsconfigPath = path.join(opts.rootDir, 'tsconfig.build.json');
   const args = (await isMonorepo(opts.rootDir))
-    ? ['--build', tsconfigPath, '--incremental', 'true', '--composite', 'true', '--declaration', '--declarationMap', 'false', '--emitDeclarationOnly']
+    ? ['--build', tsconfigPath, '--force', '--declaration', '--declarationMap', 'false', '--emitDeclarationOnly']
     : ['--project', tsconfigPath, '--incremental', 'false', '--composite', 'false', '--declaration', '--declarationMap', 'false', '--emitDeclarationOnly'];
 
   await runBin('tsc', args, { rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun, mode: 'build', watch: false });
+}
+
+/**
+ * Bundles generated declaration files for every public package export.
+ *
+ * Local workspace declarations are inlined so the packed package has no type-level
+ * dependency on unshipped workspace packages. Third-party dependencies remain external.
+ *
+ * Every entry is bundled in one Rollup run, so declarations shared by several entries go into
+ * common chunks under `dist/_chunks/`. Bundling each entry on its own would give every entry
+ * its own copy of a shared class: TypeScript treats two declarations of a class with private
+ * members as different types, so a subclass from one subpath (`pkg/devices`) would not be
+ * assignable where another subpath (`pkg`) expects the base class.
+ *
+ * `rollup-plugin-dts` needs the classic compiler API that TypeScript 7 removed; it loads
+ * it from the `@typescript/typescript6` compatibility package installed next to `typescript` 7.
+ *
+ * @param {Pick<DtsOptions, 'rootDir' | 'dryRun'>} opts Declaration-bundling options.
+ * @returns {Promise<string[]>} Absolute paths of every written declaration file, entries and shared chunks (empty on dry run).
+ * @throws {Error} If a library declaration target is missing after the declaration build.
+ */
+export async function runDtsBundle(opts: Pick<DtsOptions, 'rootDir' | 'dryRun'>): Promise<string[]> {
+  if (opts.dryRun) return [];
+
+  const packageJson = await parsePackageJson(opts.rootDir);
+  const declarationPaths = new Set<string>();
+  if (typeof packageJson['types'] === 'string') declarationPaths.add(packageJson['types']);
+  const packageExports = packageJson['exports'];
+  if (typeof packageExports === 'object' && packageExports !== null && !Array.isArray(packageExports)) {
+    for (const exportValue of Object.values(packageExports)) {
+      if (typeof exportValue !== 'object' || exportValue === null || Array.isArray(exportValue)) continue;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const declarationPath = (exportValue as Record<string, unknown>)['types'];
+      if (typeof declarationPath === 'string') declarationPaths.add(declarationPath);
+    }
+  }
+
+  const entryPoints: DeclarationEntryPoint[] = [];
+  for (const declarationPath of declarationPaths) {
+    const filePath = path.resolve(opts.rootDir, declarationPath);
+    if (!(await fileExists(filePath))) {
+      throw new Error(`Missing declaration file for packed library: ${declarationPath}`);
+    }
+    entryPoints.push({ filePath });
+  }
+  if (entryPoints.length === 0) return [];
+
+  const workspaceDeclarationPaths: Record<string, string[]> = {};
+  for (const packageJsonPath of await resolveWorkspacePackageJsonPaths(opts.rootDir)) {
+    const workspacePackage = await parsePackageJson(path.dirname(packageJsonPath));
+    if (typeof workspacePackage['name'] !== 'string') continue;
+    const workspaceName = workspacePackage['name'];
+    const workspaceDirectory = path.dirname(packageJsonPath);
+    const toDeclarationPath = (declarationPath: string): string => path.relative(opts.rootDir, path.resolve(workspaceDirectory, declarationPath)).split(path.sep).join('/');
+    const workspaceTypes = workspacePackage['types'];
+    if (typeof workspaceTypes === 'string') {
+      workspaceDeclarationPaths[workspaceName] = [toDeclarationPath(workspaceTypes)];
+    }
+    const workspaceExports = workspacePackage['exports'];
+    if (typeof workspaceExports !== 'object' || workspaceExports === null || Array.isArray(workspaceExports)) continue;
+    for (const [exportPath, exportValue] of Object.entries(workspaceExports)) {
+      if (typeof exportValue !== 'object' || exportValue === null || Array.isArray(exportValue)) continue;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const declarationPath = (exportValue as Record<string, unknown>)['types'];
+      if (typeof declarationPath !== 'string') continue;
+      const importPath = exportPath === '.' ? workspaceName : `${workspaceName}/${exportPath.replace(/^\.\//, '')}`;
+      workspaceDeclarationPaths[importPath] = [toDeclarationPath(declarationPath)];
+    }
+  }
+
+  // Lazily import declaration bundling to avoid loading Rollup and the TypeScript 6 compiler
+  // in command paths that never bundle declarations.
+  const { rollup } = await import('rollup');
+  const { dts } = await import('rollup-plugin-dts');
+  // Name each entry by its path relative to the root without `.d.ts`, so `[name].d.ts` writes it back in place.
+  const input: Record<string, string> = {};
+  for (const entryPoint of entryPoints) {
+    input[
+      path
+        .relative(opts.rootDir, entryPoint.filePath)
+        .split(path.sep)
+        .join('/')
+        .replace(/\.d\.ts$/, '')
+    ] = entryPoint.filePath;
+  }
+  const bundle = await rollup({
+    input,
+    external: (specifier) => !specifier.startsWith('.') && !path.isAbsolute(specifier) && !Object.hasOwn(workspaceDeclarationPaths, specifier),
+    plugins: [dts({ respectExternal: true, compilerOptions: { baseUrl: opts.rootDir, paths: workspaceDeclarationPaths } })],
+  });
+  const { output } = await bundle.write({ dir: opts.rootDir, format: 'es', entryFileNames: '[name].d.ts', chunkFileNames: 'dist/_chunks/[name]-[hash].d.ts' });
+  await bundle.close();
+  return output.map((file) => path.resolve(opts.rootDir, file.fileName));
 }

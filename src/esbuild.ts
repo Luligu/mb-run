@@ -21,16 +21,17 @@
  * limitations under the License.
  */
 
-import { copyFile, mkdir, readFile, readdir, rm } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { isBuiltin } from 'node:module';
 import path from 'node:path';
 
 import { build, type BuildOptions, type Plugin } from 'esbuild';
 
 import { resolveWorkspacePackageJsonPaths } from './cache.js';
 import { fileExists } from './clean.js';
-import { runDtsBuild } from './dts.js';
+import { runDtsBuild, runDtsBundle } from './dts.js';
 import { isLibrary, isPlugin, parsePackageJson } from './helpers.js';
-import { logEsbuild, logEsbuildAction, logEsbuildOptions } from './logger.js';
+import { logEsbuild, logEsbuildAction, logEsbuildOptions, logWarning } from './logger.js';
 
 /** Context shared by all esbuild operations. */
 export interface EsbuildOptions {
@@ -44,6 +45,8 @@ export interface EsbuildOptions {
   verbose?: boolean;
   /** When true, minify the generated bundle. */
   minify?: boolean;
+  /** When true, obfuscate the generated JavaScript with javascript-obfuscator. */
+  obfuscate?: boolean;
 }
 
 /** A user-declared runtime entry point bundled into the package dist directory. */
@@ -186,16 +189,50 @@ async function copyDeclaredEntries(entries: DeclaredCopyEntry[], rootDir: string
 }
 
 /**
+ * Obfuscates JavaScript files written by esbuild, in place.
+ *
+ * Uses the same javascript-obfuscator settings as the vendored `scripts/esbuild.mjs`.
+ * `renameGlobals: false` keeps top-level names intact, so the ESM imports and exports
+ * that connect entry points and shared chunks keep working. A leading shebang (bin
+ * launchers) is set aside before obfuscation and restored on the first line afterwards.
+ *
+ * @param {string[]} filePaths Absolute paths of the JavaScript files to obfuscate.
+ * @param {string} rootDir Project root directory, used for logging.
+ * @returns {Promise<void>} Resolves when every file is rewritten.
+ */
+async function obfuscateOutputs(filePaths: string[], rootDir: string): Promise<void> {
+  // Lazily load the obfuscator: it is large and only needed when obfuscation is requested.
+  const { default: JavaScriptObfuscator } = await import('javascript-obfuscator');
+  for (const filePath of filePaths) {
+    logEsbuildAction('obfuscate', [filePath], rootDir);
+    const code = await readFile(filePath, 'utf8');
+    const shebang = /^#![^\n]*\n/.exec(code)?.[0] ?? '';
+    const obfuscated = JavaScriptObfuscator.obfuscate(code.slice(shebang.length), {
+      compact: true,
+      renameGlobals: false,
+      identifierNamesGenerator: 'hexadecimal',
+      stringArray: true,
+      stringArrayThreshold: 0.8,
+      splitStrings: true,
+      splitStringsChunkLength: 10,
+      sourceMap: false,
+    }).getObfuscatedCode();
+    await writeFile(filePath, `${shebang}${obfuscated}\n`, 'utf8');
+  }
+}
+
+/**
  * Deletes every file under `dist/` that this esbuild run did not produce or keep.
  *
  * Compiling each source file individually (via `tsc`) leaves plain per-file compiled
  * JavaScript in `dist/`; once esbuild bundles the project, those files are superseded by
  * the entry, chunk, and copied outputs actually needed at runtime, but nothing else removes
  * them. Declaration files are produced separately by `tsc`; library packages rebuild them
- * after esbuild with declaration-only emit.
+ * after esbuild with declaration-only emit, bundle them with `rollup-plugin-dts`, then
+ * prune again so only the bundled declaration entries remain.
  *
  * @param {string} distDir Absolute path to the dist directory.
- * @param {Set<string>} keepPaths Absolute file paths that must survive: esbuild outputs and copyEntries destinations.
+ * @param {Set<string>} keepPaths Absolute file paths that must survive: esbuild outputs, copyEntries destinations and bundled declarations.
  * @returns {Promise<void>} Resolves when every unproduced file, and any directory left empty by their removal, is deleted.
  */
 async function pruneUnproducedDistFiles(distDir: string, keepPaths: Set<string>): Promise<void> {
@@ -326,6 +363,67 @@ function resolveDeclaredPackageSpecifiers(packageJson: Record<string, unknown>, 
 }
 
 /**
+ * Returns the package name of a bare import specifier.
+ *
+ * @param {string} specifier Bare import specifier, e.g. `@scope/pkg/sub` or `pkg/sub`.
+ * @returns {string} The package name, e.g. `@scope/pkg` or `pkg`.
+ */
+function toPackageName(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+}
+
+/**
+ * Reports whether an import specifier matches one of the declared package patterns.
+ *
+ * A pattern matches its exact specifier, every subpath of the package it names, and, when it
+ * ends with `*` (as esbuild's `external` allows), every specifier starting with its prefix.
+ *
+ * @param {string} specifier Bare import specifier.
+ * @param {Iterable<string>} patterns Package names or `*` patterns.
+ * @returns {boolean} True when a pattern matches.
+ */
+function matchesPackagePattern(specifier: string, patterns: Iterable<string>): boolean {
+  for (const pattern of patterns) {
+    if (pattern.endsWith('*') ? specifier.startsWith(pattern.slice(0, -1)) : specifier === pattern || toPackageName(specifier) === pattern) return true;
+  }
+  return false;
+}
+
+/**
+ * Creates an esbuild plugin that keeps every package import external, unless it is a local
+ * workspace package (inlined through the alias map) or opted in with `automator.esbuild.bundle`.
+ *
+ * Only declared dependencies were external before, so a package imported without being declared
+ * (typically a hoisted transitive dependency, like `@matter/general` under `@matter/main`) was
+ * silently bundled: the process then loaded two copies of it, the bundled one and the one its
+ * declared parent imports at runtime. Such packages now stay external and are collected so the
+ * caller can warn that npm installs them only by chance.
+ *
+ * @param {Set<string>} localNames Local workspace package names.
+ * @param {string[]} bundledPatterns Packages declared in `automator.esbuild.bundle`.
+ * @param {Set<string>} declaredPatterns Packages declared as dependencies or external, which need no warning.
+ * @param {Set<string>} undeclaredPackages Receives the imported packages that nothing declares.
+ * @returns {Plugin} The esbuild plugin.
+ */
+function createExternalPackagesPlugin(localNames: Set<string>, bundledPatterns: string[], declaredPatterns: Set<string>, undeclaredPackages: Set<string>): Plugin {
+  return {
+    name: 'mb-run-external-packages',
+    setup(build) {
+      build.onResolve({ filter: /^[^./]/ }, (args) => {
+        // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
+        if (args.kind === 'entry-point' || path.isAbsolute(args.path)) return undefined;
+        const packageName = toPackageName(args.path);
+        // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
+        if (localNames.has(packageName) || matchesPackagePattern(args.path, bundledPatterns)) return undefined;
+        if (!args.path.includes(':') && !isBuiltin(args.path) && !matchesPackagePattern(args.path, declaredPatterns)) undeclaredPackages.add(packageName);
+        return { path: args.path, external: true };
+      });
+    },
+  };
+}
+
+/**
  * Creates an esbuild plugin that redirects a relative import of a compiled `dist/` file back
  * to the TypeScript source that produces it, wherever that source exists.
  *
@@ -374,7 +472,9 @@ function createOwnOutputRedirectPlugin(): Plugin {
  * 3. Gather root and workspace dependencies into the `external` set, then remove
  *    local workspace names so they are inlined. `automator.esbuild.bundle` removes explicit
  *    package specifiers from this set; `automator.esbuild.external` adds them back and wins
- *    when both fields declare the same package.
+ *    when both fields declare the same package. Every other package import also stays
+ *    external (only workspace packages and `bundle` entries are inlined), and imported
+ *    packages that no `package.json` declares are reported with a warning.
  * 4. Read the root `package.json` to resolve the main entry point
  *    (`main` → `exports["."]["import"]` → throw), public export subpaths, bins,
  *    and optional `automator.esbuild.entryPoints` and `automator.esbuild.copyEntries` declarations.
@@ -389,10 +489,13 @@ function createOwnOutputRedirectPlugin(): Plugin {
  *    `splitting` can share it in one chunk instead of duplicating it.
  * 7. Run one `esbuild.build()` call with `splitting: true`, writing bundled output to
  *    `dist/`, then copy files matching declared `copyEntries` patterns into `dist/`.
+ *    With `obfuscate`, every JavaScript file esbuild wrote is then obfuscated in place.
  * 8. Delete every file under `dist/` that step 7 did not produce or copy: leftover
  *    per-file JavaScript and declarations from an earlier plain `tsc` build. Library
  *    packages recreate declarations after esbuild with declaration-only emit.
- * 9. Build declarations for packages that publish types.
+ * 9. Build declarations for packages that publish types, then bundle each public
+ *    declaration entry with `rollup-plugin-dts`, inlining local workspace declarations,
+ *    and delete every per-file declaration the bundles superseded.
  *
  * @param {EsbuildOptions} opts Esbuild options.
  * @returns {Promise<void>} Resolves when the bundle is written.
@@ -440,7 +543,8 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     exports?: Record<string, unknown> | string;
     bin?: Record<string, string>;
   } & Record<string, unknown>;
-  for (const packageName of resolveDeclaredPackageSpecifiers(rootPkg, 'bundle')) {
+  const bundledPatterns = resolveDeclaredPackageSpecifiers(rootPkg, 'bundle');
+  for (const packageName of bundledPatterns) {
     externalSet.delete(packageName);
   }
   for (const packageName of resolveDeclaredPackageSpecifiers(rootPkg, 'external')) {
@@ -553,6 +657,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
   }
 
   const allEntryPoints = [...entryPoints, ...resolvedBinEntries];
+  const undeclaredPackages = new Set<string>();
 
   // Step 7: Run esbuild — all entries in one call with code splitting.
   logEsbuild(allEntryPoints, opts.rootDir);
@@ -562,7 +667,7 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     entryPoints: allEntryPoints,
     /** Redirects a launcher's relative import of a compiled dist file to its TypeScript
      * source, so shared code compiles once and can be split into a shared chunk. */
-    plugins: [createOwnOutputRedirectPlugin()],
+    plugins: [createOwnOutputRedirectPlugin(), createExternalPackagesPlugin(localNames, bundledPatterns, new Set([...externalSet, ...localNames]), undeclaredPackages)],
     /** To bundle a file means to inline any imported dependencies into the file itself. This process is recursive so dependencies of dependencies (and so on) will also be inlined.
      *  By default esbuild will not bundle the input files. Bundling must be explicitly enabled. */
     bundle: true,
@@ -610,12 +715,26 @@ export async function runEsbuild(opts: EsbuildOptions): Promise<void> {
     return;
   }
   const result = await build(esbuildOptions);
+  if (undeclaredPackages.size > 0) {
+    logWarning(`Imported but not declared in any package.json dependencies, kept external: ${[...undeclaredPackages].toSorted().join(', ')}. Declare them so npm installs them.`);
+  }
   const copiedPaths = await copyDeclaredEntries(declaredCopyEntries, opts.rootDir);
+  if (opts.obfuscate) {
+    const javascriptOutputs = Object.keys(result.metafile.outputs).filter((outputPath) => outputPath.endsWith('.js'));
+    await obfuscateOutputs(
+      javascriptOutputs.map((outputPath) => path.resolve(opts.rootDir, outputPath)),
+      opts.rootDir,
+    );
+  }
 
   // Step 8: Remove leftover per-file compiled JavaScript that this run superseded.
   const keepPaths = new Set([...Object.keys(result.metafile.outputs).map((outputPath) => path.resolve(opts.rootDir, outputPath)), ...copiedPaths]);
   await pruneUnproducedDistFiles(path.join(opts.rootDir, 'dist'), keepPaths);
 
-  // Step 9: Build declarations for packages that publish types.
-  if (await isLibrary(opts.rootDir)) await runDtsBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun });
+  // Step 9: Build and bundle declarations for packages that publish types, then remove the per-file declarations they superseded.
+  if (await isLibrary(opts.rootDir)) {
+    await runDtsBuild({ rootDir: opts.rootDir, isWindows: opts.isWindows, dryRun: opts.dryRun });
+    const bundledDeclarations = await runDtsBundle({ rootDir: opts.rootDir, dryRun: opts.dryRun });
+    await pruneUnproducedDistFiles(path.join(opts.rootDir, 'dist'), new Set([...keepPaths, ...bundledDeclarations]));
+  }
 }

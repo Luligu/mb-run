@@ -137,8 +137,10 @@ describe('cache', () => {
       const onDisk = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
       expect(onDisk.version).toBe('9.9.9');
       await restore(monorepoPath);
-      const restored = JSON.parse(await readFile(pkgPath, 'utf8')) as Record<string, unknown>;
+      const restoredRaw = await readFile(pkgPath, 'utf8');
+      const restored = JSON.parse(restoredRaw) as Record<string, unknown>;
       expect(restored.version).toBe('1.0.0');
+      expect(restoredRaw.endsWith('}\n')).toBe(true);
     });
 
     it('restores workspace package.json after content is modified on disk', async () => {

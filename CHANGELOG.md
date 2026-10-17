@@ -25,6 +25,25 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.2] - Dev branch
 
+### Added
+
+- [esbuild]: Add the `obfuscate` keyword to `--esbuild`, which obfuscates every bundled JavaScript file with `javascript-obfuscator` (same settings as the vendored `scripts/esbuild.mjs`), keeping bin launcher shebangs.
+- [pack]: Add the `obfuscate` keyword to `--pack`, passed through to the esbuild step.
+
+### Changed
+
+- [dts]: Bundle library declarations again with `rollup` and `rollup-plugin-dts` after the declaration-only emit, using `@typescript/typescript6` for the compiler API that TypeScript 7 removed.
+- [package]: Add the `@typescript/native` alias of `typescript` 7 so `node_modules/.bin/tsc` runs TypeScript 7 instead of the TypeScript 6 pulled in by `@typescript/typescript6`.
+- [esbuild]: Remove the per-file declarations superseded by the bundled declaration entries, so `dist` holds only bundled output.
+- [pack]: Exclude the redirected source bin launchers from `files`, so they no longer ship in the tarball.
+
+### Fixed
+
+- [dts]: Bundle all declaration entries in one Rollup run with shared chunks in `dist/_chunks/`, so classes exported from several subpaths are declared once and stay assignable across them.
+- [esbuild]: Keep every package import external unless it is a workspace package or listed in `automator.esbuild.bundle`, and warn about imported packages no `package.json` declares, instead of bundling a second copy of them.
+- [dts]: Drop `--composite` (rejected by `tsc --build`, TS5094) and add `--force` to the monorepo declaration build, so monorepo libraries bundle again.
+- [pack]: Keep the final newline when restoring `package.json` and `tsconfig*.json` files.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.1] - 2026-10-17

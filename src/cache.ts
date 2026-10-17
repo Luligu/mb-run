@@ -176,12 +176,12 @@ export async function restore(rootDir: string): Promise<void> {
   logRestore(rootDir);
   for (const [relKey, content] of tsconfigMap) {
     const absPath = path.join(rootDir, ...relKey.split('/'));
-    await writeFile(absPath, JSON.stringify(content, null, 2));
+    await writeFile(absPath, JSON.stringify(content, null, 2) + '\n');
   }
   for (const [name, content] of packageJsonMap) {
     const absPath = packageJsonPaths.get(name);
     if (absPath) {
-      await writeFile(absPath, JSON.stringify(content, null, 2));
+      await writeFile(absPath, JSON.stringify(content, null, 2) + '\n');
     }
   }
 }

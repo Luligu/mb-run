@@ -189,10 +189,12 @@ describe('help', () => {
       expect(output).toContain('npm publish');
     });
 
-    it('documents the --esbuild minify keyword', () => {
+    it('documents the --esbuild minify and obfuscate keywords', () => {
       printUsage();
       expect(output).toContain('--esbuild');
       expect(output).toContain('minify');
+      expect(output).toContain('[minify] [obfuscate]');
+      expect(output).toContain('[tag] [minify] [obfuscate]');
     });
 
     it('documents --dry-run behavior', () => {
