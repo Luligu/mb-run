@@ -868,10 +868,6 @@ export async function runPackageJsonUpgrade(
       : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? `@types/node` : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
-    // rollup-plugin-dts bundles the declarations and needs the legacy compiler API, which TypeScript 7 (tsgo) removed:
-    // its optional peer @typescript/typescript6 supplies that API alongside the typescript 7 used for the build.
-    opts.enableBundle ? 'npm install --no-fund --no-audit --save-dev --save-exact esbuild @typescript/typescript6 rollup rollup-plugin-dts' : null,
-    opts.enableObfuscate ? `npm install --no-fund --no-audit --save-dev --save-exact javascript-obfuscator` : null,
     `npm prune --no-fund --no-audit`,
     isPlugin && !isWorkspace ? `npm link --no-fund --no-audit matterbridge` : null,
     isWorkspace ? null : `npm run format`,

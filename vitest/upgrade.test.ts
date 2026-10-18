@@ -557,40 +557,33 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('npm pkg set "license='), expect.anything());
   });
 
-  it('installs the declaration bundling devDependencies when bundle is enabled', async () => {
+  it('removes the bundling devDependencies without reinstalling them, since mb-run --esbuild ships its own', async () => {
+    vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);
     vi.mocked(readFileSync).mockReturnValue('{}');
 
     const bundlePkgJson = {
       ...structuredClone(packageJson),
-      automator: { bundle: true },
-      devDependencies: { 'rollup': '0.0.0', 'rollup-plugin-dts': '0.0.0', '@typescript/typescript6': '0.0.0' },
+      automator: { bundle: true, minify: true, obfuscate: true },
+      devDependencies: {
+        'esbuild': '0.0.0',
+        'javascript-obfuscator': '0.0.0',
+        'rollup': '0.0.0',
+        'rollup-plugin-dts': '0.0.0',
+        '@typescript/typescript6': '0.0.0',
+      },
     };
     await runPackageJsonUpgrade(
-      { rootDir: path.resolve('bundle-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      { rootDir: path.resolve('bundle-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false, enableBundle: true, enableObfuscate: true },
       path.resolve('bundle-package/package.json'),
       bundlePkgJson,
     );
 
-    expect(vi.mocked(execSync)).toHaveBeenCalledWith(expect.stringContaining('esbuild @typescript/typescript6 rollup rollup-plugin-dts'), expect.anything());
-    // The stale pins are dropped before the install re-adds them exactly
     expect(bundlePkgJson.devDependencies).toEqual({});
-  });
-
-  it('does not install the declaration bundling devDependencies when bundle is disabled', async () => {
-    vi.clearAllMocks();
-    vi.mocked(existsSync).mockReturnValue(false);
-    vi.mocked(fileExists).mockResolvedValue(true);
-    vi.mocked(readFileSync).mockReturnValue('{}');
-
-    await runPackageJsonUpgrade(
-      { rootDir: path.resolve('no-bundle-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
-      path.resolve('no-bundle-package/package.json'),
-      { ...structuredClone(packageJson), automator: { bundle: false } },
-    );
-
-    expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('rollup-plugin-dts'), expect.anything());
+    for (const dependency of ['esbuild', 'javascript-obfuscator', 'rollup', '@typescript/typescript6']) {
+      expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining(dependency), expect.anything());
+    }
   });
 
   it('configures the bundle, minify, obfuscate and prepublishOnly scripts with mb-run --esbuild', async () => {
