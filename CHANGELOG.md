@@ -36,6 +36,12 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Stop installing `esbuild`, `javascript-obfuscator`, `rollup`, `rollup-plugin-dts` and `@typescript/typescript6` as devDependencies (mb-run ships them), and remove them from packages that have them.
 - [upgrade]: Run `npm-check-updates@latest` in the `checkDependencies` and `updateDependencies` scripts (also in the frontend template), so npx never reuses a stale cached version.
 - [upgrade]: Always remove `scripts/esbuild.mjs` from packages, since `mb-run --esbuild` supersedes it; the template keeps it.
+- [template]: Update the testing rule to 1.0.6 from matterbridge (run `bun test` only through `npm run test:bun`, new Bun vs Vitest section).
+- [template]: Update `CLAUDE.md` (1.0.6), `GEMINI.md` (1.0.1) and `copilot-instructions.md` (1.0.7) from matterbridge, dropping the hardcoded `/verify-agent-context` skill example.
+- [template]: Align `.codex/rules/default.rules` to 1.0.7 and `.agents/README.md` to 1.0.3 with matterbridge (note that skill mirrors also offer the skill through their `description`).
+- [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.6 with the generic wording from matterbridge (oxfmt formatting, TypeScript and ESM, documentation beyond README.md).
+- [template]: Update the plugin `verify-agent-context` skill to 1.0.4 (reports folder, worktree and branch first) and align every skill mirror description.
+- [template]: Update the plugin `matterbridge.instructions.md` rule to 1.0.3 from matterbridge (Chapter 16 Camera devices from `matterbridge/devices/camera`).
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

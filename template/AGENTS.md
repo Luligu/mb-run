@@ -1,11 +1,11 @@
-# Matterbridge Agents Instructions (v.1.0.3)
+# Matterbridge Agents Instructions (v.1.0.6)
 
 ## Style And Formatting
 
 - Follow [STYLEGUIDE.md](./STYLEGUIDE.md) for code style, naming, JSDoc, validation, logging, and formatting expectations.
-- JSDoc requirements are enforced by the linter. Treat missing or incomplete JSDoc on required APIs as a real lint issue, not optional documentation.
-- Import and export ordering are enforced by the linter or by the formatter. Preserve the existing grouped and sorted order unless a change requires updating it.
-- Follow the existing formatting and do not fight the formatter.
+- JSDoc requirements are enforced by the configured linter. Treat missing or incomplete JSDoc on required APIs as a real lint issue, not optional documentation.
+- Import and export ordering are enforced by the formatter. Preserve the existing grouped and sorted order unless a change requires updating it.
+- Formatting is enforced by oxfmt. Follow the existing formatting and do not fight the formatter.
 
 ## Scope And Safety
 
@@ -16,7 +16,7 @@
 
 ## Project Architecture
 
-- This repository is a TypeScript ESM repo. Follow existing project patterns for imports, exports, build configuration, and test setup.
+- This repository uses TypeScript and ESM. Follow existing project patterns for imports, exports, build configuration, and test setup.
 
 ## Testing And Validation
 
@@ -27,7 +27,7 @@
 
 ## Documentation
 
-- When behavior changes, update the relevant tests and documentation in the README.md files.
+- When behavior changes, update the relevant tests and documentation.
 
 ## Additional Agent Guidance
 
