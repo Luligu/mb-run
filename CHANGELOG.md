@@ -26,12 +26,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Added
 
-- [upgrade]: Add `automator.minify`, which adds the `minify` script (`npx --yes mb-run@latest --esbuild minify`) when `automator.bundle` is enabled.
+- [upgrade]: Add `automator.minify`, which adds `minify` to the `prepublishOnly` esbuild step when `automator.bundle` is enabled.
 - [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`).
 
 ### Changed
 
-- [upgrade]: The `bundle` and `obfuscate` scripts run `npx --yes mb-run@latest --esbuild` (`obfuscate` with `minify obfuscate`) instead of the vendored `scripts/esbuild.mjs`, and `obfuscate` now needs `automator.bundle`.
+- [upgrade]: Remove the `bundle` and `obfuscate` scripts, replaced by the `Bundle`, `Minify` and `Obfuscate` VS Code tasks.
 - [upgrade]: With `automator.bundle`, `prepublishOnly` builds with `npx --yes mb-run@latest --esbuild` (plus `minify`/`obfuscate` when enabled) instead of `npm run cleanBuildProduction`.
 - [upgrade]: Stop installing `esbuild`, `javascript-obfuscator`, `rollup`, `rollup-plugin-dts` and `@typescript/typescript6` as devDependencies (mb-run ships them), and remove them from packages that have them.
 - [upgrade]: Always remove `scripts/esbuild.mjs` from packages, since `mb-run --esbuild` supersedes it; the template keeps it.

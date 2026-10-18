@@ -157,11 +157,11 @@ export async function runPackageJsonUpgrade(
         version?: boolean;
         /* add publish scripts */
         publish?: boolean;
-        /* use bundle and add bundle scripts */
+        /* build prepublishOnly with mb-run --esbuild */
         bundle?: boolean;
-        /* use minify and add minify scripts */
+        /* minify the bundle built by prepublishOnly (needs bundle) */
         minify?: boolean;
-        /* use obfuscate and add obfuscate scripts */
+        /* obfuscate the bundle built by prepublishOnly (needs bundle) */
         obfuscate?: boolean;
         /* signal package is private */
         private?: boolean;
@@ -765,11 +765,6 @@ export async function runPackageJsonUpgrade(
       'chip:start': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --start' : undefined,
       'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
       'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
-
-      // The mb-run esbuild step builds the bundle (and the bundled declarations for libraries); minify and obfuscate need bundle.
-      'bundle': automator?.bundle === true ? 'npx --yes mb-run@latest --esbuild' : undefined,
-      'minify': automator?.bundle === true && automator.minify === true ? 'npx --yes mb-run@latest --esbuild minify' : undefined,
-      'obfuscate': automator?.bundle === true && automator.obfuscate === true ? 'npx --yes mb-run@latest --esbuild minify obfuscate' : undefined,
 
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': opts.useNode

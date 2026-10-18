@@ -602,7 +602,7 @@ describe('upgrade', () => {
     }
   });
 
-  it('configures the bundle, minify, obfuscate and prepublishOnly scripts with mb-run --esbuild', async () => {
+  it('builds prepublishOnly with mb-run --esbuild when bundle is enabled and drops the bundle, minify and obfuscate scripts', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);
     vi.mocked(readFileSync).mockReturnValue('{}');
@@ -610,25 +610,24 @@ describe('upgrade', () => {
     const esbuild = 'npx --yes mb-run@latest --esbuild';
     const prepublishTail =
       ' && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev';
-    const cases: { automator: Record<string, boolean>; bundle?: string; minify?: string; obfuscate?: string; prepublishOnly: string }[] = [
+    const cases: { automator: Record<string, boolean>; prepublishOnly: string }[] = [
       { automator: {}, prepublishOnly: `npm run cleanBuildProduction${prepublishTail}` },
       // minify and obfuscate need bundle
       { automator: { minify: true, obfuscate: true }, prepublishOnly: `npm run cleanBuildProduction${prepublishTail}` },
-      { automator: { bundle: true }, bundle: esbuild, prepublishOnly: `${esbuild}${prepublishTail}` },
-      { automator: { bundle: true, minify: true }, bundle: esbuild, minify: `${esbuild} minify`, prepublishOnly: `${esbuild} minify${prepublishTail}` },
-      { automator: { bundle: true, obfuscate: true }, bundle: esbuild, obfuscate: `${esbuild} minify obfuscate`, prepublishOnly: `${esbuild} obfuscate${prepublishTail}` },
-      {
-        automator: { bundle: true, minify: true, obfuscate: true },
-        bundle: esbuild,
-        minify: `${esbuild} minify`,
-        obfuscate: `${esbuild} minify obfuscate`,
-        prepublishOnly: `${esbuild} minify obfuscate${prepublishTail}`,
-      },
+      { automator: { bundle: true }, prepublishOnly: `${esbuild}${prepublishTail}` },
+      { automator: { bundle: true, minify: true }, prepublishOnly: `${esbuild} minify${prepublishTail}` },
+      { automator: { bundle: true, obfuscate: true }, prepublishOnly: `${esbuild} obfuscate${prepublishTail}` },
+      { automator: { bundle: true, minify: true, obfuscate: true }, prepublishOnly: `${esbuild} minify obfuscate${prepublishTail}` },
     ];
 
     for (const isLibrary of [false, true]) {
-      for (const { automator, bundle, minify, obfuscate, prepublishOnly } of cases) {
-        const pkg: { automator: Record<string, boolean>; scripts?: Record<string, string> } = { ...structuredClone(packageJson), automator };
+      for (const { automator, prepublishOnly } of cases) {
+        const pkg: { automator: Record<string, boolean>; scripts?: Record<string, string> } = {
+          ...structuredClone(packageJson),
+          automator,
+          // Scripts from earlier upgrades are dropped: the Bundle, Minify and Obfuscate tasks replace them
+          scripts: { bundle: 'old', minify: 'old', obfuscate: 'old' },
+        };
         await runPackageJsonUpgrade(
           { rootDir: path.resolve('esbuild-scripts'), isWindows: false, dryRun: false },
           path.resolve('esbuild-scripts/package.json'),
@@ -638,9 +637,9 @@ describe('upgrade', () => {
           false,
           isLibrary,
         );
-        expect(pkg.scripts?.bundle).toBe(bundle);
-        expect(pkg.scripts?.minify).toBe(minify);
-        expect(pkg.scripts?.obfuscate).toBe(obfuscate);
+        expect(pkg.scripts?.bundle).toBeUndefined();
+        expect(pkg.scripts?.minify).toBeUndefined();
+        expect(pkg.scripts?.obfuscate).toBeUndefined();
         expect(pkg.scripts?.prepublishOnly).toBe(prepublishOnly);
       }
     }
