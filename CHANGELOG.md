@@ -22,7 +22,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.1.2] - Dev branch
+## [1.1.2] - 2026-10-18
 
 ### Added
 
@@ -35,6 +35,8 @@ If you like this project and find it useful, please consider giving it a star on
 - [package]: Add the `@typescript/native` alias of `typescript` 7 so `node_modules/.bin/tsc` runs TypeScript 7 instead of the TypeScript 6 pulled in by `@typescript/typescript6`.
 - [esbuild]: Remove the per-file declarations superseded by the bundled declaration entries, so `dist` holds only bundled output.
 - [pack]: Exclude the redirected source bin launchers from `files`, so they no longer ship in the tarball.
+- [scripts]: Update `scripts/prepublish-clean.mjs` and its template to v.2.1.0: also remove `bun.lock`.
+- [scripts]: Update `scripts/deep-clean.mjs` and its template to v.2.1.0: also remove the `tmp` directory.
 
 ### Fixed
 
