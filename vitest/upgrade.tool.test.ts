@@ -274,7 +274,7 @@ describe('upgrade tool package', () => {
     expect(existsSync(path.join(rootDir, '.github/workflows/codeql.yml'))).toBe(true);
   });
 
-  it('copies the template scripts/esbuild.mjs when bundling is enabled', async () => {
+  it('removes the template scripts/esbuild.mjs even when bundling is enabled, since mb-run --esbuild supersedes it', async () => {
     const pkgPath = path.join(rootDir, 'package.json');
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as { automator: Record<string, unknown> };
     pkg.automator = { ...pkg.automator, bundle: true };
@@ -282,7 +282,6 @@ describe('upgrade tool package', () => {
 
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
 
-    expect(existsSync(path.join(rootDir, 'scripts/esbuild.mjs'))).toBe(true);
-    expect(await readFile(path.join(rootDir, 'scripts/esbuild.mjs'), 'utf8')).toContain('rollup-plugin-dts');
+    expect(existsSync(path.join(rootDir, 'scripts/esbuild.mjs'))).toBe(false);
   });
 });

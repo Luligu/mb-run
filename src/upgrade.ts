@@ -386,7 +386,8 @@ export async function runPackageJsonUpgrade(
       copyRecursive('scripts', 'scripts');
     }
     // Remove legacy scripts that are no longer needed
-    if (!opts.enableBundle) unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
+    // Bundling runs through mb-run --esbuild, which supersedes the vendored scripts/esbuild.mjs kept in the template.
+    unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
     if (!opts.useBun) unlinkSafe(path.join(dstDir, 'scripts', 'bun-bundle.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
     if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));

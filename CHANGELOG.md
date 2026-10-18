@@ -34,6 +34,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: The `bundle` and `obfuscate` scripts run `npx --yes mb-run@latest --esbuild` (`obfuscate` with `minify obfuscate`) instead of the vendored `scripts/esbuild.mjs`, and `obfuscate` now needs `automator.bundle`.
 - [upgrade]: With `automator.bundle`, `prepublishOnly` builds with `npx --yes mb-run@latest --esbuild` (plus `minify`/`obfuscate` when enabled) instead of `npm run cleanBuildProduction`.
 - [upgrade]: Stop installing `esbuild`, `javascript-obfuscator`, `rollup`, `rollup-plugin-dts` and `@typescript/typescript6` as devDependencies (mb-run ships them), and remove them from packages that have them.
+- [upgrade]: Always remove `scripts/esbuild.mjs` from packages, since `mb-run --esbuild` supersedes it; the template keeps it.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

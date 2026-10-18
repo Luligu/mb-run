@@ -557,6 +557,22 @@ describe('upgrade', () => {
     expect(vi.mocked(execSync)).not.toHaveBeenCalledWith(expect.stringContaining('npm pkg set "license='), expect.anything());
   });
 
+  it('removes the vendored scripts/esbuild.mjs even when bundle is enabled', async () => {
+    vi.clearAllMocks();
+    const esbuildScript = path.join('scripts', 'esbuild.mjs');
+    vi.mocked(existsSync).mockImplementation((filePath) => String(filePath).endsWith(esbuildScript));
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('esbuild-script-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false, enableBundle: true },
+      path.resolve('esbuild-script-package/package.json'),
+      { ...structuredClone(packageJson), automator: { bundle: true } },
+    );
+
+    expect(vi.mocked(unlinkSync)).toHaveBeenCalledWith(expect.stringContaining(esbuildScript));
+  });
+
   it('removes the bundling devDependencies without reinstalling them, since mb-run --esbuild ships its own', async () => {
     vi.clearAllMocks();
     vi.mocked(existsSync).mockReturnValue(false);
