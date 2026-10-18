@@ -1,4 +1,4 @@
-// VS Code tasks v.1.0.5
+// VS Code tasks v.1.0.6
 {
   "version": "2.0.0",
   "tasks": [
@@ -144,6 +144,33 @@
       "type": "shell",
       "command": "npx",
       "args": ["--yes", "mb-run", "--info"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Bundle",
+      "detail": "Bundle with esbuild using mb-run",
+      "type": "shell",
+      "command": "npx",
+      "args": ["--yes", "mb-run", "--esbuild"],
+      "group": { "kind": "build", "isDefault": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "Minify",
+      "detail": "Bundle and minify with esbuild using mb-run",
+      "type": "shell",
+      "command": "npx",
+      "args": ["--yes", "mb-run", "--esbuild", "minify"],
+      "group": { "kind": "build", "isDefault": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "Obfuscate",
+      "detail": "Bundle, minify and obfuscate with esbuild using mb-run",
+      "type": "shell",
+      "command": "npx",
+      "args": ["--yes", "mb-run", "--esbuild", "minify", "obfuscate"],
+      "group": { "kind": "build", "isDefault": false },
       "problemMatcher": []
     },
     {

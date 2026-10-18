@@ -159,6 +159,8 @@ export async function runPackageJsonUpgrade(
         publish?: boolean;
         /* use bundle and add bundle scripts */
         bundle?: boolean;
+        /* use minify and add minify scripts */
+        minify?: boolean;
         /* use obfuscate and add obfuscate scripts */
         obfuscate?: boolean;
         /* signal package is private */
@@ -763,8 +765,10 @@ export async function runPackageJsonUpgrade(
       'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
       'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
 
-      'bundle': automator?.bundle === true ? `npm run cleanBuild && node scripts/esbuild.mjs dist${isLibrary ? ' --declaration' : ''}` : undefined,
-      'obfuscate': automator?.obfuscate === true ? `npm run cleanBuild && node scripts/esbuild.mjs dist --obfuscate${isLibrary ? ' --declaration' : ''}` : undefined,
+      // The mb-run esbuild step builds the bundle (and the bundled declarations for libraries); minify and obfuscate need bundle.
+      'bundle': automator?.bundle === true ? 'npx --yes mb-run@latest --esbuild' : undefined,
+      'minify': automator?.bundle === true && automator.minify === true ? 'npx --yes mb-run@latest --esbuild minify' : undefined,
+      'obfuscate': automator?.bundle === true && automator.obfuscate === true ? 'npx --yes mb-run@latest --esbuild minify obfuscate' : undefined,
 
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': opts.useNode
@@ -779,8 +783,12 @@ export async function runPackageJsonUpgrade(
         'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
         (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +
         (opts.enableJest && opts.enableVitest ? ' && npm run test:vitest:coverage' : ''),
+      // Bundled packages are built by the mb-run esbuild step (with the enabled minify and obfuscate options) instead of the production tsc build.
       'prepublishOnly':
-        'npm run cleanBuildProduction && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
+        (automator?.bundle === true
+          ? `npx --yes mb-run@latest --esbuild${automator.minify === true ? ' minify' : ''}${automator.obfuscate === true ? ' obfuscate' : ''}`
+          : 'npm run cleanBuildProduction') +
+        ' && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
       'npmPack':
         automator?.publish === true
           ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm pack && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'

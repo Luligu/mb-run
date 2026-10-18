@@ -24,6 +24,16 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.3] - Dev branch
 
+### Added
+
+- [upgrade]: Add `automator.minify`, which adds the `minify` script (`npx --yes mb-run@latest --esbuild minify`) when `automator.bundle` is enabled.
+- [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`).
+
+### Changed
+
+- [upgrade]: The `bundle` and `obfuscate` scripts run `npx --yes mb-run@latest --esbuild` (`obfuscate` with `minify obfuscate`) instead of the vendored `scripts/esbuild.mjs`, and `obfuscate` now needs `automator.bundle`.
+- [upgrade]: With `automator.bundle`, `prepublishOnly` builds with `npx --yes mb-run@latest --esbuild` (plus `minify`/`obfuscate` when enabled) instead of `npm run cleanBuildProduction`.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.2] - 2026-10-18
