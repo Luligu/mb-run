@@ -27,7 +27,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Added
 
 - [upgrade]: Add `automator.minify`, which adds `minify` to the `prepublishOnly` esbuild step when `automator.bundle` is enabled.
-- [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`).
+- [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`) and the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks (`mb-run --pack`, with `minify` and `minify obfuscate`).
 
 ### Changed
 
