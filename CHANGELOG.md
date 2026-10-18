@@ -34,6 +34,7 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Remove the `bundle` and `obfuscate` scripts, replaced by the `Bundle`, `Minify` and `Obfuscate` VS Code tasks.
 - [upgrade]: With `automator.bundle`, `prepublishOnly` builds with `npx --yes mb-run@latest --esbuild` (plus `minify`/`obfuscate` when enabled) instead of `npm run cleanBuildProduction`.
 - [upgrade]: Stop installing `esbuild`, `javascript-obfuscator`, `rollup`, `rollup-plugin-dts` and `@typescript/typescript6` as devDependencies (mb-run ships them), and remove them from packages that have them.
+- [upgrade]: Run `npm-check-updates@latest` in the `checkDependencies` and `updateDependencies` scripts (also in the frontend template), so npx never reuses a stale cached version.
 - [upgrade]: Always remove `scripts/esbuild.mjs` from packages, since `mb-run --esbuild` supersedes it; the template keeps it.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>

@@ -773,8 +773,8 @@ export async function runPackageJsonUpgrade(
           ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck`
           : undefined,
       'softReset:bun': opts.useNode && opts.useBun ? `bun install && bun prune${isPlugin ? ' && bun link matterbridge' : ''} && bun run build && bun run typecheck` : undefined,
-      'checkDependencies': `npx --yes --package npm-check-updates ncu`,
-      'updateDependencies': `npx --yes --package npm-check-updates ncu -u && npm run softReset`,
+      'checkDependencies': `npx --yes --package npm-check-updates@latest ncu`,
+      'updateDependencies': `npx --yes --package npm-check-updates@latest ncu -u && npm run softReset`,
       'runMeBeforePublish':
         'npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck' +
         (opts.enableJest || opts.enableVitest ? ' && npm run test:coverage' : '') +
