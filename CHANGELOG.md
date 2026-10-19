@@ -46,6 +46,10 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Update the testing rule to 1.0.7 (also names `*.spec.ts`, matching the globs of its Claude and Copilot pointers).
 - [template]: Update `.agents/README.md` to 1.0.4 (where Copilot instruction and skill pointers keep their version, pointer file naming) and the `verify-agent-context` skill to 1.0.5 (mirrors defer to every step of the check).
 
+### Fixed
+
+- [upgrade]: Skip OS junk files (`.DS_Store`, `Thumbs.db`, `desktop.ini`) when copying template folders, so they no longer leak into packages.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.2] - 2026-10-18

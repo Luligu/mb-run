@@ -38,6 +38,8 @@ import { isLibrary, isMonorepo, isPlugin, parsePackageJson } from './helpers.js'
 
 const configDirname = path.dirname(url.fileURLToPath(import.meta.url));
 const srcDir = path.join(configDirname, '..', 'template');
+// Files the OS drops into folders (Finder, Explorer): never copied out of the template
+const osJunkFiles = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
 const commandFailures: Array<{ command: string; status: number | undefined; message: string }> = [];
 let dstDir: string;
 
@@ -912,6 +914,7 @@ export async function pressyAnyKey(msg: string = 'Press any key to continue or p
 /**
  * Recursively copies a file or directory from source to destination, creating directories as needed.
  * If the destination path ends with a slash or points to an existing directory, the source will be copied into that directory.
+ * OS junk files (.DS_Store, Thumbs.db, desktop.ini) found while walking a directory are skipped.
  *
  * @param {string} sourceFileName Relative path to the source file or directory from the srcDir.
  * @param {string} destinationFileName Relative path to the destination file or directory from the dstDir.
@@ -924,7 +927,7 @@ export function copyRecursive(sourceFileName: string, destinationFileName: strin
   const stats = statSync(sourcePath);
   if (stats.isDirectory()) {
     mkdirSync(destinationPath, { recursive: true });
-    const entries = readdirSync(sourcePath);
+    const entries = readdirSync(sourcePath).filter((entry) => !osJunkFiles.has(entry));
     for (const entry of entries) {
       copyRecursive(path.join(sourceFileName, entry), path.join(destinationFileName, entry));
     }

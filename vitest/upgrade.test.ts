@@ -411,6 +411,18 @@ describe('upgrade', () => {
     appendFileToFileIfExists('.localignore', '.gitignore');
   });
 
+  it('should skip OS junk files when copying a directory', () => {
+    vi.mocked(copyFileSync).mockClear();
+    vi.mocked(statSync)
+      .mockReturnValueOnce({ isDirectory: (): boolean => true } as ReturnType<typeof statSync>)
+      .mockReturnValueOnce({ isDirectory: (): boolean => false } as ReturnType<typeof statSync>);
+    vi.mocked(readdirSync).mockReturnValue(['.DS_Store', 'Thumbs.db', 'desktop.ini', 'child.txt'] as never);
+    vi.mocked(existsSync).mockReturnValue(false);
+    copyRecursive('source', 'destination');
+    expect(vi.mocked(copyFileSync)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(copyFileSync)).toHaveBeenCalledWith(expect.stringContaining('child.txt'), expect.stringContaining('child.txt'));
+  });
+
   it('covers package warnings and coverage script variants', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);
