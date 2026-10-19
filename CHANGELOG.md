@@ -42,6 +42,9 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.6 with the generic wording from matterbridge (oxfmt formatting, TypeScript and ESM, documentation beyond README.md).
 - [template]: Update the plugin `verify-agent-context` skill to 1.0.4 (reports folder, worktree and branch first) and align every skill mirror description.
 - [template]: Update the plugin `matterbridge.instructions.md` rule to 1.0.3 from matterbridge (Chapter 16 Camera devices from `matterbridge/devices/camera`).
+- [template]: Update `AGENTS.md`, `AGENTS.plugin.md` and `CLAUDE.md` to 1.0.7 (run `npm run lint:fix` only when asked, matching the agent deny lists; `bun test` only through `npm run test:bun`; clearer `matterbridge` rule bullet).
+- [template]: Update the testing rule to 1.0.7 (also names `*.spec.ts`, matching the globs of its Claude and Copilot pointers).
+- [template]: Update `.agents/README.md` to 1.0.4 (where Copilot instruction and skill pointers keep their version, pointer file naming) and the `verify-agent-context` skill to 1.0.5 (mirrors defer to every step of the check).
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

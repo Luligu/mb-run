@@ -1,4 +1,4 @@
-# Shared agent instructions (v.1.0.3)
+# Shared agent instructions (v.1.0.4)
 
 This folder is the **single source of truth** for the instructions given to every coding agent used on this
 repository — OpenAI Codex, Claude Code, GitHub Copilot and Google Gemini / Antigravity. Each agent reads the same documents through its
@@ -30,7 +30,7 @@ Each starts with YAML frontmatter holding a `description` that ends with the fil
 
 ```yaml
 ---
-description: 'Testing standards for unit tests in the project v.1.0.5'
+description: 'Testing standards for unit tests in the project v.1.0.7'
 ---
 ```
 
@@ -68,7 +68,7 @@ its own folder. Those mirrors hold **only** frontmatter plus a pointer, for exam
 
 ```markdown
 ---
-description: 'Testing standards for unit tests in the project v.1.0.5'
+description: 'Testing standards for unit tests in the project v.1.0.7'
 paths:
   - '**/*.test.ts'
 ---
@@ -89,8 +89,8 @@ when the skill runs, and both also read the mirror's `description` to offer the 
    rule that is not listed there is invisible to it.
 3. Create the two pointer files, copying the frontmatter style of an existing pair and setting the
    `paths:` / `applyTo:` globs that should trigger it:
-   - `.claude/rules/<topic>/<name>.instructions.md`
-   - `.github/instructions/<topic>/<name>.instructions.md`
+   - `.claude/rules/<topic>/<topic>.instructions.md`
+   - `.github/instructions/<topic>/<topic>.instructions.md`
 
 **A new skill:**
 
@@ -102,12 +102,14 @@ when the skill runs, and both also read the mirror's `description` to offer the 
    - `.github/skills/<name>/SKILL.md`
 
 Keep the description identical across a document and its pointers, so the tools describe the same
-thing in the same words.
+thing in the same words. The one exception is a Copilot instruction pointer under `.github/instructions/`:
+its `description` drops the version, which moves to the end of a `name` holding the rule title.
 
 ## Versions
 
-Every file carries a version as `v.MAJOR.MINOR.PATCH` at the end of its `description` (or `name` for
-Copilot, or the title for `AGENTS.md`). Bump it when the content changes, and bump it in the pointers too —
+Every file carries a version as `v.MAJOR.MINOR.PATCH` at the end of its `description`, except a Copilot
+instruction pointer (end of its `name`) and `AGENTS.md` (its title line). Copilot skill pointers keep it in
+the `description` like every other skill. Bump it when the content changes, and bump it in the pointers too —
 they must always agree with the document they point at.
 
 ## Checking it works
