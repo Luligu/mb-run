@@ -201,6 +201,7 @@ describe('upgrade tool package', () => {
       '.agents/rules/chip-tests.instructions.md',
       '.claude/rules/matterbridge/matterbridge.instructions.md',
       '.github/instructions/matterbridge/matterbridge.instructions.md',
+      '.github/agents/matterbridge.agent.md',
       '.devcontainer/devcontainer.json',
       '.devcontainer/postCreateCommand.sh',
       '.devcontainer/postStartCommand.sh',

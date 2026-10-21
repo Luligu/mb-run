@@ -141,6 +141,7 @@ describe('upgrade plugin package', () => {
       '.claude/skills/verify-agent-context/SKILL.md',
       '.devcontainer/bun/devcontainer.json',
       '.devcontainer/node/devcontainer.json',
+      '.github/agents/matterbridge.agent.md',
       '.github/instructions/matterbridge/matterbridge.instructions.md',
       '.github/instructions/testing/testing.instructions.md',
       '.github/skills/verify-agent-context/SKILL.md',

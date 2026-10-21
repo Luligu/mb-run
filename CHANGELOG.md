@@ -26,6 +26,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Added
 
+- [template]: Add the Copilot `Matterbridge` custom agent (`.github/agents/matterbridge.agent.md`) to the plugin template.
 - [upgrade]: Add `automator.minify`, which adds `minify` to the `prepublishOnly` esbuild step when `automator.bundle` is enabled.
 - [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`) and the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks (`mb-run --pack`, with `minify` and `minify obfuscate`), plus the `Docker: Ubuntu Install`, `Docker: Debian Install` and `Docker: Alpine Install` tasks.
 
@@ -45,6 +46,9 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Update `AGENTS.md`, `AGENTS.plugin.md` and `CLAUDE.md` to 1.0.7 (run `npm run lint:fix` only when asked, matching the agent deny lists; `bun test` only through `npm run test:bun`; clearer `matterbridge` rule bullet).
 - [template]: Update the testing rule to 1.0.7 (also names `*.spec.ts`, matching the globs of its Claude and Copilot pointers).
 - [template]: Update `.agents/README.md` to 1.0.4 (where Copilot instruction and skill pointers keep their version, pointer file naming) and the `verify-agent-context` skill to 1.0.5 (mirrors defer to every step of the check).
+- [package]: Bump `rollup` to v.4.64.12.
+- [package]: Bump `oxfmt` to v.0.74.0.
+- [package]: Bump `oxlint` to v.1.89.0.
 
 ### Fixed
 
