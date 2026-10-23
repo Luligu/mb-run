@@ -70,7 +70,7 @@
     "bun": false,
     "jest": false,
     "vitest": true,
-    "buntest": false,
+    "buntest": true,
     "native": true,
     "git": false,
     "version": false,
@@ -116,6 +116,7 @@
     "test:watch": "vitest watch",
     "test:verbose": "vitest run --reporter verbose",
     "test:coverage": "vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100",
+    "test:scripts": "bun test --cwd scripts --parallel --coverage",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
@@ -125,7 +126,7 @@
     "checkDependencies": "npx --yes --package npm-check-updates@latest ncu",
     "updateDependencies": "npx --yes --package npm-check-updates@latest ncu -u && npm run softReset",
     "runMeBeforePublish": "npm run cleanBuild && npm run format && npm run lint && npm run build && npm run typecheck && npm run test:coverage",
-    "prepublishOnly": "npm run cleanBuildProduction && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev"
+    "prepublishOnly": "npm run cleanBuildProduction && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev"
   },
   "dependencies": {
     "@typescript/typescript6": "6.0.2",

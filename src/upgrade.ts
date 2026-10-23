@@ -781,8 +781,7 @@ export async function runPackageJsonUpgrade(
       'prepublishOnly':
         (automator?.bundle === true
           ? `npx --yes mb-run@latest --esbuild${automator.minify === true ? ' minify' : ''}${automator.obfuscate === true ? ' obfuscate' : ''}`
-          : 'npm run cleanBuildProduction') +
-        ' && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
+          : 'npm run cleanBuildProduction') + ' && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev',
       'npmPack':
         automator?.publish === true
           ? 'npx shx cp package.json package.json.backup && node scripts/version.mjs dev && npm run prepublishOnly && npm pack && npx shx cp package.json.backup package.json && npx shx rm -f package.json.backup && npm run reset'

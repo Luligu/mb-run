@@ -620,8 +620,7 @@ describe('upgrade', () => {
     vi.mocked(readFileSync).mockReturnValue('{}');
 
     const esbuild = 'npx --yes mb-run@latest --esbuild';
-    const prepublishTail =
-      ' && npm pkg delete devDependencies scripts automator && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev';
+    const prepublishTail = ' && node scripts/prepublish-clean.mjs && npm install --no-fund --no-audit --omit=dev && npm shrinkwrap --omit=dev';
     const cases: { automator: Record<string, boolean>; prepublishOnly: string }[] = [
       { automator: {}, prepublishOnly: `npm run cleanBuildProduction${prepublishTail}` },
       // minify and obfuscate need bundle

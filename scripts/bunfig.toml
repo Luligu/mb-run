@@ -1,0 +1,25 @@
+# Bun config.toml bun v.1.0.0.
+
+[test]
+# Optional setup run before any test (env, global mocks):
+# preload = ["./buntest/setup.ts"]
+
+# 'text' prints the table at the end of the run, 'lcov' writes coverageDir/lcov.info for CI and
+# editor gutters. Keep 'text': outside --parallel the coverageThreshold check below only runs when
+# the text reporter is enabled, and an lcov-only run exits 0 however low the coverage is.
+coverageReporter = ['lcov', 'text']
+
+# Where the lcov reporter writes.
+coverageDir = "./coverage/bun"
+
+# Exclude test files from coverage reports
+coverageSkipTestFiles = true
+
+# Exclude system temporary directories on macOS, Linux, and Windows.
+coveragePathIgnorePatterns = ['**/var/folders/**', '**/tmp/**', '**/temp/**', '**/Temp/**', '**/TEMP/**']
+
+# Use sourcemaps so coverage line numbers map to the TypeScript sources
+coverageIgnoreSourcemaps = false
+
+# Fail the run if coverage drops below 100%. Applies to the whole run, not per file.
+coverageThreshold = { lines = 1.0, functions = 1.0 }

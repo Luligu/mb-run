@@ -27,12 +27,14 @@ If you like this project and find it useful, please consider giving it a star on
 ### Added
 
 - [template]: Add the Copilot `Matterbridge` custom agent (`.github/agents/matterbridge.agent.md`) to the plugin template.
+- [scripts]: Add the Bun tests of the scripts from matterbridge-native (`scripts/buntest`, `scripts/bunfig.toml`) and the `test:scripts` script to run them. The `prepublish-clean` tests cover v.2.2.0.
 - [upgrade]: Add `automator.minify`, which adds `minify` to the `prepublishOnly` esbuild step when `automator.bundle` is enabled.
 - [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`) and the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks (`mb-run --pack`, with `minify` and `minify obfuscate`), plus the `Docker: Ubuntu Install`, `Docker: Debian Install` and `Docker: Alpine Install` tasks.
 
 ### Changed
 
 - [upgrade]: Remove the `bundle` and `obfuscate` scripts, replaced by the `Bundle`, `Minify` and `Obfuscate` VS Code tasks.
+- [upgrade]: Drop `npm pkg delete devDependencies scripts automator` from `prepublishOnly`: `scripts/prepublish-clean.mjs` now deletes those fields.
 - [upgrade]: With `automator.bundle`, `prepublishOnly` builds with `npx --yes mb-run@latest --esbuild` (plus `minify`/`obfuscate` when enabled) instead of `npm run cleanBuildProduction`.
 - [upgrade]: Stop installing `esbuild`, `javascript-obfuscator`, `rollup`, `rollup-plugin-dts` and `@typescript/typescript6` as devDependencies (mb-run ships them), and remove them from packages that have them.
 - [upgrade]: Run `npm-check-updates@latest` in the `checkDependencies` and `updateDependencies` scripts (also in the frontend template), so npx never reuses a stale cached version.
@@ -57,6 +59,8 @@ If you like this project and find it useful, please consider giving it a star on
 
 - [upgrade]: Skip OS junk files (`.DS_Store`, `Thumbs.db`, `desktop.ini`) when copying template folders, so they no longer leak into packages.
 - [template]: Fix `CODEOWNERS` to `* @Luligu`: the bare `@Luligu` line assigned no owner to any file.
+- [scripts]: Update `scripts/prepublish-clean.mjs` and its template to v.2.2.0: reject unknown arguments (a mistyped `--dry-run` no longer deletes) and log every removed path with a final summary, like `clean.mjs` and `deep-clean.mjs`. Removal errors are warnings, so they never block the publish.
+- [scripts]: `scripts/prepublish-clean.mjs` v.2.2.0 also deletes `devDependencies`, `scripts` and `automator` from package.json (and from every workspace with `--workspaces`, where the root also loses `workspaces`). It reads the workspaces before deleting the field.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
