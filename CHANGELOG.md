@@ -22,7 +22,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.1.3] - Dev branch
+## [1.1.3] - 2026-10-24
 
 ### Added
 
@@ -54,9 +54,10 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Drop Node.js 20.19 from the supported versions in `AGENTS.md`/`AGENTS.plugin.md` and from the `build.yml` comment.
 - [template]: Update `.codex/config.toml` to 1.0.6 with a comment that the `:workspace` default is intentional and the `matterbridge_safe`/`matterbridge_unsafe` profiles are opt-in.
 - [template]: Update `.vscode/tasks.json` to 1.0.7: the Docker install tasks download the install script to a file and run it only after a complete download, instead of `curl | bash`.
-- [package]: Bump `rollup` to v.4.64.12.
+- [package]: Bump `rollup` to v.4.65.0.
 - [package]: Bump `oxfmt` to v.0.74.0.
 - [package]: Bump `oxlint` to v.1.89.0.
+- [package]: Bump `oxlint-tsgolint` to v.7.0.2005.
 
 ### Fixed
 
