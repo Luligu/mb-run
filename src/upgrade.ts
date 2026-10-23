@@ -454,6 +454,8 @@ export async function runPackageJsonUpgrade(
     }
     if (opts.useBun || opts.enableBuntest) {
       copyRecursive('bunfig.toml', 'bunfig.toml');
+      // With script tests in scripts/buntest, Bun scans and measures the scripts folder too.
+      if (existsSync(path.join(dstDir, 'scripts', 'buntest'))) fileReplace('bunfig.toml', `  '**/scripts/**',\n`, '');
       mkDirSafe(path.join(dstDir, 'buntest'));
     } else {
       log(magenta('No Bun test flag set, removing Bun test...'));

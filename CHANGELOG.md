@@ -27,7 +27,8 @@ If you like this project and find it useful, please consider giving it a star on
 ### Added
 
 - [template]: Add the Copilot `Matterbridge` custom agent (`.github/agents/matterbridge.agent.md`) to the plugin template.
-- [scripts]: Add the Bun tests of the scripts from matterbridge-native (`scripts/buntest`, `scripts/bunfig.toml`) and the `test:scripts` script to run them. The `prepublish-clean` tests cover v.2.2.0.
+- [scripts]: Add the Bun tests of the scripts from matterbridge-native in `scripts/buntest`, run by `npm run test:bun`. The `prepublish-clean` tests cover v.2.2.0.
+- [upgrade]: When the package has `scripts/buntest`, remove the `'**/scripts/**'` ignore patterns from `bunfig.toml`, so Bun runs the script tests and measures their coverage.
 - [upgrade]: Add `automator.minify`, which adds `minify` to the `prepublishOnly` esbuild step when `automator.bundle` is enabled.
 - [template]: Update `.vscode/tasks.json` to 1.0.6 with the `Bundle`, `Minify` and `Obfuscate` tasks (`mb-run --esbuild`, with `minify` and `minify obfuscate`) and the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks (`mb-run --pack`, with `minify` and `minify obfuscate`), plus the `Docker: Ubuntu Install`, `Docker: Debian Install` and `Docker: Alpine Install` tasks.
 

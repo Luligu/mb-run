@@ -465,6 +465,32 @@ describe('upgrade', () => {
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.json'), expect.stringContaining('"bun"'), 'utf8');
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.build.json'), expect.stringContaining('"bun"'), 'utf8');
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('tsconfig.build.production.json'), expect.stringContaining('"bun"'), 'utf8');
+    // Without scripts/buntest the bunfig.toml keeps ignoring the scripts folder.
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalledWith(expect.stringContaining('bunfig.toml'), expect.anything(), 'utf8');
+  });
+
+  it('removes the scripts ignore patterns from bunfig.toml when the package has scripts/buntest', async () => {
+    vi.clearAllMocks();
+    vi.mocked(parsePackageJson).mockResolvedValue({ ...structuredClone(packageJson), automator: { node: true, buntest: true } });
+    vi.mocked(isMonorepo).mockResolvedValue(false);
+    vi.mocked(isPlugin).mockResolvedValue(false);
+    vi.mocked(isLibrary).mockResolvedValue(false);
+    vi.mocked(resolveWorkspacePackageJsonPaths).mockResolvedValue([]);
+    vi.mocked(existsSync).mockImplementation((filePath) => {
+      const normalizedPath = String(filePath).replaceAll('\\', '/');
+      return !normalizedPath.endsWith('/packages') && !normalizedPath.endsWith('/bun-scripts/buntest');
+    });
+    vi.mocked(fileExists).mockResolvedValue(true);
+    const bunfig = "pathIgnorePatterns = [\n  '**/dist/**',\n  '**/scripts/**',\n]\ncoveragePathIgnorePatterns = [\n  '**/scripts/**',\n  '**/tmp/**',\n]\n";
+    vi.mocked(readFileSync).mockImplementation((filePath) => (String(filePath).endsWith('bunfig.toml') ? bunfig : '{"compilerOptions":{"types":["node"]}}'));
+
+    await runUpgrade({ rootDir: path.resolve('bun-scripts'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false });
+
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      path.resolve('bun-scripts/bunfig.toml'),
+      "pathIgnorePatterns = [\n  '**/dist/**',\n]\ncoveragePathIgnorePatterns = [\n  '**/tmp/**',\n]\n",
+      'utf8',
+    );
   });
 
   it('covers terminal, destination-directory, and unchanged replacement paths', async () => {
