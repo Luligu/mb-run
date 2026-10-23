@@ -72,9 +72,10 @@ describe('git-sync-dev.mjs', () => {
       const lines = log.mock.calls.map((call) => String(call[0]));
       expect(lines[0]).toBe('[dry-run] git fetch origin');
       expect(lines[1]).toBe('[dry-run] git switch dev');
-      expect(lines[2]).toMatch(/^\[dry-run\] git branch dev-backup-\d{8}-\d{6}$/);
-      expect(lines[3]).toMatch(/^\[dry-run\] Would create backup branch: dev-backup-\d{8}-\d{6}$/);
-      expect(lines).toHaveLength(6);
+      expect(lines[2]).toBe('[dry-run] git merge-base --is-ancestor refs/remotes/origin/dev dev');
+      expect(lines[3]).toMatch(/^\[dry-run\] git branch dev-backup-\d{8}-\d{6}$/);
+      expect(lines[4]).toMatch(/^\[dry-run\] Would create backup branch: dev-backup-\d{8}-\d{6}$/);
+      expect(lines).toHaveLength(7);
     }
     expect(execFileSync).not.toHaveBeenCalled();
   });
@@ -84,15 +85,52 @@ describe('git-sync-dev.mjs', () => {
     const commands = gitCommands();
     expect(commands[0]).toBe('git fetch origin');
     expect(commands[1]).toBe('git switch dev');
-    expect(commands[2]).toMatch(/^git branch dev-backup-\d{8}-\d{6}$/);
-    expect(commands.slice(3)).toEqual(['git merge origin/main', 'git push origin dev']);
+    expect(commands[2]).toBe('git rev-parse --verify --quiet refs/remotes/origin/dev');
+    expect(commands[3]).toBe('git merge-base --is-ancestor refs/remotes/origin/dev dev');
+    expect(commands[4]).toMatch(/^git branch dev-backup-\d{8}-\d{6}$/);
+    expect(commands.slice(5)).toEqual(['git merge origin/main', 'git push origin dev']);
     expect(execFileSync).toHaveBeenCalledWith('git', ['fetch', 'origin'], { stdio: 'inherit', shell: false });
     expect(log).toHaveBeenCalledWith(expect.stringMatching(/^Created backup branch: dev-backup-\d{8}-\d{6}$/));
   });
 
-  test('should back up dev, then rebase on origin/main and force push with lease', () => {
+  test('should back up dev, then rebase on origin/main and force push with lease if it includes origin/dev', () => {
     expect(main(['rebase'])).toBe(0);
-    expect(gitCommands().slice(3)).toEqual(['git rebase origin/main', 'git push --force-with-lease origin dev']);
+    expect(gitCommands().slice(5)).toEqual(['git rebase origin/main', 'git push --force-with-lease --force-if-includes origin dev']);
+  });
+
+  test('should stop before the backup when origin/dev has commits that dev lacks', () => {
+    for (const operation of ['merge', 'rebase']) {
+      execFileSync.mockClear();
+      error.mockClear();
+      execFileSync
+        .mockReturnValueOnce('')
+        .mockReturnValueOnce('')
+        .mockReturnValueOnce('')
+        .mockImplementationOnce(() => {
+          throw new Error('not an ancestor');
+        });
+      expect(main([operation])).toBe(1);
+      expect(gitCommands()).toEqual([
+        'git fetch origin',
+        'git switch dev',
+        'git rev-parse --verify --quiet refs/remotes/origin/dev',
+        'git merge-base --is-ancestor refs/remotes/origin/dev dev',
+      ]);
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('origin/dev has commits that the local dev lacks'));
+    }
+  });
+
+  test('should skip the ancestor check when origin/dev does not exist', () => {
+    execFileSync
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+      .mockImplementationOnce(() => {
+        throw new Error('no origin/dev');
+      });
+    expect(main(['rebase'])).toBe(0);
+    const commands = gitCommands();
+    expect(commands).not.toContain('git merge-base --is-ancestor refs/remotes/origin/dev dev');
+    expect(commands.slice(3)).toEqual([expect.stringMatching(/^git branch dev-backup-/), 'git rebase origin/main', 'git push --force-with-lease --force-if-includes origin dev']);
   });
 
   test('should stop at the first failing git command', () => {

@@ -52,12 +52,15 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Run `scripts/git-sync-dev.mjs` in the `git:merge:dev` and `git:rebase:dev` scripts (timestamped backup branch instead of the fixed `dev-backup-001`).
 - [upgrade]: Drop Node.js 20 from `engines.node` (`>=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0`), matching matterbridge 3.11.0 and Vitest 5.
 - [template]: Drop Node.js 20.19 from the supported versions in `AGENTS.md`/`AGENTS.plugin.md` and from the `build.yml` comment.
+- [template]: Update `.codex/config.toml` to 1.0.6 with a comment that the `:workspace` default is intentional and the `matterbridge_safe`/`matterbridge_unsafe` profiles are opt-in.
+- [template]: Update `.vscode/tasks.json` to 1.0.7: the Docker install tasks download the install script to a file and run it only after a complete download, instead of `curl | bash`.
 - [package]: Bump `rollup` to v.4.64.12.
 - [package]: Bump `oxfmt` to v.0.74.0.
 - [package]: Bump `oxlint` to v.1.89.0.
 
 ### Fixed
 
+- [scripts]: Update `scripts/git-sync-dev.mjs` and its template to v.2.1.0: stop before the backup when `origin/dev` has commits that the local `dev` lacks, since the force push after the rebase dropped them (the fetch made `--force-with-lease` always pass), and add `--force-if-includes`.
 - [upgrade]: Skip OS junk files (`.DS_Store`, `Thumbs.db`, `desktop.ini`) when copying template folders, so they no longer leak into packages.
 - [template]: Fix `CODEOWNERS` to `* @Luligu`: the bare `@Luligu` line assigned no owner to any file.
 - [scripts]: Update `scripts/prepublish-clean.mjs` and its template to v.2.2.0: reject unknown arguments (a mistyped `--dry-run` no longer deletes) and log every removed path with a final summary, like `clean.mjs` and `deep-clean.mjs`. Removal errors are warnings, so they never block the publish.
