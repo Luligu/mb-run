@@ -46,6 +46,9 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Update `AGENTS.md`, `AGENTS.plugin.md` and `CLAUDE.md` to 1.0.7 (run `npm run lint:fix` only when asked, matching the agent deny lists; `bun test` only through `npm run test:bun`; clearer `matterbridge` rule bullet).
 - [template]: Update the testing rule to 1.0.7 (also names `*.spec.ts`, matching the globs of its Claude and Copilot pointers).
 - [template]: Update `.agents/README.md` to 1.0.4 (where Copilot instruction and skill pointers keep their version, pointer file naming) and the `verify-agent-context` skill to 1.0.5 (mirrors defer to every step of the check).
+- [upgrade]: Run `scripts/git-sync-dev.mjs` in the `git:merge:dev` and `git:rebase:dev` scripts (timestamped backup branch instead of the fixed `dev-backup-001`).
+- [upgrade]: Drop Node.js 20 from `engines.node` (`>=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0`), matching matterbridge 3.11.0 and Vitest 5.
+- [template]: Drop Node.js 20.19 from the supported versions in `AGENTS.md`/`AGENTS.plugin.md` and from the `build.yml` comment.
 - [package]: Bump `rollup` to v.4.64.12.
 - [package]: Bump `oxfmt` to v.0.74.0.
 - [package]: Bump `oxlint` to v.1.89.0.
@@ -53,6 +56,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Fixed
 
 - [upgrade]: Skip OS junk files (`.DS_Store`, `Thumbs.db`, `desktop.ini`) when copying template folders, so they no longer leak into packages.
+- [template]: Fix `CODEOWNERS` to `* @Luligu`: the bare `@Luligu` line assigned no owner to any file.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

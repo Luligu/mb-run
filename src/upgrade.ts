@@ -575,7 +575,7 @@ export async function runPackageJsonUpgrade(
 
   // Update package.json fields via npm pkg set
   const npmPkgSets = [];
-  if (opts.useNode) npmPkgSets.push(['engines.node', '>=20.19.0 <21.0.0 || >=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0']);
+  if (opts.useNode) npmPkgSets.push(['engines.node', '>=22.13.0 <23.0.0 || >=24.0.0 <25.0.0 || >=26.0.0 <27.0.0']);
   else if (opts.useBun) npmPkgSets.push(['engines.bun', '>=1.4.2']);
   if (!pkgJson.license) npmPkgSets.push(['license', 'Apache-2.0']);
   if (!pkgJson.type) npmPkgSets.push(['type', 'module']);
@@ -757,12 +757,8 @@ export async function runPackageJsonUpgrade(
       'git:hardreset:main': automator?.git === true ? 'git fetch origin && git checkout main && git reset --hard origin/main' : undefined,
       'git:hardreset:dev': automator?.git === true ? 'git fetch origin && git checkout dev && git reset --hard origin/dev' : undefined,
       'git:hardreset:edge': automator?.git === true ? 'git fetch origin && git checkout edge && git reset --hard origin/edge' : undefined,
-      'git:merge:dev':
-        automator?.git === true ? 'git fetch origin && git checkout -b dev-backup-001 && git checkout dev && git merge origin/main && git push origin dev' : undefined,
-      'git:rebase:dev':
-        automator?.git === true
-          ? 'git fetch origin && git checkout -b dev-backup-001 && git checkout dev && git rebase origin/main && git push --force-with-lease origin dev'
-          : undefined,
+      'git:merge:dev': automator?.git === true ? 'node scripts/git-sync-dev.mjs merge' : undefined,
+      'git:rebase:dev': automator?.git === true ? 'node scripts/git-sync-dev.mjs rebase' : undefined,
 
       'chip:start': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --start' : undefined,
       'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
