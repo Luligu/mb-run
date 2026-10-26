@@ -26,6 +26,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [template]: Update `.vscode/tasks.json` to 1.0.8: add `local` after `--pack` in the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks.
 - [template]: Update the plugin frontend guide to v.1.0.1: build API URLs from Vite's base URL to preserve Home Assistant Ingress paths.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
