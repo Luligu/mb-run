@@ -4,7 +4,7 @@
  * @author Luca Liguori
  */
 
-import { afterAll, afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { afterAll, afterEach, beforeEach, describe, expect, setSystemTime, spyOn, test } from 'bun:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -15,16 +15,23 @@ const log = spyOn(console, 'log').mockImplementation(() => {});
 const error = spyOn(console, 'error').mockImplementation(() => {});
 
 let range: unknown;
-let point: unknown;
 let status = 200;
 // Every request is mocked, so the tests never reach the npm registry.
-const fetch = spyOn(globalThis, 'fetch').mockImplementation((async (url: string) => {
-  const body = url.includes('/range/') ? range : point;
-  return new Response(JSON.stringify(body), { status });
-}) as unknown as typeof globalThis.fetch);
+const fetch = spyOn(globalThis, 'fetch').mockImplementation((async () => new Response(JSON.stringify(range), { status })) as unknown as typeof globalThis.fetch);
 
 let root: string;
 let pkgPath: string;
+
+/**
+ * Build a range response with the given daily downloads, starting on 2026-09-01.
+ *
+ * @param {number[]} counts - Downloads of each day.
+ * @returns {unknown} The range response.
+ */
+function rangeOf(counts: number[]): unknown {
+  const days = counts.map((downloads, i) => ({ day: `2026-09-${String(i + 1).padStart(2, '0')}`, downloads }));
+  return { start: '2026-09-01', end: days.at(-1)?.day ?? '2026-09-01', package: '@scope/fixture', downloads: days };
+}
 
 /**
  * Get everything printed to the console.
@@ -41,22 +48,24 @@ beforeEach(() => {
   writeFileSync(pkgPath, JSON.stringify({ name: '@scope/fixture' }));
   range = {
     start: '2026-09-01',
-    end: '2026-09-03',
+    end: '2026-09-04',
     package: '@scope/fixture',
     downloads: [
       { day: '2026-09-02', downloads: 30 },
       { day: '2026-09-01', downloads: 10 },
+      { day: '2026-09-04', downloads: 20 },
       { day: '2026-09-03', downloads: 0 },
     ],
   };
-  point = { start: '2026-09-04', end: '2026-09-04', package: '@scope/fixture', downloads: 20 };
   status = 200;
+  setSystemTime(new Date('2026-09-04T12:00:00Z'));
   log.mockClear();
   error.mockClear();
   fetch.mockClear();
 });
 
 afterEach(() => {
+  setSystemTime();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -91,10 +100,12 @@ describe('downloads.mjs', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  test('should print the sorted days with today appended and the summary', async () => {
+  test('should query an explicit 30-day range and print the sorted days and the summary', async () => {
     expect(await main([], pkgPath)).toBe(0);
-    expect(fetch).toHaveBeenCalledWith('https://api.npmjs.org/downloads/range/last-month/%40scope%2Ffixture', { headers: { accept: 'application/json' } });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith('https://api.npmjs.org/downloads/range/2026-08-05:2026-09-04/%40scope%2Ffixture', { headers: { accept: 'application/json' } });
     const text = output();
+    expect(text).toContain('npm downloads (last 30 days + today)');
     expect(text).toContain('Package: @scope/fixture');
     expect(text).toContain('Range:   2026-09-01 .. 2026-09-04');
     expect(text.indexOf('2026-09-01')).toBeLessThan(text.indexOf('2026-09-02'));
@@ -106,25 +117,30 @@ describe('downloads.mjs', () => {
     expect(text).not.toContain('pending');
   });
 
-  test('should mark today as pending and leave it out of the summary when npm has not published it yet', async () => {
-    point = { start: '2026-09-04', end: '2026-09-04', package: '@scope/fixture', downloads: 0 };
+  test('should mark at most two trailing zero days as pending and leave them out of the summary', async () => {
+    range = rangeOf([10, 30, 0, 0]);
     expect(await main([], pkgPath)).toBe(0);
-    const text = output();
+    let text = output();
+    expect(text).toMatch(/2026-09-03\s+pending/);
     expect(text).toMatch(/2026-09-04\s+pending/);
-    expect(text).toContain("npm has not published today's count yet");
+    expect(text).toContain('npm has not published the count of 2026-09-03, 2026-09-04 yet');
     expect(text).toMatch(/Total:\s+40/);
-  });
-
-  test('should not duplicate today when the range already contains it and handle an empty range', async () => {
-    point = { start: '2026-09-03', end: '2026-09-03', package: '@scope/fixture', downloads: 5 };
-    expect(await main([], pkgPath)).toBe(0);
-    expect(log.mock.calls.filter((call) => String(call[0]).startsWith('2026-09-03 '))).toHaveLength(1);
 
     log.mockClear();
-    range = { start: '2026-09-01', end: '2026-09-03', package: '@scope/fixture', downloads: [] };
-    point = { start: '2026-09-04', end: '2026-09-04', package: '@scope/fixture', downloads: 0 };
+    range = rangeOf([10, 0, 0, 0]);
     expect(await main([], pkgPath)).toBe(0);
-    expect(output()).toContain('Min:      0 (-)');
+    text = output();
+    expect(text).toMatch(/2026-09-02\s+0/);
+    expect(text).toContain('npm has not published the count of 2026-09-03, 2026-09-04 yet');
+    expect(text).toContain('Min:      0 (2026-09-02)');
+  });
+
+  test('should handle an empty range', async () => {
+    range = { start: '2026-08-05', end: '2026-09-04', package: '@scope/fixture', downloads: [] };
+    expect(await main([], pkgPath)).toBe(0);
+    const text = output();
+    expect(text).toContain('Range:   2026-08-05 .. 2026-09-04');
+    expect(text).toContain('Min:      0 (-)');
   });
 
   test('should fail when the package.json is not an object or has no name', async () => {
@@ -142,7 +158,6 @@ describe('downloads.mjs', () => {
     expect(await main([], pkgPath)).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('HTTP 404 fetching https://api.npmjs.org/downloads/'));
     fetch.mockResolvedValueOnce({ ok: false, status: 500, text: async () => Promise.reject(new Error('closed')) } as unknown as Response);
-    fetch.mockResolvedValueOnce({ ok: false, status: 500, text: async () => Promise.reject(new Error('closed')) } as unknown as Response);
     expect(await main([], pkgPath)).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('HTTP 500 fetching'));
   });
@@ -151,10 +166,8 @@ describe('downloads.mjs', () => {
     range = { downloads: 'none' };
     expect(await main([], pkgPath)).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('Unexpected response shape from https://api.npmjs.org/downloads/range/'));
-    range = { start: '2026-09-01', end: '2026-09-03', package: '@scope/fixture', downloads: [] };
-    point = null;
+    range = null;
     expect(await main([], pkgPath)).toBe(1);
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('Unexpected response shape from https://api.npmjs.org/downloads/point/'));
   });
 
   test('should report a failure that is not an Error', async () => {

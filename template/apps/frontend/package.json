@@ -11,6 +11,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --project tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:verbose": "vitest run --reporter verbose",
+    "test:coverage": "vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
@@ -35,6 +39,6 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
-    "vite": "8.3.4"
+    "vite": "8.3.5"
   }
 }

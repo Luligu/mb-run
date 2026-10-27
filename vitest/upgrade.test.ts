@@ -682,6 +682,64 @@ describe('upgrade', () => {
     }
   });
 
+  it.each([
+    { frontend: true, isWorkspace: false, installsJsdom: true },
+    { frontend: false, isWorkspace: false, installsJsdom: false },
+    { frontend: undefined, isWorkspace: false, installsJsdom: false },
+    { frontend: true, isWorkspace: true, installsJsdom: false },
+  ])('handles root jsdom installation with $frontend frontend and $isWorkspace workspace', async ({ frontend, isWorkspace, installsJsdom }) => {
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+
+    await runPackageJsonUpgrade(
+      { rootDir: path.resolve('frontend-package'), isWindows: false, dryRun: false, enableJest: false, enableVitest: false },
+      path.resolve('frontend-package/package.json'),
+      { ...structuredClone(packageJson), automator: { frontend } },
+      false,
+      isWorkspace,
+    );
+
+    const command = 'npm install --no-fund --no-audit --save-dev --save-exact jsdom';
+    expect(vi.mocked(execSync).mock.calls.some(([executedCommand]) => executedCommand === command)).toBe(installsJsdom);
+    const frontendPkgPath = path.resolve('frontend-package/apps/frontend/package.json');
+    expect(vi.mocked(writeFileSync).mock.calls.some(([filePath]) => filePath === frontendPkgPath)).toBe(installsJsdom);
+    for (const configFile of ['tsconfig.json', 'vitest.config.ts']) {
+      const configPath = path.join('apps', 'frontend', configFile);
+      expect(vi.mocked(copyFileSync).mock.calls.some(([source, destination]) => String(source).endsWith(configPath) && String(destination).endsWith(configPath))).toBe(
+        installsJsdom,
+      );
+    }
+  });
+
+  it('sets frontend scripts while preserving the other package fields', async () => {
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    const frontendPkgPath = path.resolve('frontend-scripts/apps/frontend/package.json');
+    const frontendPackage = { name: 'plugin-frontend', private: true, dependencies: { react: '19.3.1' }, scripts: { old: 'old' } };
+    vi.mocked(readFileSync).mockImplementation((filePath) => (filePath === frontendPkgPath ? JSON.stringify(frontendPackage) : '{}'));
+
+    await runPackageJsonUpgrade({ rootDir: path.resolve('frontend-scripts'), isWindows: false, dryRun: false }, path.resolve('frontend-scripts/package.json'), {
+      ...structuredClone(packageJson),
+      automator: { frontend: true },
+    });
+
+    const written = vi.mocked(writeFileSync).mock.calls.find(([filePath]) => filePath === frontendPkgPath);
+    const result = JSON.parse(typeof written?.[1] === 'string' ? written[1] : '{}');
+    expect(result).toMatchObject({ name: frontendPackage.name, private: true, dependencies: frontendPackage.dependencies });
+    expect(result.scripts).toMatchObject({
+      'build': 'vite build',
+      'test': 'vitest run',
+      'test:watch': 'vitest watch',
+      'test:verbose': 'vitest run --reporter verbose',
+      'test:coverage':
+        'vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100',
+    });
+    expect(result.scripts.old).toBeUndefined();
+  });
+
   it('installs jestTypes and vitestTypes devDependencies for workspace packages', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);

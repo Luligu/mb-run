@@ -26,8 +26,15 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [upgrade]: Install jsdom in root devDependencies when `automator.frontend` is true.
+- [upgrade]: Align frontend package scripts with the frontend template when `automator.frontend` is true.
+- [upgrade]: Copy frontend TypeScript and Vitest configuration from the template when `automator.frontend` is true.
 - [template]: Update `.vscode/tasks.json` to 1.0.8: add `local` after `--pack` in the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks.
 - [template]: Update the plugin frontend guide to v.1.0.1: build API URLs from Vite's base URL to preserve Home Assistant Ingress paths.
+
+### Fixed
+
+- [scripts]: Update `downloads.mjs` to v.2.1.0 in the package and the template: query an explicit 30-day date range instead of the npm `last-month` period, which returns stale data.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

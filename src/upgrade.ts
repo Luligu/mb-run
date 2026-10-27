@@ -149,6 +149,8 @@ export async function runPackageJsonUpgrade(
         jest?: boolean;
         /* use Vitest for testing */
         vitest?: boolean;
+        /* install the frontend DOM test environment in the root */
+        frontend?: boolean;
         /* use Bun for testing */
         buntest?: boolean;
         /* add git scripts */
@@ -803,6 +805,41 @@ export async function runPackageJsonUpgrade(
     };
   }
 
+  // Copy frontend configuration when upgrading the root package with a frontend.
+  if (!isWorkspace && automator?.frontend === true) {
+    copyRecursive('apps/frontend/tsconfig.json', 'apps/frontend/tsconfig.json');
+    copyRecursive('apps/frontend/vitest.config.ts', 'apps/frontend/vitest.config.ts');
+  }
+
+  // Set frontend package scripts when upgrading the root package with a frontend.
+  if (!isWorkspace && automator?.frontend === true) {
+    const frontendPkgPath = path.join(path.dirname(pkgPath), 'apps', 'frontend', 'package.json');
+    const frontendPackageJson = JSON.parse(readFileSync(frontendPkgPath, 'utf8'));
+    frontendPackageJson.scripts = {
+      'dev': 'vite',
+      'build': 'vite build',
+      'preview': 'vite preview',
+      'typecheck': 'tsc --project tsconfig.json --noEmit',
+      'test': 'vitest run',
+      'test:watch': 'vitest watch',
+      'test:verbose': 'vitest run --reporter verbose',
+      'test:coverage':
+        'vitest run --coverage --coverage.thresholds.statements=100 --coverage.thresholds.branches=100 --coverage.thresholds.lines=100 --coverage.thresholds.functions=100',
+      'lint': 'oxlint',
+      'lint:fix': 'oxlint --fix',
+      'format': 'oxfmt',
+      'format:check': 'oxfmt --check',
+      'clean': 'node ../../scripts/clean.mjs',
+      'deepClean': 'node ../../scripts/deep-clean.mjs',
+      'reset': 'npm run deepClean && npm run softReset',
+      'softReset': 'npm install --no-fund --no-audit && npm prune --no-fund --no-audit && npm run build && npm run typecheck',
+      'checkDependencies': 'npx --yes --package npm-check-updates@latest ncu',
+      'updateDependencies': 'npx --yes --package npm-check-updates@latest ncu -u && npm run softReset',
+      'runMeBeforePublish': 'npm run format && npm run lint && npm run build && npm run typecheck',
+    };
+    writeFileSync(frontendPkgPath, JSON.stringify(frontendPackageJson, null, 2) + '\n', 'utf8');
+  }
+
   // Set devDependencies field.
   const devDeps = pkgJson.devDependencies as Record<string, string> | undefined;
   delete devDeps?.['npm-check-updates'];
@@ -863,6 +900,7 @@ export async function runPackageJsonUpgrade(
       : `npm install --no-fund --no-audit --save-dev --save-exact ${opts.useNode ? `@types/node` : ''} ${opts.useBun ? '@types/bun' : ''} ${automator?.jestTypes ? '@types/jest' : ''} ${automator?.vitestTypes ? 'vitest' : ''} typescript oxlint oxlint-tsgolint oxfmt`,
     opts.enableJest ? `npm install --no-fund --no-audit --save-dev --save-exact jest ts-jest @types/jest @jest/globals cross-env` : null,
     opts.enableVitest ? `npm install --no-fund --no-audit --save-dev --save-exact vitest @vitest/coverage-v8` : null,
+    !isWorkspace && automator?.frontend === true ? `npm install --no-fund --no-audit --save-dev --save-exact jsdom` : null,
     `npm prune --no-fund --no-audit`,
     isPlugin && !isWorkspace ? `npm link --no-fund --no-audit matterbridge` : null,
     isWorkspace ? null : `npm run format`,
