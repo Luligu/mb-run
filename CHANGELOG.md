@@ -22,7 +22,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.1.4] - Dev branch
+## [1.1.4] - 2026-10-28
 
 ### Changed
 
@@ -31,6 +31,9 @@ If you like this project and find it useful, please consider giving it a star on
 - [upgrade]: Copy frontend TypeScript and Vitest configuration from the template when `automator.frontend` is true.
 - [template]: Update `.vscode/tasks.json` to 1.0.8: add `local` after `--pack` in the `Pack`, `Pack Minify` and `Pack Obfuscate` tasks.
 - [template]: Update the plugin frontend guide to v.1.0.1: build API URLs from Vite's base URL to preserve Home Assistant Ingress paths.
+- [package]: Bump `rollup` to v.4.65.1.
+- [package]: Bump `oxfmt` to v.0.75.0.
+- [package]: Bump `oxlint` to v.1.90.0.
 
 ### Fixed
 
