@@ -24,6 +24,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.5] - Dev branch
 
+### Changed
+
+- [scripts]: Update `downloads.mjs` to v.2.2.0 in the package and the template: report that npm has no download data yet, instead of failing, when the npm API answers 404 for a newly published package.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.4] - 2026-10-28

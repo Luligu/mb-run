@@ -153,10 +153,18 @@ describe('downloads.mjs', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  test('should fail on an HTTP error, even when its body cannot be read', async () => {
+  test('should report no download data when npm does not know the package yet', async () => {
     status = 404;
+    range = { error: 'package @scope/fixture not found' };
+    expect(await main([], pkgPath)).toBe(0);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('npm has no download data for @scope/fixture yet'));
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  test('should fail on an HTTP error, even when its body cannot be read', async () => {
+    status = 503;
     expect(await main([], pkgPath)).toBe(1);
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('HTTP 404 fetching https://api.npmjs.org/downloads/'));
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('HTTP 503 fetching https://api.npmjs.org/downloads/'));
     fetch.mockResolvedValueOnce({ ok: false, status: 500, text: async () => Promise.reject(new Error('closed')) } as unknown as Response);
     expect(await main([], pkgPath)).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('HTTP 500 fetching'));
