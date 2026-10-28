@@ -1,4 +1,4 @@
-# Contributing
+# Contributing (v.1.0.1)
 
 Thanks for taking the time to contribute to Matterbridge.
 
@@ -37,6 +37,10 @@ This guide is intentionally **repository-agnostic** so it can be reused across M
 - Follow the existing code style and patterns.
 - Add or update tests for any behavior changes when practical.
 - Ensure CI passes (or explain why it cannot).
+
+## Using Coding Agents
+
+Contributions made with coding agents or other AI tools are welcome. In your pull request, state whether you used an agent and, if so, which agent you used and what it helped with. You remain responsible for reviewing the changes and verifying that they work.
 
 ## Reporting Bugs
 

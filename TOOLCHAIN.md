@@ -1,4 +1,4 @@
-## Repository toolchain
+## Repository toolchain (v.1.0.1)
 
 This repository uses a new toolchain. It replaces the traditional TypeScript / ESLint / Prettier / Jest stack with a faster and lighter setup.
 
