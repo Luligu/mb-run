@@ -4,7 +4,7 @@
  * @author Luca Liguori
  */
 
-// oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+/* oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

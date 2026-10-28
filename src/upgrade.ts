@@ -21,8 +21,8 @@
  * limitations under the License.
  */
 
-// oxlint-disable typescript/no-unsafe-type-assertion
-// oxlint-disable complexity
+/* oxlint-disable typescript/no-unsafe-type-assertion */
+/* oxlint-disable complexity */
 
 import { execSync } from 'node:child_process';
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';

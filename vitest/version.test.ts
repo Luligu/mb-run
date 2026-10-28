@@ -4,7 +4,7 @@
  * @author Luca Liguori
  */
 
-// oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value
+/* oxlint-disable unicorn/no-useless-undefined -- typed vitest mocks require the explicit undefined resolve/return value */
 
 import type { Dirent } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';

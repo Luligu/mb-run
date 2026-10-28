@@ -21,7 +21,7 @@
  * limitations under the License.
  */
 
-// oxlint-disable unicorn/no-negated-condition
+/* oxlint-disable unicorn/no-negated-condition */
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
