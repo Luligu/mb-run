@@ -39,6 +39,7 @@
     "**/coverage": true
   },
   "git.autofetch": true,
+  "git.alwaysSignOff": true, // Git adds Signed-off-by using the current committer identity at commit time.
   "git.autoRepositoryDetection": false,
   // VS Code's Copilot Chat extension settings
   "chat.useCustomizationsInParentRepositories": true, // Default false.

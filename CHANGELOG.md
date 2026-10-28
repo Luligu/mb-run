@@ -33,6 +33,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [scripts]: Update `downloads.mjs` to v.2.2.0 in the package and the template: report that npm has no download data yet, instead of failing, when the npm API answers 404 for a newly published package.
+- [template]: Keep generated commit sign-offs generic and prohibit hardcoded or placeholder identities.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
