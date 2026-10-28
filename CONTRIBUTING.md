@@ -23,7 +23,7 @@ This guide is intentionally **repository-agnostic** so it can be reused across M
   - Prefer `dev` when the repository uses it.
   - Otherwise, use the default branch (`main`).
 - Follow the repo’s setup instructions (usually in `README.md` / `README-DEV.md`).
-- Run formatting/lint/tests if the repository provides scripts for them (for example: `npm run lint`, `npm run format`, `npm run test`, `npm run build`).
+- Run the repository's `npm run runMeBeforePublish` script when available. Its tool order is: `npm run cleanBuild`, `npm run format`, `npm run lint`, `npm run build`, `npm run typecheck`, then `npm run test:coverage`.
 
 ## Submitting a Pull Request
 
