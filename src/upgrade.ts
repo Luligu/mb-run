@@ -3,7 +3,7 @@
  * @description This file contains upgrade utilities for the mb-run command.
  * @author Luca Liguori
  * @created 2026-05-03
- * @version 1.0.1
+ * @version 1.0.2
  * @license Apache-2.0
  *
  * Copyright 2026, 2027, 2028 Luca Liguori.
@@ -523,6 +523,8 @@ export async function runPackageJsonUpgrade(
   if (!isWorkspace && automator?.private !== true) copyRecursive('CONTRIBUTING.md', 'CONTRIBUTING.md');
   if (!(await fileExists('LICENSE')) && automator?.private !== true) copyRecursive('LICENSE', 'LICENSE');
   if (!isWorkspace) copyRecursive('STYLEGUIDE.md', 'STYLEGUIDE.md');
+  if (!isWorkspace) copyRecursive(useMatterbridgeRules ? 'SHARED-AGENTS-PLUGIN.md' : 'SHARED-AGENTS.md', 'SHARED-AGENTS.md');
+  if (!isWorkspace) copyRecursive('TOOLCHAIN.md', 'TOOLCHAIN.md');
 
   // Add files to package
   if (!pkgJson.private && pkgJson.files === undefined) {

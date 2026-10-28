@@ -24,6 +24,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.5] - Dev branch
 
+### Added
+
+- [upgrade]: Add `TOOLCHAIN.md` to the template and copy it to the destination repository.
+- [upgrade]: Add `SHARED-AGENTS.md` to the template and copy it to the destination repository.
+- [upgrade]: Select the expanded shared-agent guide for plugins and Matterbridge; clarify shared guidance and tool-specific configuration.
+
 ### Changed
 
 - [scripts]: Update `downloads.mjs` to v.2.2.0 in the package and the template: report that npm has no download data yet, instead of failing, when the npm API answers 404 for a newly published package.

@@ -158,6 +158,7 @@ describe('upgrade tool package', () => {
     expect(tsconfig).toContain('"vitest/globals"');
     expect(agents).toContain('.agents/rules/testing.instructions.md');
     expect(agents).not.toContain('.agents/rules/matterbridge.instructions.md');
+    expect(await readFile(path.join(rootDir, 'SHARED-AGENTS.md'), 'utf8')).toBe(await readFile(new URL('../template/SHARED-AGENTS.md', import.meta.url), 'utf8'));
 
     for (const fileName of [
       '.agents/README.md',
@@ -189,6 +190,8 @@ describe('upgrade tool package', () => {
       'CONTRIBUTING.md',
       'LICENSE',
       'STYLEGUIDE.md',
+      'SHARED-AGENTS.md',
+      'TOOLCHAIN.md',
     ]) {
       expect(existsSync(path.join(rootDir, fileName))).toBe(true);
     }
@@ -238,6 +241,7 @@ describe('upgrade tool package', () => {
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: false, enableVitest: true });
 
     const agents = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
+    expect(await readFile(path.join(rootDir, 'SHARED-AGENTS.md'), 'utf8')).toBe(await readFile(new URL('../template/SHARED-AGENTS.md', import.meta.url), 'utf8'));
     expect(agents).toContain('.agents/rules/testing.instructions.md');
     expect(agents).not.toContain('.agents/rules/matterbridge.instructions.md');
 

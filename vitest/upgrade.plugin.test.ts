@@ -121,6 +121,8 @@ describe('upgrade plugin package', () => {
     expect(agents).toContain('.agents/rules/testing.instructions.md');
     expect(agents).toContain('.agents/rules/matterbridge.instructions.md');
     expect(agents).toContain('.agents/rules/chip-tests.instructions.md');
+    expect(await readFile(path.join(rootDir, 'SHARED-AGENTS.md'), 'utf8')).toBe(await readFile(new URL('../template/SHARED-AGENTS-PLUGIN.md', import.meta.url), 'utf8'));
+    expect(existsSync(path.join(rootDir, 'SHARED-AGENTS-PLUGIN.md'))).toBe(false);
     // localAgents.md is appended to AGENTS.md only: the other entry points reach it through AGENTS.md, so a second copy would duplicate it
     expect(agents).toContain('## Repository specific instructions');
     expect(claude).not.toContain('## Repository specific instructions');
