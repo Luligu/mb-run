@@ -22,7 +22,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="120"></a>
 
-## [1.1.5] - Dev branch
+## [1.1.5] - 2026-10-30
 
 ### Added
 
@@ -32,6 +32,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [package]: Bump `rollup` to v.4.66.0.
+- [package]: Bump `@types/node` to v.26.6.6.
+- [agents]: Update `AGENTS.md` to v.1.0.8 with commit sign-off guidance.
+- [vscode]: Update `.vscode/settings.json` to v.1.0.17.
 - [scripts]: Update `downloads.mjs` to v.2.2.0 in the package and the template: report that npm has no download data yet, instead of failing, when the npm API answers 404 for a newly published package.
 - [template]: Enable `git.alwaysSignOff` in VS Code settings and update commit message instructions to v.1.0.1 so Git adds the sign-off at commit time.
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.8: agents must not add a `Signed-off-by:` trailer or any personal email to commit messages.

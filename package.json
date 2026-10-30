@@ -136,12 +136,12 @@
     "esbuild": "0.28.2",
     "javascript-obfuscator": "5.9.0",
     "npm-check-updates": "23.1.1",
-    "rollup": "4.65.1",
+    "rollup": "4.66.0",
     "rollup-plugin-dts": "6.5.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "6.0.6",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/coverage-v8": "5.0.5",
     "oxfmt": "0.75.0",
