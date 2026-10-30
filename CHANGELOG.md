@@ -34,6 +34,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 - [scripts]: Update `downloads.mjs` to v.2.2.0 in the package and the template: report that npm has no download data yet, instead of failing, when the npm API answers 404 for a newly published package.
 - [template]: Enable `git.alwaysSignOff` in VS Code settings and update commit message instructions to v.1.0.1 so Git adds the sign-off at commit time.
+- [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.8: agents must not add a `Signed-off-by:` trailer or any personal email to commit messages.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
