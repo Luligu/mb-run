@@ -24,6 +24,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.6] - Dev branch
 
+### Changed
+
+- [package]: Bump `rollup` to v.4.67.3.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.5] - 2026-10-30
