@@ -29,6 +29,9 @@ If you like this project and find it useful, please consider giving it a star on
 - [template]: Move `git commit` and `git push` from `deny` to `ask` in the Claude Code settings.
 - [template]: Change `git commit` and `git push` from `forbidden` to `prompt` in the Codex rules.
 - [template]: Move `git commit` and `git push` from `deny` to `ask` in the Antigravity settings.
+- [template]: Branch protection ruleset targets all branches except `claude/**`, `codex/**` and `copilot/**`.
+- [template]: Branch protection ruleset requires the `Analyze` and `Run tests and collect coverage` checks and extra approval for unattributed changes.
+- [template]: Add the Tag protection ruleset.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
