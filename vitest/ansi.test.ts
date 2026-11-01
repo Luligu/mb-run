@@ -181,6 +181,7 @@ describe('ansi', () => {
   describe('ANSI enabled via FORCE_COLOR', () => {
     beforeEach(() => {
       vi.stubEnv('FORCE_COLOR', '1');
+      vi.stubEnv('TERM', 'xterm-256color');
       Object.defineProperty(process.stdout, 'isTTY', {
         value: false,
         writable: true,
