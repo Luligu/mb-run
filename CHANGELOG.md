@@ -24,6 +24,12 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.7] - Dev branch
 
+### Changed
+
+- [template]: Move `git commit` and `git push` from `deny` to `ask` in the Claude Code settings.
+- [template]: Change `git commit` and `git push` from `forbidden` to `prompt` in the Codex rules.
+- [template]: Move `git commit` and `git push` from `deny` to `ask` in the Antigravity settings.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.6] - 2026-11-01
