@@ -24,6 +24,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.8] - Dev branch
 
+### Changed
+
+- [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.9: add a Context And Reading section so agents read only the files the request needs.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.7] - 2026-11-01
