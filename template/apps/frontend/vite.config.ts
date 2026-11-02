@@ -1,4 +1,4 @@
-// vite.config.ts 1.0.1
+// vite.config.ts v.1.0.1
 
 // This Vite configuration is designed for a Vite/React/TypeScript frontend using ESM modules.
 

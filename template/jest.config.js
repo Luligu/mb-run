@@ -1,5 +1,5 @@
 // @ts-check
-// jest.config.js 2.0.2
+// jest.config.js v.2.0.2
 
 // This Jest configuration is designed for a TypeScript project using ESM modules with ts-jest.
 

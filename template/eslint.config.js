@@ -1,5 +1,5 @@
 // @ts-check
-// eslint.config.js 2.0.7
+// eslint.config.js v.2.0.7
 
 // This ESLint configuration is designed for a TypeScript project using ESM modules.
 

@@ -1,5 +1,5 @@
 // @ts-check
-// prettier.config.js 2.0.0
+// prettier.config.js v.2.0.0
 
 // Config for Prettier
 

@@ -71,7 +71,6 @@
     "jest": false,
     "vitest": true,
     "buntest": true,
-    "native": true,
     "git": false,
     "version": false,
     "publish": false,
