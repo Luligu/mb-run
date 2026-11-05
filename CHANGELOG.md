@@ -27,6 +27,14 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.9: add a Context And Reading section so agents read only the files the request needs.
+- [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.10: add Bionic / LM Studio skill invocation (`@<name>`) and ask Bionic to read the global `~/.agents/AGENTS.md`.
+- [template]: Document Bionic / LM Studio in `SHARED-AGENTS.md`, `SHARED-AGENTS-PLUGIN.md` and `.agents/README.md` (v.1.0.5).
+- [template]: Update the `verify-agent-context` skill to v.1.0.6: report the global instruction file, the global `~/.agents/AGENTS.md` master and global settings, and group skills by source.
+- [package]: Bump `javascript-obfuscator` to v.5.10.0.
+- [package]: Bump `rollup` to v.4.67.5.
+- [package]: Bump `vitest` and `@vitest/coverage-v8` to v.5.1.0.
+- [package]: Bump `oxfmt` to v.0.76.0.
+- [package]: Bump `oxlint` to v.1.91.0.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 

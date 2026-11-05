@@ -1,4 +1,4 @@
-# Matterbridge Agents Instructions (v.1.0.9)
+# Matterbridge Agents Instructions (v.1.0.10)
 
 ## Style And Formatting
 
@@ -44,6 +44,8 @@
 
 ## Additional Agent Guidance
 
+Bionic / LM Studio only (other agents skip this): read `.agents/AGENTS.md` in the user's home folder (`~/.agents/AGENTS.md`) if it exists, and follow it together with this file. If it does not exist, continue with this file alone.
+
 For task-specific guidance, read relevant files in [.agents/rules](./.agents/rules/):
 
 - `.agents/rules/testing.instructions.md` for testing and validation expectations;
@@ -51,6 +53,6 @@ For task-specific guidance, read relevant files in [.agents/rules](./.agents/rul
 - `.agents/rules/plugin-frontend.instructions.md` for guidance on plugin frontend SPAs and custom REST APIs;
 - `.agents/rules/chip-tests.instructions.md` for guidance on the CHIP conformance test harness.
 
-The following workflows are available as skills in [.agents/skills](./.agents/skills/), discovered automatically and invocable with `$<name>` (Codex) or `/<name>` (Claude Code, Copilot, Gemini / Antigravity):
+The following workflows are available as skills in [.agents/skills](./.agents/skills/), discovered automatically and invocable with `$<name>` (Codex), `@<name>` (Bionic / LM Studio) or `/<name>` (Claude Code, Copilot, Gemini / Antigravity):
 
 - `$verify-agent-context` for verifying which coding agent is running and that it loaded the shared instructions, rules and skills from AGENTS.md and `.agents/`.

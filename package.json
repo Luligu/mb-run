@@ -133,20 +133,20 @@
     "@typescript/typescript6": "6.0.2",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.2",
-    "javascript-obfuscator": "5.9.0",
+    "javascript-obfuscator": "5.10.0",
     "npm-check-updates": "23.1.1",
-    "rollup": "4.67.3",
+    "rollup": "4.67.5",
     "rollup-plugin-dts": "6.5.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "6.0.6",
     "@types/node": "26.6.6",
     "@typescript/native": "npm:typescript@7.0.2",
-    "@vitest/coverage-v8": "5.0.5",
-    "oxfmt": "0.75.0",
-    "oxlint": "1.90.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "oxfmt": "0.76.0",
+    "oxlint": "1.91.0",
     "oxlint-tsgolint": "7.0.2005",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }
