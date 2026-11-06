@@ -44,7 +44,7 @@
 
 ## Additional Agent Guidance
 
-Read `~/.agents/AGENTS.md` in the user's home folder if it exists, and follow it together with this file. If it does not exist, continue with this file alone.
+Before doing anything in this repo, read `~/.agents/AGENTS.md` and apply it.
 
 For task-specific guidance, read relevant files in [.agents/rules](./.agents/rules/):
 
