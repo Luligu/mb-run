@@ -1,4 +1,4 @@
-# Matterbridge Agents Instructions (v.1.0.10)
+# Matterbridge Agents Instructions (v.1.0.11)
 
 ## Style And Formatting
 
@@ -44,7 +44,7 @@
 
 ## Additional Agent Guidance
 
-Bionic / LM Studio only (other agents skip this): read `.agents/AGENTS.md` in the user's home folder (`~/.agents/AGENTS.md`) if it exists, and follow it together with this file. If it does not exist, continue with this file alone.
+Read `~/.agents/AGENTS.md` in the user's home folder if it exists, and follow it together with this file. If it does not exist, continue with this file alone.
 
 For task-specific guidance, read relevant files in [.agents/rules](./.agents/rules/):
 
