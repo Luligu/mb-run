@@ -1,4 +1,4 @@
-// VS Code settings v.1.0.19
+// VS Code settings v.1.0.20
 {
   "eslint.enable": false,
   "prettier.enable": false,
@@ -49,7 +49,9 @@
   "github.copilot.chat.commitMessageGeneration.instructions": [{ "file": ".github/commit-message-instructions.md" }], // Conventional Commits for the Source Control "Generate Commit Message" button.
   "chat.tools.urls.autoApprove": {
     // Allow chat tools to access these domains without approval.
+    "api.github.com": true,
     "github.com": true,
+    "registry.npmjs.org": true,
     "matterbridge.io": true
   },
   "chat.permissions.default": "autoApprove", // Automatically approve permissions by default.
