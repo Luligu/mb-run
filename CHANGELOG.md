@@ -26,6 +26,7 @@ If you like this project and find it useful, please consider giving it a star on
 
 ### Changed
 
+- [template]: Allow all domains in the Codex online permission profile and RFC Editor/IETF in the restricted profile.
 - [template]: Set the workspace TypeScript SDK path in VS Code settings v.1.0.18.
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.9: add a Context And Reading section so agents read only the files the request needs.
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.10: add Bionic / LM Studio skill invocation (`@<name>`) and ask Bionic to read the global `~/.agents/AGENTS.md`.

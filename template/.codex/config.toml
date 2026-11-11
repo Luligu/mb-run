@@ -29,6 +29,8 @@ allow_local_binding = true
 "github.com" = "allow"
 "registry.npmjs.org" = "allow"
 "matterbridge.io" = "allow"
+"www.rfc-editor.org" = "allow"
+"www.ietf.org" = "allow"
 
 [permissions.matterbridge_sandbox_restricted.filesystem]
 glob_scan_max_depth = 4
@@ -47,6 +49,9 @@ extends = ":workspace"
 [permissions.matterbridge_sandbox_online.network]
 enabled = true
 allow_local_binding = true
+
+[permissions.matterbridge_sandbox_online.network.domains]
+"*" = "allow"
 
 [permissions.matterbridge_sandbox_online.filesystem]
 glob_scan_max_depth = 4
