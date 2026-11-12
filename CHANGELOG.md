@@ -27,18 +27,23 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [template]: Allow all domains in the Codex online permission profile and RFC Editor/IETF in the restricted profile.
-- [template]: Set the workspace TypeScript SDK path in VS Code settings v.1.0.18.
+- [template]: Update VS Code settings to v.1.0.20 (workspace TypeScript SDK path, chat tool URL auto-approve, agent sandbox) and extensions to v.1.0.6 (LM Studio Copilot provider).
+- [template]: Update Claude settings to v.1.0.12 (sandbox with allowed domains, extra Git and bun rules).
+- [template]: Update Codex config to v.1.0.8 (sandbox restricted, online and offline permission profiles) and rules to v.1.0.8 (extra Git and bun rules).
+- [template]: Update Antigravity settings comment (v.1.0.6).
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.9: add a Context And Reading section so agents read only the files the request needs.
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to 1.0.10: add Bionic / LM Studio skill invocation (`@<name>`) and ask Bionic to read the global `~/.agents/AGENTS.md`.
 - [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to v.1.0.11: require every agent to read and apply the global `~/.agents/AGENTS.md` before doing anything in the repo.
+- [template]: Update `AGENTS.md` and `AGENTS.plugin.md` to v.1.0.12: add the Git HARD RULES and authorization procedure, drop the read-global-instructions line.
+- [template]: Version `SHARED-AGENTS.md` and `SHARED-AGENTS-PLUGIN.md` (v.1.0.0).
 - [template]: Document Bionic / LM Studio in `SHARED-AGENTS.md`, `SHARED-AGENTS-PLUGIN.md` and `.agents/README.md` (v.1.0.5).
 - [template]: Add names to all shared rules, update both agent README files to v.1.0.6, and synchronize rule versions with their pointers.
 - [template]: Update the `verify-agent-context` skill to v.1.0.6: report the global instruction file, the global `~/.agents/AGENTS.md` master and global settings, and group skills by source.
-- [package]: Bump `javascript-obfuscator` to v.5.10.0.
-- [package]: Bump `rollup` to v.4.68.0.
+- [package]: Bump `javascript-obfuscator` to v.5.10.1.
+- [package]: Bump `rollup` to v.4.68.2.
 - [package]: Bump `vitest` and `@vitest/coverage-v8` to v.5.1.0.
-- [package]: Bump `oxfmt` to v.0.77.0.
-- [package]: Bump `oxlint` to v.1.92.0.
+- [package]: Bump `oxfmt` to v.0.78.0.
+- [package]: Bump `oxlint` to v.1.93.0.
 - [package]: Bump `oxlint-tsgolint` to v.7.0.2006.
 - [agents]: Update `.agents/README.md` to v.1.0.6: document shared rule names and refresh the testing examples.
 - [agents]: Update testing instructions to v.1.0.8: add `name` to the shared rule and synchronize Claude and Copilot pointer versions.
