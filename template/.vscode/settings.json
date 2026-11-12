@@ -52,7 +52,9 @@
     "api.github.com": true,
     "github.com": true,
     "registry.npmjs.org": true,
-    "matterbridge.io": true
+    "matterbridge.io": true,
+    "www.rfc-editor.org": true,
+    "www.ietf.org": true
   },
   "chat.permissions.default": "autoApprove", // Automatically approve permissions by default.
   "chat.agent.sandbox.enabled": "on", // Run agent commands in the sandbox.

@@ -7,7 +7,7 @@
     "excludedCommands": ["npm run test*", "npm run test:bun*", "bun run test*", "bun run test:bun*"],
     "network": {
       "allowLocalBinding": true,
-      "allowedDomains": ["api.github.com", "github.com", "registry.npmjs.org", "matterbridge.io"]
+      "allowedDomains": ["api.github.com", "github.com", "registry.npmjs.org", "matterbridge.io", "www.rfc-editor.org", "www.ietf.org"]
     }
   },
   "permissions": {
