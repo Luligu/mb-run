@@ -21,8 +21,8 @@
     "source.format.oxc": "always",
     "source.fixAll.oxc": "always"
   },
-  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/template/**}",
   "diffEditor.ignoreTrimWhitespace": false,
+  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/vendor/**,**/.*/**,**/*.d.ts,**/template/**}",
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,

@@ -135,7 +135,7 @@
     "esbuild": "0.28.2",
     "javascript-obfuscator": "5.10.1",
     "npm-check-updates": "23.1.1",
-    "rollup": "4.68.2",
+    "rollup": "4.68.3",
     "rollup-plugin-dts": "6.5.1"
   },
   "devDependencies": {
@@ -145,7 +145,7 @@
     "@vitest/coverage-v8": "5.1.0",
     "oxfmt": "0.78.0",
     "oxlint": "1.93.0",
-    "oxlint-tsgolint": "7.0.2006",
+    "oxlint-tsgolint": "7.0.2007",
     "typescript": "7.0.2",
     "vitest": "5.1.0"
   }
