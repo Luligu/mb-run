@@ -24,6 +24,10 @@ If you like this project and find it useful, please consider giving it a star on
 
 ## [1.1.9] - Dev branch
 
+### Changed
+
+- [chip-test]: Replace the template runner with `run-chip-test.mjs`, update plugin startup and CI, and remove the legacy runner during upgrades.
+
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
 ## [1.1.8] - 2026-11-13

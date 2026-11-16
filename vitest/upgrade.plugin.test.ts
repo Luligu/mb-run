@@ -91,6 +91,19 @@ describe('upgrade plugin package', () => {
     await rm(rootDir, { recursive: true, force: true });
   });
 
+  it.each([true, false])('replaces the legacy runner when CHIP support is %s', async (chip) => {
+    const pkg = JSON.parse(await readFile(path.join(rootDir, 'package.json'), 'utf8')) as { automator: { chip?: boolean } };
+    pkg.automator.chip = chip;
+    await writeFixture('package.json', JSON.stringify(pkg));
+    await writeFixture('scripts/run-chip-tests.mjs', 'legacy runner');
+    await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false });
+    expect(existsSync(path.join(rootDir, 'scripts/run-chip-tests.mjs'))).toBe(false);
+    expect(existsSync(path.join(rootDir, 'scripts/run-chip-test.mjs'))).toBe(chip);
+    const copiedRunner = chip ? await readFile(path.join(rootDir, 'scripts/run-chip-test.mjs'), 'utf8') : undefined;
+    const expectedRunner = chip ? await readFile(new URL('../template/scripts/run-chip-test.mjs', import.meta.url), 'utf8') : undefined;
+    expect(copiedRunner).toBe(expectedRunner);
+  });
+
   it('upgrades a plugin package with Jest and Vitest', async () => {
     await runUpgrade({ rootDir, isWindows: process.platform === 'win32', dryRun: false, enableJest: true, enableVitest: true });
 

@@ -791,6 +791,21 @@ describe('upgrade', () => {
     expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(expect.stringContaining('package.json'), expect.stringContaining('chip:test'), 'utf8');
   });
 
+  it('uses the new CHIP runner and enables plugin copying only for plugins', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(fileExists).mockResolvedValue(true);
+    vi.mocked(readFileSync).mockReturnValue('{}');
+    for (const plugin of [false, true]) {
+      const pkg = { ...structuredClone(packageJson), automator: { chip: true } };
+      await runPackageJsonUpgrade({ rootDir: path.resolve('chip-package'), isWindows: false, dryRun: false }, path.resolve('chip-package/package.json'), pkg, false, false, plugin);
+      expect(pkg.scripts).toMatchObject({
+        'chip:start': `node scripts/run-chip-test.mjs --start${plugin ? ' --plugin' : ''}`,
+        'chip:test': 'node scripts/run-chip-test.mjs',
+        'chip:stop': 'node scripts/run-chip-test.mjs --stop',
+      });
+    }
+  });
+
   it('configures softReset and softReset:bun scripts for Node, Bun, and plugin variants', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(fileExists).mockResolvedValue(true);

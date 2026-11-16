@@ -392,10 +392,11 @@ export async function runPackageJsonUpgrade(
     // Remove legacy scripts that are no longer needed
     // Bundling runs through mb-run --esbuild, which supersedes the vendored scripts/esbuild.mjs kept in the template.
     unlinkSafe(path.join(dstDir, 'scripts', 'esbuild.mjs'));
+    unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
     if (!opts.useBun) unlinkSafe(path.join(dstDir, 'scripts', 'bun-bundle.mjs'));
     if (pkgJson.private === true) unlinkSafe(path.join(dstDir, 'scripts', 'downloads.mjs'));
-    if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
-    if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-tests.mjs'));
+    if (!isPlugin) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-test.mjs'));
+    if (isPlugin && automator?.chip !== true) unlinkSafe(path.join(dstDir, 'scripts', 'run-chip-test.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'run-automator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'runAutomator.mjs'));
     unlinkSafe(path.join(dstDir, 'scripts', 'install-experimental.mjs'));
@@ -766,9 +767,9 @@ export async function runPackageJsonUpgrade(
       'git:merge:dev': automator?.git === true ? 'node scripts/git-sync-dev.mjs merge' : undefined,
       'git:rebase:dev': automator?.git === true ? 'node scripts/git-sync-dev.mjs rebase' : undefined,
 
-      'chip:start': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --start' : undefined,
-      'chip:test': automator?.chip === true ? 'node scripts/run-chip-tests.mjs' : undefined,
-      'chip:stop': automator?.chip === true ? 'node scripts/run-chip-tests.mjs --stop' : undefined,
+      'chip:start': automator?.chip === true ? `node scripts/run-chip-test.mjs --start${isPlugin ? ' --plugin' : ''}` : undefined,
+      'chip:test': automator?.chip === true ? 'node scripts/run-chip-test.mjs' : undefined,
+      'chip:stop': automator?.chip === true ? 'node scripts/run-chip-test.mjs --stop' : undefined,
 
       'reset': 'npm run deepClean && npm run softReset',
       'softReset': opts.useNode
