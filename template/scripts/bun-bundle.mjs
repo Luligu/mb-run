@@ -1,6 +1,6 @@
 /**
  * bun-bundle.mjs
- * Version: 2.0.0
+ * Version: 2.0.1
  *
  * Bundles the package with `Bun.build` and the type declarations with rollup + rollup-plugin-dts.
  *
@@ -45,7 +45,7 @@ import process from 'node:process';
 import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 
-const scriptVersion = '2.0.0';
+const scriptVersion = '2.0.1';
 
 const require = createRequire(import.meta.url);
 
@@ -127,10 +127,28 @@ const resolveBundledDeclaration = (specifier) => {
   }
 
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const target = manifest.exports?.[subpath];
+  const exportsMap = manifest.exports && typeof manifest.exports === 'object' ? manifest.exports : {};
+  let target = exportsMap[subpath];
+  let match;
+  if (target === undefined) {
+    // A subpath pattern like `./clusters/*`: the longest matching prefix wins, as in the Node resolution
+    const pattern = Object.keys(exportsMap)
+      .filter((key) => key.split('*').length === 2)
+      .filter((key) => {
+        const [prefix, suffix] = key.split('*');
+        return subpath.length >= key.length && subpath.startsWith(prefix) && subpath.endsWith(suffix);
+      })
+      .toSorted((a, b) => b.indexOf('*') - a.indexOf('*'))[0];
+    if (pattern) {
+      const [prefix, suffix] = pattern.split('*');
+      target = exportsMap[pattern];
+      match = subpath.slice(prefix.length, subpath.length - suffix.length);
+    }
+  }
   const fallback = subpath === '.' ? (manifest.types ?? manifest.typings ?? null) : null;
-  const types = typeof target === 'string' ? fallback : (target?.types ?? fallback);
+  let types = typeof target === 'string' ? fallback : (target?.types ?? fallback);
   if (!types) return null;
+  if (match !== undefined) types = types.replaceAll('*', match);
 
   const resolved = path.resolve(path.dirname(manifestPath), types);
   return existsSync(resolved) ? resolved : null;
