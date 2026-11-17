@@ -27,6 +27,11 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [chip-test]: Replace the template runner with `run-chip-test.mjs`, update plugin startup and CI, and remove the legacy runner during upgrades.
+- [package]: Bump `rollup` to v.4.68.5.
+- [package]: Bump `oxfmt` to v.0.79.0.
+- [package]: Bump `oxlint` to v.1.94.0.
+- [vscode]: Update `.vscode/settings.json` to v.1.0.21.
+- [agents]: Update `AGENTS.md` to v.1.0.12.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
