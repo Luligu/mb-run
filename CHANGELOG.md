@@ -27,7 +27,7 @@ If you like this project and find it useful, please consider giving it a star on
 ### Changed
 
 - [chip-test]: Replace the template runner with `run-chip-test.mjs`, update plugin startup and CI, and remove the legacy runner during upgrades.
-- [scripts]: Update `bun-bundle.mjs` to v.2.0.1: resolve the declarations of `exports` subpath patterns (e.g. `./clusters/*`).
+- [scripts]: Update `bun-bundle.mjs` to v.2.1.0: resolve the declarations of `exports` subpath patterns (e.g. `./clusters/*`), keep `node-ansi-logger` external and read `automator.esbuild.bundle` / `automator.esbuild.external` like `mb-run --esbuild`.
 - [scripts]: Add `bun-bundle.mjs` and `esbuild.mjs` with their tests to the repository scripts.
 - [package]: Bump `rollup` to v.4.68.5.
 - [package]: Bump `oxfmt` to v.0.79.0.

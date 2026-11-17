@@ -160,6 +160,41 @@ describe('bun-bundle.mjs', () => {
     expect(log).toHaveBeenLastCalledWith('Bundled the development exports.');
   });
 
+  test('should bundle and keep external the packages configured in automator.esbuild', async () => {
+    writePackage(
+      '.',
+      'fixture',
+      [
+        "import { inlined } from 'dep-inline/sub';",
+        "import { kept } from '@fixture/kept';",
+        "import { both } from 'dep-both';",
+        'export const value = [inlined, kept, both];',
+      ].join('\n'),
+      {
+        workspaces: ['packages/*'],
+        // external wins over bundle; subpath specifiers name their package; invalid entries are ignored
+        automator: { esbuild: { bundle: ['dep-inline/sub', 'dep-both', 7, ''], external: ['@fixture/kept', 'dep-both'] } },
+      },
+    );
+    write('packages/kept/package.json', { name: '@fixture/kept' });
+    write('node_modules/dep-inline/package.json', { name: 'dep-inline', type: 'module', exports: { './sub': './sub.js' } });
+    write('node_modules/dep-inline/sub.js', "export const inlined = 'inlined';");
+
+    expect(await main(['--no-declaration-build'], root)).toBe(0);
+    const javascript = read('build/index.js');
+    expect(javascript).not.toMatch(/from "dep-inline/);
+    expect(javascript).toContain('var inlined = "inlined"');
+    expect(javascript).toContain('from "@fixture/kept"');
+    expect(javascript).toContain('from "dep-both"');
+    expect(log).toHaveBeenCalledWith('Automator: bundle dep-inline, dep-both, external @fixture/kept, dep-both.');
+
+    // Fields that are not lists configure nothing
+    log.mockClear();
+    writePackage('.', 'fixture', 'export const value = 42;', { automator: { esbuild: { bundle: 'dep-inline', external: null } } });
+    expect(await main(['--no-declaration-build'], root)).toBe(0);
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('Automator:'));
+  });
+
   test('should minify without sourcemaps in production', async () => {
     writePackage('.', 'fixture', 'export const value = 42;');
     expect(await main(['--production', '--no-declaration-build'], root)).toBe(0);
