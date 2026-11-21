@@ -27,6 +27,8 @@ Repository-local additions in `localAgents.md`, when present, are appended to `A
 | ------------------------------------------------------ | ------------------------------------------------------------ |
 | `.github/copilot-instructions.md`                      | Entry point importing or linking to AGENTS.md                |
 | `.github/instructions/testing/testing.instructions.md` | Testing standards — scoped to the test patterns listed below |
+| `.github/agents/matterbridge-no-delegate.agent.md`     | **Matterbridge No Delegate** custom agent — executes tasks directly |
+| `.github/agents/matterbridge-orchestrator.agent.md`    | **Matterbridge Orchestrator** custom agent — collects independent answers from GPT 6.2, Opus 5.5 and Neo 4 |
 | `.github/skills/verify-agent-context/SKILL.md`         | Skill invocable as `/verify-agent-context`                   |
 
 The testing pointers for both Claude Code and Copilot cover `**/*.test.ts`, `**/*.spec.ts`, `**/test/**/*.ts`, `**/vitest/**/*.ts`, and `**/buntest/**/*.ts`.

@@ -90,6 +90,7 @@ describe('upgrade tool package', () => {
     await writeFixture('.agents/testing.md', 'obsolete\n');
     await writeFixture('.claude/rules/testing/unit-tests.instructions.md', 'obsolete\n');
     await writeFixture('.github/instructions/testing/unit-tests.instructions.md', 'obsolete\n');
+    await writeFixture('.github/agents/matterbridge.agent.md', 'obsolete\n');
     await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
     await writeFixture('.devcontainer/postCreateCommand.sh', 'obsolete\n');
     await writeFixture('.devcontainer/postStartCommand.sh', 'obsolete\n');
@@ -172,6 +173,8 @@ describe('upgrade tool package', () => {
       '.devcontainer/bun/devcontainer.json',
       '.devcontainer/node/devcontainer.json',
       '.github/workflows/build.yml',
+      '.github/agents/matterbridge-no-delegate.agent.md',
+      '.github/agents/matterbridge-orchestrator.agent.md',
       '.github/instructions/testing/testing.instructions.md',
       '.github/skills/verify-agent-context/SKILL.md',
       'AGENTS.md',

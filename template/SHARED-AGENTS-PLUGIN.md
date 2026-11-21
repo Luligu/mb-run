@@ -35,7 +35,8 @@ The plugin guidance covers endpoints, frontend SPAs and REST APIs, and CHIP conf
 | `.github/instructions/matterbridge/matterbridge.instructions.md`       | Endpoint guide — scoped to `src/module.ts`                                                            |
 | `.github/instructions/plugin-frontend/plugin-frontend.instructions.md` | Frontend guide — scoped to `apps/frontend/**` and `src/*.ts`                                          |
 | `.github/instructions/chip-tests/chip-tests.instructions.md`           | CHIP harness guide — scoped to the CHIP files listed below                                            |
-| `.github/agents/matterbridge.agent.md`                                 | **Matterbridge** custom agent — follows the shared instructions and works without subagent delegation |
+| `.github/agents/matterbridge-no-delegate.agent.md`                    | **Matterbridge No Delegate** custom agent — follows the shared instructions and executes tasks directly |
+| `.github/agents/matterbridge-orchestrator.agent.md`                    | **Matterbridge Orchestrator** custom agent — collects independent answers from GPT 6.2, Opus 5.5 and Neo 4 |
 | `.github/skills/verify-agent-context/SKILL.md`                         | Skill invocable as `/verify-agent-context`                                                            |
 
 The testing pointers for both Claude Code and Copilot cover `**/*.test.ts`, `**/*.spec.ts`, `**/test/**/*.ts`, `**/vitest/**/*.ts`, and `**/buntest/**/*.ts`.

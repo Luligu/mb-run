@@ -347,6 +347,7 @@ export async function runPackageJsonUpgrade(
     unlinkSafe(path.join(dstDir, '.github', 'instructions', 'testing', 'unit-tests.instructions.md'));
     if (useMatterbridgeRules) copyRecursive('.github-plugin', '.github');
     else copyRecursive('.github', '.github');
+    unlinkSafe(path.join(dstDir, '.github', 'agents', 'matterbridge.agent.md'));
     if (!useMatterbridgeRules) {
       for (const ruleName of matterbridgeRules) {
         removeDirSafe(path.join(dstDir, '.github', 'instructions', ruleName));

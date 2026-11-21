@@ -75,6 +75,7 @@ describe('upgrade plugin package', () => {
     );
     await writeFixture('LICENSE', 'fixture license\n');
     await writeFixture('localAgents.md', '## Repository specific instructions\n');
+    await writeFixture('.github/agents/matterbridge.agent.md', 'obsolete\n');
     await writeFixture('README.md', 'yellow-button.png src="matterbridge.svg"\n');
     await writeFixture('CHANGELOG.md', 'yellow-button.png build-matterbridge-plugin.yml\n');
     await writeFixture('.devcontainer/devcontainer.json', 'obsolete\n');
@@ -156,7 +157,8 @@ describe('upgrade plugin package', () => {
       '.claude/skills/verify-agent-context/SKILL.md',
       '.devcontainer/bun/devcontainer.json',
       '.devcontainer/node/devcontainer.json',
-      '.github/agents/matterbridge.agent.md',
+      '.github/agents/matterbridge-no-delegate.agent.md',
+      '.github/agents/matterbridge-orchestrator.agent.md',
       '.github/instructions/matterbridge/matterbridge.instructions.md',
       '.github/instructions/testing/testing.instructions.md',
       '.github/skills/verify-agent-context/SKILL.md',
@@ -173,6 +175,7 @@ describe('upgrade plugin package', () => {
       '.devcontainer/devcontainer.json',
       '.devcontainer/postCreateCommand.sh',
       '.devcontainer/postStartCommand.sh',
+      '.github/agents/matterbridge.agent.md',
       'yellow-button.png',
       'bmc-button.svg',
       'matterbridge.svg',
