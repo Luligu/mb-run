@@ -30,11 +30,19 @@ If you like this project and find it useful, please consider giving it a star on
 - [chip-test]: Replace the template runner with `run-chip-test.mjs`, update plugin startup and CI, and remove the legacy runner during upgrades.
 - [scripts]: Update `bun-bundle.mjs` to v.2.1.0: resolve the declarations of `exports` subpath patterns (e.g. `./clusters/*`), keep `node-ansi-logger` external and read `automator.esbuild.bundle` / `automator.esbuild.external` like `mb-run --esbuild`.
 - [scripts]: Add `bun-bundle.mjs` and `esbuild.mjs` with their tests to the repository scripts.
-- [package]: Bump `rollup` to v.4.68.5.
+- [package]: Bump `rollup` to v.4.68.8.
 - [package]: Bump `oxfmt` to v.0.79.0.
 - [package]: Bump `oxlint` to v.1.94.0.
 - [vscode]: Update `.vscode/settings.json` to v.1.0.21.
 - [agents]: Update `AGENTS.md` to v.1.0.12.
+- [package]: Bump `@vitest/coverage-v8` to v.5.1.1.
+- [package]: Bump `oxlint-tsgolint` to v.7.0.2008.
+- [package]: Bump `vitest` to v.5.1.1.
+- [config]: Update `SHARED-AGENTS.md` to v.1.0.0.
+- [scripts]: Remove `scripts/bun-bundle.mjs`.
+- [scripts]: Remove `scripts/esbuild.mjs`.
+- [config]: Add `.github/agents/matterbridge-no-delegate.agent.md`.
+- [config]: Add `.github/agents/matterbridge-orchestrator.agent.md`.
 
 <a href="https://www.buymeacoffee.com/luligugithub"><img src="https://matterbridge.io/assets/bmc-button.svg" alt="Buy me a coffee" width="80"></a>
 
