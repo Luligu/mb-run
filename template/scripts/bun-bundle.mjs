@@ -1,6 +1,6 @@
 /**
  * bun-bundle.mjs
- * Version: 2.1.0
+ * Version: 2.1.1
  *
  * Bundles the package with `Bun.build` and the type declarations with rollup + rollup-plugin-dts.
  *
@@ -47,7 +47,7 @@ import process from 'node:process';
 import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 
-const scriptVersion = '2.1.0';
+const scriptVersion = '2.1.1';
 
 const require = createRequire(import.meta.url);
 
@@ -178,7 +178,10 @@ const getEntries = (dir) => {
     /** @type {string} */
     const sourcePattern = source;
     const wildcard = sourcePattern.indexOf('*');
-    const sources = wildcard === -1 ? [sourcePattern] : [...new Bun.Glob(sourcePattern.replaceAll('*', '**/*')).scanSync({ cwd: dir, onlyFiles: true })].toSorted();
+    const sources =
+      wildcard === -1
+        ? [sourcePattern]
+        : [...new Bun.Glob(sourcePattern.replaceAll('*', '**/*')).scanSync({ cwd: dir, onlyFiles: true })].map((file) => file.replaceAll('\\', '/')).toSorted();
 
     for (const sourceFile of sources) {
       // A package export star can include nested paths; use the same match in every target.

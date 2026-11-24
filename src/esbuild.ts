@@ -409,7 +409,7 @@ function matchesPackagePattern(specifier: string, patterns: Iterable<string>): b
 function createExternalPackagesPlugin(localNames: Set<string>, bundledPatterns: string[], declaredPatterns: Set<string>, undeclaredPackages: Set<string>): Plugin {
   return {
     name: 'mb-run-external-packages',
-    setup(build) {
+    setup(build): void {
       build.onResolve({ filter: /^[^./]/ }, (args) => {
         // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
         if (args.kind === 'entry-point' || path.isAbsolute(args.path)) return undefined;
@@ -441,7 +441,7 @@ function createExternalPackagesPlugin(localNames: Set<string>, bundledPatterns: 
 function createOwnOutputRedirectPlugin(): Plugin {
   return {
     name: 'redirect-own-dist-outputs',
-    setup(pluginBuild) {
+    setup(pluginBuild): void {
       pluginBuild.onResolve({ filter: /^\.\.?\// }, async (args) => {
         // oxlint-disable-next-line unicorn/no-useless-undefined -- keeps every branch's return type consistent with the object-returning branch below
         if (!args.path.endsWith('.js')) return undefined;
